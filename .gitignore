@@ -1,0 +1,16 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+
+# Build outputs
+artifacts/
+publish/
+
+# Local docs copies (regenerate from Mac repo)
+docs/spec/*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
