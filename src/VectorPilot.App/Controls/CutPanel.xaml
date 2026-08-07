@@ -1,0 +1,41 @@
+<UserControl x:Class="VectorPilot.App.Controls.CutPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Toolpaths" FontSize="20" FontWeight="Bold"/>
+        <TextBlock Text="Add a strategy, then calculate — the G-code appears below and is ready for the Machine stage." 
+                   Foreground="#666" Margin="0,2,0,10"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+            <ComboBox x:Name="CmbStrategy" Width="170" SelectedIndex="0">
+                <ComboBoxItem Content="Profile"/>
+                <ComboBoxItem Content="Pocket"/>
+                <ComboBoxItem Content="V-Carve"/>
+                <ComboBoxItem Content="Drill"/>
+            </ComboBox>
+            <TextBox x:Name="TxtDepth" Text="0.25" Width="70" Margin="8,0,0,0" ToolTip="Cut depth"/>
+            <TextBox x:Name="TxtFeed" Text="100" Width="60" Margin="6,0,0,0" ToolTip="Feed rate"/>
+            <Button x:Name="BtnAdd" Content="+ Add Toolpath" Margin="10,0,0,0" Padding="12,6" Click="BtnAdd_Click"/>
+            <Button x:Name="BtnCalc" Content="Calculate All" Margin="8,0,0,0" Padding="12,6" Click="BtnCalc_Click"/>
+            <Button x:Name="BtnSend" Content="→ Machine" Margin="8,0,0,0" Padding="12,6" Click="BtnSend_Click"/>
+        </StackPanel>
+
+        <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,8"/>
+
+        <Border Grid.Row="3" Background="#22222C" CornerRadius="6" Padding="10" MaxHeight="220">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Generated G-code (first 60 lines)" Foreground="#9AC8FF" FontSize="11" Margin="0,0,0,6"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="GCodePreview" FontFamily="Consolas" FontSize="11" Foreground="#DDD" Text="— nothing calculated yet —"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

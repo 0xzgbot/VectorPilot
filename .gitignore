@@ -1,16 +1,20 @@
-# .NET / Visual Studio
+# .NET
 bin/
 obj/
-.vs/
 *.user
+.vs/
+*.suo
+TestResults/
 
-# Build outputs
-artifacts/
-publish/
+# Hermes / agent artifacts
+.hermes/
+.worktrees/
 
-# Local docs copies (regenerate from Mac repo)
-docs/spec/*.tmp
+# IDE
+.vscode/
+.idea/
+*.swp
 
-# OS
-.DS_Store
-Thumbs.db
+# Output
+dist/
+*.zip

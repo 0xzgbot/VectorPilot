@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>VectorPilot.Engine</RootNamespace>
+    <AssemblyName>VectorPilot.Engine</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VectorPilot.Geometry\VectorPilot.Geometry.csproj" />
+    <ProjectReference Include="..\VectorPilot.Serial\VectorPilot.Serial.csproj" />
+  </ItemGroup>
+</Project>

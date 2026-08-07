@@ -1,0 +1,36 @@
+<Window x:Class="VectorPilot.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:VectorPilot.App.Controls"
+        Title="VectorPilot — CNC Suite" Width="1400" Height="860"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource PanelBg}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="190"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Stage rail -->
+        <Border Grid.Column="0" Background="{StaticResource RailBg}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="14,18,14,10">
+                    <TextBlock Text="VECTORPILOT" FontSize="17" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="DocTitle" Text="New Job" FontSize="11" Foreground="#8888A0" Margin="0,3,0,0"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="10,6">
+                    <Button Style="{StaticResource RailButton}" Tag="setup" Click="Stage_Click" Content="⚙  Setup"/>
+                    <Button Style="{StaticResource RailButton}" Tag="design" Click="Stage_Click" Content="✏  Design"/>
+                    <Button Style="{StaticResource RailButton}" Tag="cut" Click="Stage_Click" Content="🛠  Toolpaths"/>
+                    <Button Style="{StaticResource RailButton}" Tag="machine" Click="Stage_Click" Content="🔌  Machine"/>
+                    <Button Style="{StaticResource RailButton}" Tag="output" Click="Stage_Click" Content="📤  Output"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="14,10">
+                    <TextBlock x:Name="RailStatus" Text="disconnected" FontSize="11" Foreground="#FFB454"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Stage host -->
+        <ContentControl x:Name="StageHost" Grid.Column="1" Margin="10"/>
+    </Grid>
+</Window>

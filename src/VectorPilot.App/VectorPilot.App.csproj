@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>VectorPilot.App</RootNamespace>
+    <AssemblyName>VectorPilot</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VectorPilot.Engine\VectorPilot.Engine.csproj" />
+    <ProjectReference Include="..\VectorPilot.Serial\VectorPilot.Serial.csproj" />
+    <ProjectReference Include="..\VectorPilot.Geometry\VectorPilot.Geometry.csproj" />
+  </ItemGroup>
+</Project>
