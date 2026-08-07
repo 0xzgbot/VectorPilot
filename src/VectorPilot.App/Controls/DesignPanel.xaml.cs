@@ -210,10 +210,10 @@ public partial class DesignPanel : UserControl
         }
 
         _dragStart = null;
-        if (shape is not null)
+        if (shape is not null && AppState.CurrentJob is { } job)
         {
             layer.AddShape(shape);
-            AppState.CurrentJob.IsDirty = true;
+            job.IsDirty = true;
             RedrawShapes();
         }
     }

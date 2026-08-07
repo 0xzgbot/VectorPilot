@@ -7,8 +7,8 @@
 - [ ] **VP-1000** Spec pack — emit from Mac repo into `docs/spec/`: document JSON schema (from Codable models), 72 preset JSON, tool DB seed JSON (13 classes/17 defaults), golden G-code files, verify PASS-line manifest
   - AC: `docs/spec/` contains schema.md + 4 JSON/asset sets; goldens byte-identical to Mac `fixtures/`
 - [ ] **VP-1001** Freeze Mac baseline commit (`4b5311d`) as port reference
-- [ ] **VP-1002** Scaffold solution (Geometry/Engine/Serial/App/Tests + assets + docs), `.gitignore`, CI (windows-latest: restore/build/test), initial board
-  - AC: fresh clone → `dotnet build` + one ported smoke test green on the PC
+- [x] **VP-1002** Scaffold solution (Geometry/Engine/Serial/App/Tests + assets + docs), `.gitignore`, CI (windows-latest: restore/build/test), initial board
+  - AC: fresh clone → `dotnet build` + one ported smoke test green on the PC — **MET 2026-08-07**: solution + 5 projects scaffolded, WPF shell runs, 20 xUnit tests green (StatusParser port, SimulatorTransport, geometry, profile generator)
 - [ ] **VP-1003** Windows live capture (reference trial PC) → merge `docs/LIVE_CAPTURE.md`
   - AC: capture report covers menus, job setup, 2D/3D, toolpath forms, machine, output; trial limitations listed
 - [ ] **VP-1004** PC environment per `docs/PC_SETUP.md` (toolchain, drivers, installer exe)
@@ -53,6 +53,8 @@
 
 ## Work log
 
-### 2026-08-06 — plan published (Hermes agent)
-- PLAN.md, AGENTS.md, MASTER_KANBAN.md, README.md, docs/ (PORT_MANIFEST.md, PC_SETUP.md) written; repo created private on GitHub (`0xzgbot/VectorPilot`).
-- Next claim: VP-1000 (spec pack) — quick win, unblocks everything.
+### 2026-08-07 — v1 vertical slice landed (direct, then 4 parallel subagents)
+- **Committed `6092945` → pushed to main.** Working app: WPF stage-rail shell (Setup → Design → Toolpaths → Machine → Output), job setup panel, 2D design canvas (rect/line/circle draw), profile toolpath generator, GRBL `StatusParser` port (incl. Pn re-join + Bf:planner,rx), `SimulatorTransport` (virtual GRBL: jog/home/zero/spindle/alarm), `SerialTransport` (System.IO.Ports), ok-wait `GCodeStreamer`, machine panel (DRO/jog/stream/console). **20/20 xUnit green.**
+- **Environment:** .NET SDK 8.0.423 installed; VS 18 Community present. `dotnet` at `C:\Program Files\dotnet`.
+- **4 parallel subagents dispatched** (deleg_34f4ff1c): pocket+v-carve engines, offset+boolean ops, DXF/SVG importers, tool DB+stock presets — each with own test files, gated on build+tests.
+- 2026-08-06 — plan published (Hermes agent): PLAN.md, AGENTS.md, MASTER_KANBAN.md, README.md, docs/ (PORT_MANIFEST.md, PC_SETUP.md) written; repo created private on GitHub (`0xzgbot/VectorPilot`). Next claim: VP-1000 (spec pack) — quick win, unblocks everything.

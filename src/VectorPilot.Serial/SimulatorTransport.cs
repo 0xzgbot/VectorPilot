@@ -16,15 +16,10 @@ public sealed class SimulatorTransport : IMachineTransport
     private MachineProfile _profile = MachineProfile.Simulator();
     private double _x, _y, _z;
     private MachineState _state = MachineState.Idle;
-    private bool _spindleOn;
-    private bool _alarm;
-    private bool _homed;
     private double _feedRate;
     private double _spindleSpeed = 12000;
     private readonly object _lock = new();
-    private CancellationTokenSource? _streamCts;
     private bool _streamPaused;
-    private int _lineCount, _sentCount;
 
     public Task OpenAsync(MachineProfile profile, CancellationToken ct = default)
     {
@@ -37,7 +32,6 @@ public sealed class SimulatorTransport : IMachineTransport
 
     public Task CloseAsync()
     {
-        _streamCts?.Cancel();
         IsOpen = false;
         Emit(TransportEventType.Closed, "Simulator closed");
         return Task.CompletedTask;
@@ -69,9 +63,7 @@ public sealed class SimulatorTransport : IMachineTransport
         }
         if (line == "\u0018" || line == "\u0018\u0018") // 0x18 soft-reset
         {
-            _streamCts?.Cancel();
             _state = MachineState.Alarm;
-            _alarm = true;
             Emit(TransportEventType.Alarm, "ALARM:9 Soft reset");
             return;
         }
@@ -83,13 +75,13 @@ public sealed class SimulatorTransport : IMachineTransport
         {
             if (upper.StartsWith("$H"))
             {
-                _x = _y = _z = 0; _homed = true;
+                _x = _y = _z = 0;
                 Emit(TransportEventType.Ok, "ok");
                 Emit(TransportEventType.Status, BuildStatusLine());
             }
             else if (upper.StartsWith("$X"))
             {
-                _alarm = false; _state = MachineState.Idle;
+                _state = MachineState.Idle;
                 Emit(TransportEventType.Ok, "ok");
                 Emit(TransportEventType.Status, BuildStatusLine());
             }
@@ -104,13 +96,11 @@ public sealed class SimulatorTransport : IMachineTransport
             }
             else if (upper.StartsWith("M3") || upper.StartsWith("M4"))
             {
-                _spindleOn = true;
                 Emit(TransportEventType.Ok, "ok");
                 Emit(TransportEventType.Status, BuildStatusLine());
             }
             else if (upper.StartsWith("M5"))
             {
-                _spindleOn = false;
                 Emit(TransportEventType.Ok, "ok");
                 Emit(TransportEventType.Status, BuildStatusLine());
             }

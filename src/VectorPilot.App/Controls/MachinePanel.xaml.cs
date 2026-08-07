@@ -184,7 +184,8 @@ public partial class MachinePanel : UserControl
         get
         {
             var item = CmbStep.SelectedItem as ComboBoxItem;
-            return item?.Content as string switch
+            var label = item?.Content as string;
+            return label switch
             {
                 "1.0" => 1.0,
                 "0.1" => 0.1,
