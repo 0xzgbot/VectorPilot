@@ -19,7 +19,6 @@ public sealed class SimulatorTransport : IMachineTransport
     private double _feedRate;
     private double _spindleSpeed = 12000;
     private readonly object _lock = new();
-    private bool _streamPaused;
 
     public Task OpenAsync(MachineProfile profile, CancellationToken ct = default)
     {
@@ -57,7 +56,7 @@ public sealed class SimulatorTransport : IMachineTransport
         }
         if (line == "~")
         {
-            if (_state == MachineState.Hold) { _state = MachineState.Run; _streamPaused = false; Emit(TransportEventType.Status, BuildStatusLine()); }
+            if (_state == MachineState.Hold) { _state = MachineState.Run; Emit(TransportEventType.Status, BuildStatusLine()); }
             Emit(TransportEventType.Ok, "ok");
             return;
         }

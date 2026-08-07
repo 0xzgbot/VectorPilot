@@ -30,7 +30,8 @@ public partial class CutPanel : UserControl
         get
         {
             var item = CmbStrategy.SelectedItem as ComboBoxItem;
-            return item?.Content as string switch
+            var label = item?.Content as string;
+            return label switch
             {
                 "Pocket" => ToolpathStrategy.Pocket,
                 "V-Carve" => ToolpathStrategy.VCarve,
