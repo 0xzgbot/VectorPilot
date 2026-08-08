@@ -10,7 +10,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 4. `[ ]` **Moulding toolpath (3D)** — swept profile along a rail as a toolpath strategy. Source: `SpecialtyToolpaths.swift` Moulding + `SweepReliefEngine.swift`.
 5. `[x]` **Grayscale bitmap ↔ heightfield** — export relief as grayscale PNG/BMP + import grayscale → relief (reuses BitmapTracer). Model menu items "Export as Grayscale Bitmap" / import.
 6. `[x]` **Modeling resolution / remesh** — resample a heightfield to a new cell size (Standard → 1M points equivalent).
-7. `[ ]` **Sketch carving as 3D strategy** — depth-ramped carving along traced contours (upgrade SketchCarve port).
+7. `[x]` **Sketch carving as 3D strategy** — depth-ramped carving along traced contours (upgrade SketchCarve port).
 8. `[ ]` **V3M 3D clipart** — minimal V3M reader/writer for clipart import/export (stub with honest status if format is opaque).
 
 ## Phase 2 — toolpath breadth
