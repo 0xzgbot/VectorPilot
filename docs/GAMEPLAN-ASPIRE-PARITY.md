@@ -18,7 +18,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 10. `[x]` **Tiling** — split large jobs into tiles with overlap.
 11. `[x]` **Toolpath templates** — save/reuse strategy settings. Source: `ToolpathTemplates.swift`.
 12. `[x]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture (our own implementations; Aspire sells as add-on).
-13. `[ ]` **Weave toolpath** — weave strategy if present in Mac (`SpecialtyToolpaths.swift`).
+13. `[x]` **Weave toolpath** — weave strategy if present in Mac (`SpecialtyToolpaths.swift`).
 
 ## Phase 3 — vector & 2D tools
 14. `[x]` **Vector validator** — open-vector / self-intersection detection.
