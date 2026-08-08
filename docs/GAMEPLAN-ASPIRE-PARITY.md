@@ -14,16 +14,16 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 8. `[ ]` **V3M 3D clipart** — minimal V3M reader/writer for clipart import/export (stub with honest status if format is opaque).
 
 ## Phase 2 — toolpath breadth
-9. `[ ]` **Tabs + ramps + leads generation** — wire SPK-1136a params into Profile/Pocket: 5 ramp types, tabs (2D/3D), lead-in/out shapes.
+9. `[x]` **Tabs + ramps + leads generation** — wire SPK-1136a params into Profile/Pocket: 5 ramp types, tabs (2D/3D), lead-in/out shapes.
 10. `[x]` **Tiling** — split large jobs into tiles with overlap.
 11. `[x]` **Toolpath templates** — save/reuse strategy settings. Source: `ToolpathTemplates.swift`.
-12. `[ ]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture (our own implementations; Aspire sells as add-on).
+12. `[x]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture (our own implementations; Aspire sells as add-on).
 13. `[ ]` **Weave toolpath** — weave strategy if present in Mac (`SpecialtyToolpaths.swift`).
 
 ## Phase 3 — vector & 2D tools
 14. `[x]` **Vector validator** — open-vector / self-intersection detection.
 15. `[x]` **Fillet / extend / trim** — Source: `ShopPilotGeometry/FilletExtend.swift`.
-16. `[ ]` **Node editing model** — add/delete/move nodes, convert segment to curve (engine model + tests; UI later).
+16. `[x]` **Node editing model** — add/delete/move nodes, convert segment to curve (engine model + tests; UI later).
 17. `[ ]` **Text on curve** — place text along a path (transform glyph outlines).
 18. `[x]` **Draw tools** — arc, polygon, star, spiral, ellipse generators as VectorShape factories.
 19. `[ ]` **Vector texture** — fill region with a repeat pattern.
