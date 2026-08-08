@@ -24,9 +24,9 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 14. `[x]` **Vector validator** — open-vector / self-intersection detection.
 15. `[x]` **Fillet / extend / trim** — Source: `ShopPilotGeometry/FilletExtend.swift`.
 16. `[x]` **Node editing model** — add/delete/move nodes, convert segment to curve (engine model + tests; UI later).
-17. `[ ]` **Text on curve** — place text along a path (transform glyph outlines).
+17. `[x]` **Text on curve** — place text along a path (transform glyph outlines).
 18. `[x]` **Draw tools** — arc, polygon, star, spiral, ellipse generators as VectorShape factories.
-19. `[ ]` **Vector texture** — fill region with a repeat pattern.
+19. `[x]` **Vector texture** — fill region with a repeat pattern.
 
 ## Phase 4 — import/export & data
 20. `[ ]` **Cabinetry / part-list import** — 6 vendor mappings (Mozaik, KCD, CabinetSense, CabinetPartsPro, Polyboard, SmartWOP) + PartListMapping.schema.json (generic mapping engine).
