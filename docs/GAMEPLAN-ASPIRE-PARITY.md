@@ -15,8 +15,8 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 
 ## Phase 2 — toolpath breadth
 9. `[ ]` **Tabs + ramps + leads generation** — wire SPK-1136a params into Profile/Pocket: 5 ramp types, tabs (2D/3D), lead-in/out shapes.
-10. `[ ]` **Tiling** — split large jobs into tiles with overlap.
-11. `[ ]` **Toolpath templates** — save/reuse strategy settings. Source: `ToolpathTemplates.swift`.
+10. `[x]` **Tiling** — split large jobs into tiles with overlap.
+11. `[x]` **Toolpath templates** — save/reuse strategy settings. Source: `ToolpathTemplates.swift`.
 12. `[ ]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture (our own implementations; Aspire sells as add-on).
 13. `[ ]` **Weave toolpath** — weave strategy if present in Mac (`SpecialtyToolpaths.swift`).
 
