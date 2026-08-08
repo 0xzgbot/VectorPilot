@@ -29,8 +29,8 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 19. `[x]` **Vector texture** — fill region with a repeat pattern.
 
 ## Phase 4 — import/export & data
-20. `[ ]` **Cabinetry / part-list import** — 6 vendor mappings (Mozaik, KCD, CabinetSense, CabinetPartsPro, Polyboard, SmartWOP) + PartListMapping.schema.json (generic mapping engine).
-21. `[ ]` **`.crv3d`-style template system** — "New from template" package save/load (JSON).
+20. `[x]` **Cabinetry / part-list import** — 6 vendor mappings (Mozaik, KCD, CabinetSense, CabinetPartsPro, Polyboard, SmartWOP) + PartListMapping.schema.json (generic mapping engine).
+21. `[x]` **`.crv3d`-style template system** — "New from template" package save/load (JSON).
 22. `[ ]` **SKP import** — evaluate; heavy (SketchUp API) — implement or stub with honest status.
 23. `[ ]` **3DM import** — evaluate; heavy (OpenNURBS) — implement or stub with honest status.
 
