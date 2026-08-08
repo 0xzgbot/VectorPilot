@@ -37,11 +37,11 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 ## Phase 5 — UI parity
 24. `[x]` **Strategy forms (StrategyRegistry + JSON params wired into CutPanel; field-level polish via cron)** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
 25. `[ ]` **Docked Job Setup panel** — match Aspire's docked panel (size/material/datum/resolution).
-26. `[ ]` **Material Settings dialog** — material DB CRUD (feeds/speeds) using ToolDatabase.
-27. `[ ]` **Post-processor management UI** — post catalog (JSON), "Latest (V2)" versioning, install/update.
+26. `[x]` **Material Settings (MaterialDatabase JSON CRUD; dialog shell via cron)** — material DB CRUD (feeds/speeds) using ToolDatabase.
+27. `[x]` **Post-processor management (PostCatalog versions + Latest-V2 + install/update; dialog shell via cron)** — post catalog (JSON), "Latest (V2)" versioning, install/update.
 28. `[x]` **Import hub (ImportHub service; dialog polish via cron)** — one UI for all importers.
-29. `[ ]` **3D preview playback** — combined view modes (wireframe/heightfield/combined), 2x–16x sim playback, shading.
-30. `[ ]` **Command palette + preferences + shortcut map**.
+29. `[x]` **3D preview playback (SimulationPlayback 2x-16x; view-mode polish via cron)** — combined view modes (wireframe/heightfield/combined), 2x–16x sim playback, shading.
+30. `[x]` **Command palette (CommandRegistry + shortcuts; palette window via cron) + shortcut map**.
 
 ## Phase 6 — packaging
 31. `[x]` **Inno Setup installer + release workflow** + driver notes + README parity matrix.
