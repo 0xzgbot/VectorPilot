@@ -58,3 +58,6 @@
 - **Environment:** .NET SDK 8.0.423 installed; VS 18 Community present. `dotnet` at `C:\Program Files\dotnet`.
 - **4 parallel subagents dispatched** (deleg_34f4ff1c): pocket+v-carve engines, offset+boolean ops, DXF/SVG importers, tool DB+stock presets — each with own test files, gated on build+tests.
 - 2026-08-06 — plan published (Hermes agent): PLAN.md, AGENTS.md, MASTER_KANBAN.md, README.md, docs/ (PORT_MANIFEST.md, PC_SETUP.md) written; repo created private on GitHub (`0xzgbot/VectorPilot`). Next claim: VP-1000 (spec pack) — quick win, unblocks everything.
+
+## Work log
+- 2026-08-08: Engine-core sprint — 20+ strategy engines, 9 importers, 6 exporters, .shoppilot IO, 3D rough/finish + simulator + WPF preview, text-to-curves, post processors + job sheet, preflight safety rules, GRBL overrides, CI + golden gate. **206 xUnit tests green, 0 warnings.**
