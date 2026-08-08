@@ -11,7 +11,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 5. `[x]` **Grayscale bitmap ↔ heightfield** — export relief as grayscale PNG/BMP + import grayscale → relief (reuses BitmapTracer). Model menu items "Export as Grayscale Bitmap" / import.
 6. `[x]` **Modeling resolution / remesh** — resample a heightfield to a new cell size (Standard → 1M points equivalent).
 7. `[x]` **Sketch carving as 3D strategy** — depth-ramped carving along traced contours (upgrade SketchCarve port).
-8. `[ ]` **V3M 3D clipart** — minimal V3M reader/writer for clipart import/export (stub with honest status if format is opaque).
+8. `[x]` **V3M (status registry, spec-pending) 3D clipart** — minimal V3M reader/writer for clipart import/export (stub with honest status if format is opaque).
 
 ## Phase 2 — toolpath breadth
 9. `[x]` **Tabs + ramps + leads generation** — wire SPK-1136a params into Profile/Pocket: 5 ramp types, tabs (2D/3D), lead-in/out shapes.
@@ -31,8 +31,8 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 ## Phase 4 — import/export & data
 20. `[x]` **Cabinetry / part-list import** — 6 vendor mappings (Mozaik, KCD, CabinetSense, CabinetPartsPro, Polyboard, SmartWOP) + PartListMapping.schema.json (generic mapping engine).
 21. `[x]` **`.crv3d`-style template system** — "New from template" package save/load (JSON).
-22. `[ ]` **SKP import** — evaluate; heavy (SketchUp API) — implement or stub with honest status.
-23. `[ ]` **3DM import** — evaluate; heavy (OpenNURBS) — implement or stub with honest status.
+22. `[x]` **SKP (status registry, SDK-pending) import** — evaluate; heavy (SketchUp API) — implement or stub with honest status.
+23. `[x]` **3DM (status registry, OpenNURBS-pending) import** — evaluate; heavy (OpenNURBS) — implement or stub with honest status.
 
 ## Phase 5 — UI parity
 24. `[ ]` **Strategy forms** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
