@@ -22,7 +22,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 
 ## Phase 3 — vector & 2D tools
 14. `[ ]` **Vector validator** — open-vector / self-intersection detection.
-15. `[ ]` **Fillet / extend / trim** — Source: `ShopPilotGeometry/FilletExtend.swift`.
+15. `[x]` **Fillet / extend / trim** — Source: `ShopPilotGeometry/FilletExtend.swift`.
 16. `[ ]` **Node editing model** — add/delete/move nodes, convert segment to curve (engine model + tests; UI later).
 17. `[ ]` **Text on curve** — place text along a path (transform glyph outlines).
 18. `[ ]` **Draw tools** — arc, polygon, star, spiral, ellipse generators as VectorShape factories.
