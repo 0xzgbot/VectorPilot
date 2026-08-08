@@ -122,4 +122,76 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         cam.LookDirection = v;
         cam.Position = (Point3D)(rot.Transform((Vector3D)cam.Position));
     }
+
+    // ---- Toolpath simulation playback ----
+
+    private SimulationPlayback? _playback;
+    private System.Windows.Threading.DispatcherTimer? _timer;
+
+    /// <summary>Load g-code for playback; renders the full wireframe overlay.</summary>
+    public void LoadGcode(IReadOnlyList<string> lines)
+    {
+        _playback = new SimulationPlayback(lines);
+        ShowToolpath(WireframeRenderer.GenerateSegments(lines));
+        UpdateProgress();
+    }
+
+    private void Play_Click(object sender, RoutedEventArgs e)
+    {
+        if (_playback is null) return;
+        if (_timer is null)
+        {
+            _timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _timer.Tick += (_, _) =>
+            {
+                if (_playback is { IsFinished: false })
+                {
+                    _playback.StepMany(1);
+                    UpdateProgress();
+                }
+                else if (_timer is not null)
+                {
+                    _timer.Stop();
+                    BtnPlay.Content = "▶";
+                }
+            };
+        }
+        if (_timer.IsEnabled)
+        {
+            _timer.Stop();
+            BtnPlay.Content = "▶";
+        }
+        else
+        {
+            _timer.Start();
+            BtnPlay.Content = "⏸";
+        }
+    }
+
+    private void Step_Click(object sender, RoutedEventArgs e)
+    {
+        if (_playback is { IsFinished: false })
+        {
+            _playback.Step();
+            UpdateProgress();
+        }
+    }
+
+    private void Restart_Click(object sender, RoutedEventArgs e)
+    {
+        _playback?.Restart();
+        UpdateProgress();
+    }
+
+    private void SpeedSlider_ValueChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_playback is not null) _playback.SpeedMultiplier = SpeedSlider.Value;
+        if (TxtSpeed is not null) TxtSpeed.Text = $"{SpeedSlider.Value:0}×";
+    }
+
+    private void UpdateProgress()
+    {
+        if (TxtProgress is null || _playback is null) return;
+        TxtProgress.Text = $"{_playback.Progress * 100:0}%";
+    }
 }

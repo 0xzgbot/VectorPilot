@@ -1,0 +1,40 @@
+<Window x:Class="VectorPilot.App.Controls.MaterialDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Material Settings" Width="520" Height="420" WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.2*"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <ListBox x:Name="MaterialList" SelectionChanged="MaterialList_SelectionChanged"/>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
+                <Button Content="Add" Width="70" Click="Add_Click"/>
+                <Button Content="Delete" Width="70" Margin="6,0,0,0" Click="Delete_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Column="2">
+            <StackPanel>
+                <TextBlock Text="Name"/>
+                <TextBox x:Name="TxtName"/>
+                <TextBlock Text="Feed (mm/min)" Margin="0,8,0,0"/>
+                <TextBox x:Name="TxtFeed"/>
+                <TextBlock Text="Plunge (mm/min)" Margin="0,8,0,0"/>
+                <TextBox x:Name="TxtPlunge"/>
+                <TextBlock Text="Spindle (RPM)" Margin="0,8,0,0"/>
+                <TextBox x:Name="TxtSpindle"/>
+                <TextBlock Text="Max depth (mm)" Margin="0,8,0,0"/>
+                <TextBox x:Name="TxtDepth"/>
+                <Button Content="Save Changes" Margin="0,14,0,0" Click="Save_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

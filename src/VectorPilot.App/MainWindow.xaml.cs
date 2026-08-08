@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using VectorPilot.App.Controls;
+using VectorPilot.Engine;
 
 namespace VectorPilot.App;
 
@@ -32,5 +33,45 @@ public partial class MainWindow : Window
             _ => _setup
         };
         if (tag is "design" or "cut" or "output") _design.RefreshIfVisible();
+    }
+
+    private static readonly CommandRegistry PaletteCommands = BuildPaletteCommands();
+
+    private static CommandRegistry BuildPaletteCommands()
+    {
+        var reg = new CommandRegistry();
+        reg.Register(new CommandRegistry.Command("materials", "Material Settings…", null, "Tools", () =>
+        {
+            var dlg = new Controls.MaterialDialog { Owner = Application.Current.MainWindow };
+            dlg.ShowDialog();
+        }));
+        reg.Register(new CommandRegistry.Command("machines", "Machine Configuration…", null, "Tools", () =>
+        {
+            var dlg = new Controls.MachineConfigDialog { Owner = Application.Current.MainWindow };
+            dlg.ShowDialog();
+        }));
+        reg.Register(new CommandRegistry.Command("posts", "Post Processors…", null, "Tools", () =>
+        {
+            var dlg = new Controls.PostManagerDialog { Owner = Application.Current.MainWindow };
+            dlg.ShowDialog();
+        }));
+        reg.Register(new CommandRegistry.Command("palette", "Command Palette…", "Ctrl+K", "Tools", () =>
+        {
+            var w = new Controls.CommandPaletteWindow(reg) { Owner = Application.Current.MainWindow };
+            w.ShowDialog();
+        }));
+        return reg;
+    }
+
+    private void Tools_Click(object sender, RoutedEventArgs e)
+    {
+        var menu = new System.Windows.Controls.ContextMenu();
+        foreach (var cmd in PaletteCommands.Commands)
+        {
+            var item = new System.Windows.Controls.MenuItem { Header = cmd.Title };
+            item.Click += (_, _) => cmd.Execute();
+            menu.Items.Add(item);
+        }
+        menu.IsOpen = true;
     }
 }

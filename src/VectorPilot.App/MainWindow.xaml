@@ -23,6 +23,7 @@
                     <Button Style="{StaticResource RailButton}" Tag="cut" Click="Stage_Click" Content="🛠  Toolpaths"/>
                     <Button Style="{StaticResource RailButton}" Tag="machine" Click="Stage_Click" Content="🔌  Machine"/>
                     <Button Style="{StaticResource RailButton}" Tag="output" Click="Stage_Click" Content="📤  Output"/>
+                    <Button Style="{StaticResource RailButton}" Click="Tools_Click" Content="🧰  Tools"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom" Margin="14,10">
                     <TextBlock x:Name="RailStatus" Text="disconnected" FontSize="11" Foreground="#FFB454"/>

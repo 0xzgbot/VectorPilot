@@ -76,3 +76,21 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 Dialog shells for the UI services (material dialog, post manager window,
 command palette window, job-setup panel polish), 3D preview view-mode polish,
 README driver notes, and deeper verify-CLT parity ports (33 → goal 109).
+
+## Driver & Connection Notes
+
+- **Simulator (default):** no driver needed — `SIMULATOR` port runs a virtual
+  GRBL for testing streams and overrides.
+- **GRBL boards (Arduino Uno/ Mega with GRBL 1.1):** install the CH340/CH341
+  or FTDI VCP driver for your board's USB chip, then pick the COM port in
+  Machine Configuration. Baud 115200. Enter the post-processor settings if
+  your firmware variant needs it.
+- **Machine wiring:** confirm the work envelope in Machine Configuration
+  before the first run — the preflight check (R017 thickness drift) and
+  keep-out zone rules run before every stream start.
+- **E-stop / safety:** the transport handles `!` (hold), `~` (resume), and
+  soft-reset; wire a physical E-stop to your controller's input per its
+  manual — VectorPilot cannot override a hardware stop.
+- **Units:** the serial layer streams in inches (G20); the engine layer works
+  in mm — the Machine Config conversion handles the mapping.
+- **File association:** the installer registers `.shoppilot` packages.

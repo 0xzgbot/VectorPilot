@@ -1,0 +1,15 @@
+<Window x:Class="VectorPilot.App.Controls.CommandPaletteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Command Palette" Width="460" Height="360" WindowStartupLocation="CenterOwner"
+        KeyDown="Window_KeyDown">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="SearchBox" FontSize="16" Padding="6" TextChanged="SearchBox_TextChanged"
+                 KeyDown="SearchBox_KeyDown"/>
+        <ListBox x:Name="ResultsBox" Grid.Row="1" Margin="0,8,0,0" MouseDoubleClick="ResultsBox_MouseDoubleClick"/>
+    </Grid>
+</Window>
