@@ -8,7 +8,17 @@ public sealed class Job
     public string? FilePath { get; set; }
     public List<Sheet> Sheets { get; } = new();
 
-    public Job() => Sheets.Add(new Sheet());
+    public Job()
+    {
+        Sheets.Add(new Sheet());
+    }
+
+    private Job(bool empty)
+    {
+        // no default sheet (used by CreateEmpty)
+    }
+
+    public static Job CreateEmpty() => new Job(true);
 
     public Sheet ActiveSheet => Sheets.FirstOrDefault() ?? Sheets[0];
     public bool IsDirty { get; set; }
