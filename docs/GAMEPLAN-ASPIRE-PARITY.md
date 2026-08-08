@@ -4,7 +4,7 @@ Status legend: `[ ]` pending · `[~]` in progress · `[x]` done (tests green, co
 Every item's DoD: port from Mac Swift authority (if one exists) or implement cleanly → xUnit tests → `dotnet build` 0 errors → full suite green → commit + push.
 
 ## Phase 1 — 3D modeling core (engine)
-1. `[ ]` **Component system + combine modes** — Component class (heightfield + transform + combine mode), Add/Subtract/Intersect/Highest compositing. Sources: `ShopPilotCore/Component.swift`, `CombineModes.swift`, `ComponentModifierEngine.swift`, `ComponentOperationEngine.swift`.
+1. `[x]` **Component system + combine modes** — Component class (heightfield + transform + combine mode), Add/Subtract/Intersect/Highest compositing. Sources: `ShopPilotCore/Component.swift`, `CombineModes.swift`, `ComponentModifierEngine.swift`, `ComponentOperationEngine.swift`.
 2. `[ ]` **Sculpt engine** — raise/lower/smooth/flatten brushes over a heightfield. Source: `SculptEngine.swift`.
 3. `[ ]` **2-rail sweep / swept-profile relief** — sweep cross-sections along rails into a heightfield. Source: `SweepReliefEngine.swift`.
 4. `[ ]` **Moulding toolpath (3D)** — swept profile along a rail as a toolpath strategy. Source: `SpecialtyToolpaths.swift` Moulding + `SweepReliefEngine.swift`.
