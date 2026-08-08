@@ -1,0 +1,272 @@
+using System.Globalization;
+using VectorPilot.Geometry;
+
+namespace VectorPilot.Engine;
+
+/// <summary>V-Carve strategy parameters (ported from VCarveParams.swift, SPK-1136d + SPK-VCarveClear).</summary>
+public sealed class VCarveParams
+{
+    public double VBitAngleDegrees { get; set; } = 90.0;
+    public double FeedRateMmPerMin { get; set; } = 1000;
+    public double PlungeFeedRateMmPerMin { get; set; } = 300;
+    public double MaxDepthOfCutMm { get; set; } = 2.0;
+    public double LeadInDistanceMm { get; set; } = 5.0;
+    public double LeadOutDistanceMm { get; set; } = 5.0;
+    public double StepOverMm { get; set; } = 1.0;
+    public bool FlatBottomMode { get; set; }
+    public Dictionary<Guid, double> VectorDepths { get; set; } = new();
+    public double StartDepthMm { get; set; }
+    public double FlatDepthMm { get; set; } = 1.0;
+    public bool CornerSharpen { get; set; }
+    public bool UseVectorStartPoints { get; set; } = true;
+    public bool UseVectorSelectionOrder { get; set; }
+    public double SafeZHeightMm { get; set; } = 3.2;
+    public bool RampPlungeMoves { get; set; }
+    public bool ClearancePassEnabled { get; set; }
+    public double ClearanceToolDiameterMm { get; set; } = 6.0;
+    public double ClearanceDepthMm { get; set; } = 1.0;
+    public double ClearanceStepOverMm { get; set; } = 0.4;
+    public double SpindleRpm { get; set; }
+
+    /// <summary>Half-angle of the V-bit in radians.</summary>
+    public double HalfAngleRadians => (Math.PI / 180.0 * VBitAngleDegrees) / 2.0;
+
+    /// <summary>Tip width at a given depth: 2·|z|·tan(halfAngle).</summary>
+    public double TipWidthAtDepth(double depth) => 2.0 * Math.Abs(depth) * Math.Tan(HalfAngleRadians);
+}
+
+/// <summary>Computed V-carve result.</summary>
+public sealed class VCarveResult
+{
+    public VCarveParams Params { get; init; } = new();
+    public List<string> GcodeLines { get; init; } = new();
+    public double EstimatedTimeSeconds { get; init; }
+    public int PassCount { get; init; }
+    public double? BoundsMinX { get; init; }
+    public double? BoundsMinY { get; init; }
+    public double? BoundsMaxX { get; init; }
+    public double? BoundsMaxY { get; init; }
+}
+
+/// <summary>
+/// V-carve toolpath engine (ported from VCarveEngine.swift): per-vector Z-depth maps
+/// to the V-bit's cutting width, multi-pass with Y-based shading, flat-bottom mode,
+/// lead-in/out, optional clearance pass. Units: millimetres (G21), faithful to the Swift.
+/// </summary>
+public static class VCarveEngine
+{
+    public static VCarveResult Compute(IReadOnlyList<VectorShape> vectors, VCarveParams params_, double stockHeightMm = 25.0)
+    {
+        double minX = double.PositiveInfinity, minY = double.PositiveInfinity;
+        double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity;
+        foreach (var v in vectors)
+        {
+            foreach (var p in v.Points)
+            {
+                minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
+                minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
+            }
+        }
+        bool hasBounds = vectors.Any(v => v.Points.Count > 0);
+
+        // Per-vector Y range for shading.
+        var vectorBounds = new Dictionary<Guid, (double MinY, double MaxY)>();
+        foreach (var v in vectors)
+        {
+            if (v.Points.Count == 0) continue;
+            vectorBounds[v.Id] = (v.Points.Min(p => p.Y), v.Points.Max(p => p.Y));
+        }
+
+        var g = new List<string>();
+        double feed = params_.FeedRateMmPerMin;
+        double plunge = params_.PlungeFeedRateMmPerMin;
+
+        g.Add("%");
+        if (params_.SpindleRpm > 0) g.Add($"M3 S{(int)params_.SpindleRpm}");
+        if (params_.ClearancePassEnabled && hasBounds)
+        {
+            g.AddRange(ClearanceGcode(vectors, params_, (minX, minY, maxX, maxY)));
+        }
+        g.Add("O=V_CARVE_TOOLPATH");
+        g.Add($"(V-Bit: {(int)params_.VBitAngleDegrees}°)");
+        g.Add($"(Flat Bottom: {(params_.FlatBottomMode ? "Yes" : "No")})");
+
+        double totalCuttingLength = 0;
+        int maxPassCount = 0;
+
+        foreach (var vector in vectors)
+        {
+            if (vector.Points.Count < 2) continue;
+
+            double maxDepth = params_.VectorDepths.TryGetValue(vector.Id, out var d) ? d : params_.MaxDepthOfCutMm;
+            double tipWidth = params_.TipWidthAtDepth(maxDepth);
+            int passCount = Math.Max(1, (int)Math.Ceiling(tipWidth / Math.Max(params_.StepOverMm, 1e-9)));
+            maxPassCount = Math.Max(maxPassCount, passCount);
+
+            var (vecMinY, vecMaxY) = vectorBounds.TryGetValue(vector.Id, out var vb) ? vb : (0.0, 1.0);
+            double yRange = vecMaxY - vecMinY;
+
+            for (int pass = 1; pass <= passCount; pass++)
+            {
+                double depthFactor = (double)pass / passCount;
+                double zDepth = -maxDepth * depthFactor;
+                double actualZ = params_.FlatBottomMode ? -maxDepth : zDepth;
+
+                g.Add("");
+                g.Add($"(Pass {pass}/{passCount}, Z={F3(actualZ)})");
+                g.Add("G0 Z5.0");
+
+                var start = vector.Points[0];
+                double leadInX = start.X - params_.LeadInDistanceMm;
+                g.Add($"G0 X{F3(leadInX)} Y{F3(start.Y)}");
+                g.Add($"G1 Z{F3(actualZ)} F{(int)plunge}");
+                g.Add($"G1 X{F3(start.X)} Y{F3(start.Y)} F{(int)feed}");
+
+                for (int i = 1; i < vector.Points.Count; i++)
+                {
+                    var p = vector.Points[i];
+                    double z;
+                    if (yRange > 1e-9)
+                    {
+                        double normalizedY = 1.0 - (p.Y - vecMinY) / yRange;
+                        z = actualZ * (0.3 + 0.7 * normalizedY);
+                    }
+                    else
+                    {
+                        z = actualZ;
+                    }
+                    g.Add($"G1 X{F3(p.X)} Y{F3(p.Y)} Z{F3(z)} F{(int)feed}");
+                }
+
+                if (vector.Closed && vector.Points.Count > 2)
+                {
+                    var first = vector.Points[0];
+                    g.Add($"G1 X{F3(first.X)} Y{F3(first.Y)} Z{F3(actualZ)} F{(int)feed}");
+                }
+
+                var end = vector.Points[^1];
+                g.Add($"G1 X{F3(end.X + params_.LeadOutDistanceMm)} Y{F3(end.Y)} Z{F3(actualZ)} F{(int)feed}");
+                g.Add("G0 Z5.0");
+            }
+
+            totalCuttingLength += PathLength(vector.Points);
+        }
+
+        g.Add("");
+        g.Add("M30");
+        g.Add("%");
+
+        double cuttingTime = totalCuttingLength * maxPassCount / Math.Max(feed, 1e-9) * 60.0;
+
+        return new VCarveResult
+        {
+            Params = params_,
+            GcodeLines = g,
+            EstimatedTimeSeconds = cuttingTime,
+            PassCount = maxPassCount,
+            BoundsMinX = hasBounds ? minX : null,
+            BoundsMinY = hasBounds ? minY : null,
+            BoundsMaxX = hasBounds ? maxX : null,
+            BoundsMaxY = hasBounds ? maxY : null
+        };
+    }
+
+    /// <summary>
+    /// Clearance pass: a flat end mill raster-clears the wide open bands inside the
+    /// vectors' bounding box (excluding tool-radius margins around each vector) down
+    /// to clearanceDepthMm, before the V-bit detail pass. Ported from VCarveEngine.swift.
+    /// </summary>
+    private static List<string> ClearanceGcode(IReadOnlyList<VectorShape> vectors, VCarveParams p,
+        (double MinX, double MinY, double MaxX, double MaxY) bounds)
+    {
+        double toolR = p.ClearanceToolDiameterMm / 2.0;
+        double step = p.ClearanceStepOverMm * p.ClearanceToolDiameterMm;
+        double margin = toolR + 1.0;
+        if (toolR <= 1e-9 || step <= 1e-9 ||
+            bounds.MaxX - bounds.MinX <= 2 * toolR || bounds.MaxY - bounds.MinY <= 2 * toolR)
+        {
+            return new List<string>();
+        }
+
+        var strictlyInside = vectors.Where(v =>
+        {
+            if (v.Points.Count == 0) return false;
+            double vMinX = v.Points.Min(pt => pt.X), vMaxX = v.Points.Max(pt => pt.X);
+            double vMinY = v.Points.Min(pt => pt.Y), vMaxY = v.Points.Max(pt => pt.Y);
+            return vMinX > bounds.MinX + 1e-6 && vMaxX < bounds.MaxX - 1e-6 &&
+                   vMinY > bounds.MinY + 1e-6 && vMaxY < bounds.MaxY - 1e-6;
+        }).ToList();
+        bool protectAll = strictlyInside.Count == 0;
+
+        var exclusions = new List<(double MinX, double MaxX, double MinY, double MaxY)>();
+        foreach (var v in vectors)
+        {
+            if (v.Points.Count == 0) continue;
+            double vMinX = v.Points.Min(pt => pt.X), vMaxX = v.Points.Max(pt => pt.X);
+            double vMinY = v.Points.Min(pt => pt.Y), vMaxY = v.Points.Max(pt => pt.Y);
+            bool isInside = vMinX > bounds.MinX + 1e-6 && vMaxX < bounds.MaxX - 1e-6 &&
+                            vMinY > bounds.MinY + 1e-6 && vMaxY < bounds.MaxY - 1e-6;
+            if (!protectAll && !isInside) continue;
+            exclusions.Add((vMinX - margin, vMaxX + margin, vMinY, vMaxY));
+        }
+
+        double depth = -p.ClearanceDepthMm;
+        var lines = new List<string>
+        {
+            "",
+            "O=VCARVE_CLEARANCE",
+            $"(Clearance tool: {F1(p.ClearanceToolDiameterMm)}mm)",
+            $"(Clearance depth: {F2(p.ClearanceDepthMm)}mm)"
+        };
+
+        double y = bounds.MinY + toolR;
+        bool leftToRight = true;
+        while (y <= bounds.MaxY - toolR)
+        {
+            var rowBands = exclusions
+                .Where(e => y >= e.MinY - toolR && y <= e.MaxY + toolR)
+                .OrderBy(e => e.MinX)
+                .ToList();
+            var gaps = new List<(double X0, double X1)>();
+            double cursor = bounds.MinX + toolR;
+            foreach (var band in rowBands)
+            {
+                double bandStart = Math.Max(cursor, band.MinX);
+                if (bandStart < bounds.MaxX - toolR && bandStart > cursor + 1e-6)
+                {
+                    gaps.Add((cursor, Math.Min(bandStart, bounds.MaxX - toolR)));
+                }
+                cursor = Math.Max(cursor, band.MaxX);
+                if (cursor >= bounds.MaxX - toolR) break;
+            }
+            if (cursor < bounds.MaxX - toolR - 1e-6)
+            {
+                gaps.Add((cursor, bounds.MaxX - toolR));
+            }
+
+            foreach (var gap in gaps)
+            {
+                double x0 = leftToRight ? gap.X0 : gap.X1;
+                double x1 = leftToRight ? gap.X1 : gap.X0;
+                lines.Add("G0 Z5.0");
+                lines.Add($"G0 X{F3(x0)} Y{F3(y)}");
+                lines.Add($"G1 Z{F3(depth)} F{(int)p.PlungeFeedRateMmPerMin}");
+                lines.Add($"G1 X{F3(x1)} Y{F3(y)} F{(int)p.FeedRateMmPerMin}");
+                leftToRight = !leftToRight;
+            }
+            y += step;
+        }
+        return lines;
+    }
+
+    private static double PathLength(IReadOnlyList<VectorPoint> pts)
+    {
+        double len = 0;
+        for (int i = 1; i < pts.Count; i++) len += pts[i - 1].DistanceTo(pts[i]);
+        return len;
+    }
+
+    private static string F3(double v) => v.ToString("0.000", CultureInfo.InvariantCulture);
+    private static string F2(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
+    private static string F1(double v) => v.ToString("0.0", CultureInfo.InvariantCulture);
+}
