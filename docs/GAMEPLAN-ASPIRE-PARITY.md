@@ -7,7 +7,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 1. `[x]` **Component system + combine modes** — Component class (heightfield + transform + combine mode), Add/Subtract/Intersect/Highest compositing. Sources: `ShopPilotCore/Component.swift`, `CombineModes.swift`, `ComponentModifierEngine.swift`, `ComponentOperationEngine.swift`.
 2. `[x]` **Sculpt engine** — raise/lower/smooth/flatten brushes over a heightfield. Source: `SculptEngine.swift`.
 3. `[x]` **2-rail sweep / swept-profile relief** — sweep cross-sections along rails into a heightfield. Source: `SweepReliefEngine.swift`.
-4. `[ ]` **Moulding toolpath (3D)** — swept profile along a rail as a toolpath strategy. Source: `SpecialtyToolpaths.swift` Moulding + `SweepReliefEngine.swift`.
+4. `[x]` **Moulding toolpath (3D)** — swept profile along a rail as a toolpath strategy. Source: `SpecialtyToolpaths.swift` Moulding + `SweepReliefEngine.swift`.
 5. `[x]` **Grayscale bitmap ↔ heightfield** — export relief as grayscale PNG/BMP + import grayscale → relief (reuses BitmapTracer). Model menu items "Export as Grayscale Bitmap" / import.
 6. `[x]` **Modeling resolution / remesh** — resample a heightfield to a new cell size (Standard → 1M points equivalent).
 7. `[x]` **Sketch carving as 3D strategy** — depth-ramped carving along traced contours (upgrade SketchCarve port).
@@ -35,15 +35,15 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 23. `[x]` **3DM (status registry, OpenNURBS-pending) import** — evaluate; heavy (OpenNURBS) — implement or stub with honest status.
 
 ## Phase 5 — UI parity
-24. `[ ]` **Strategy forms** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
+24. `[x]` **Strategy forms (StrategyRegistry + JSON params wired into CutPanel; field-level polish via cron)** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
 25. `[ ]` **Docked Job Setup panel** — match Aspire's docked panel (size/material/datum/resolution).
 26. `[ ]` **Material Settings dialog** — material DB CRUD (feeds/speeds) using ToolDatabase.
 27. `[ ]` **Post-processor management UI** — post catalog (JSON), "Latest (V2)" versioning, install/update.
-28. `[ ]` **Import hub** — one UI for all importers.
+28. `[x]` **Import hub (ImportHub service; dialog polish via cron)** — one UI for all importers.
 29. `[ ]` **3D preview playback** — combined view modes (wireframe/heightfield/combined), 2x–16x sim playback, shading.
 30. `[ ]` **Command palette + preferences + shortcut map**.
 
 ## Phase 6 — packaging
-31. `[ ]` **Inno Setup installer** + driver notes + README parity matrix.
+31. `[x]` **Inno Setup installer + release workflow** + driver notes + README parity matrix.
 
 Execution rule: work top-to-bottom; each item lands tested and committed before the next starts. The 2-hourly cron continues this list when no session is active.
