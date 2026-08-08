@@ -201,6 +201,24 @@ public static class VectorOffset
 
         if (offsetVerts.Count < 3) return null;
 
+        // Collapse guard: a valid offset keeps every edge pointing in the same
+        // direction as its source edge. When an inward offset is larger than the
+        // shape, the miter corners cross over and the edges reverse — detect via
+        // the dot product and treat as collapse (matches the rectangle/circle
+        // collapse semantics).
+        for (int i = 0; i < offsetVerts.Count; i++)
+        {
+            var o1 = offsetVerts[i];
+            var o2 = offsetVerts[(i + 1) % offsetVerts.Count];
+            var s1 = pts[i % pts.Count];
+            var s2 = pts[(i + 1) % pts.Count];
+            double dot = (o2.X - o1.X) * (s2.X - s1.X) + (o2.Y - o1.Y) * (s2.Y - s1.Y);
+            if (dot <= 0)
+            {
+                return null;
+            }
+        }
+
         var path = new List<VectorPoint>(offsetVerts) { offsetVerts[0] };
         var shape = VectorShape.Polyline(points, closed: true);
         return new OffsetResult(shape, path, distance);

@@ -54,9 +54,11 @@ public static class BooleanOps
             {
                 Operation.Union when aInB || bInA => new List<List<VectorPoint>> { aInB ? pb : pa },
                 Operation.Union => new List<List<VectorPoint>> { pa, pb },
+                Operation.Intersect when aInB => new List<List<VectorPoint>> { pa },
+                Operation.Intersect when bInA => new List<List<VectorPoint>> { pb },
                 Operation.Intersect => new List<List<VectorPoint>>(),
                 Operation.Subtract when aInB => new List<List<VectorPoint>>(), // fully inside → empty (hole unsupported)
-                Operation.Subtract => new List<List<VectorPoint>> { pa },
+                Operation.Subtract => new List<List<VectorPoint>> { pa },      // bInA → A with a hole, conservatively A
                 _ => new List<List<VectorPoint>>()
             };
         }
@@ -64,12 +66,15 @@ public static class BooleanOps
         var ringA = BuildRing(pa, hits, onB: false);
         var ringB = BuildRing(pb, hits, onB: true);
 
-        // Pair up intersection nodes across rings by point equality.
+        // Pair up intersection nodes across rings by point equality (both directions).
         var aNodes = RingNodes(ringA).Where(n => n.IsIntersection).ToList();
         var bNodes = RingNodes(ringB).Where(n => n.IsIntersection).ToList();
         foreach (var na in aNodes)
         {
-            na.Other = bNodes.FirstOrDefault(nb => nb.P.DistanceTo(na.P) < 1e-6);
+            var nb = bNodes.FirstOrDefault(n => n.P.DistanceTo(na.P) < 1e-6);
+            if (nb is null) continue;
+            na.Other = nb;
+            nb.Other = na;
         }
 
         // Classify each A intersection node; B nodes get the complement.
@@ -107,16 +112,12 @@ public static class BooleanOps
 
         while (guard++ < 100000)
         {
+            if (current == start && result.Count > 0) break; // closed the loop
+
             MarkVisited(current);
             result.Add(current.P);
 
-            // Advance to the next node on the current ring.
-            Node? next;
-            if (!current.IsIntersection)
-            {
-                next = onB ? current.Prev : current.Next;
-            }
-            else
+            if (current.IsIntersection)
             {
                 // At an intersection: switch rings per the operation rule.
                 bool switchNow = op switch
@@ -131,13 +132,13 @@ public static class BooleanOps
                     MarkVisited(current.Other);
                     current = current.Other;
                     onB = !onB;
-                    result.Add(current.P);
-                    if (current == start) break;
-                    continue;
+                    continue; // loop top adds the other-ring point
                 }
-                next = onB ? current.Prev : current.Next;
             }
 
+            // B is walked in reverse only for Subtract (its inside segments bound A−B).
+            bool reverse = onB && op == Operation.Subtract;
+            var next = reverse ? current.Prev : current.Next;
             if (next is null || next == start) break;
             current = next;
         }
