@@ -8,8 +8,8 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 2. `[x]` **Sculpt engine** — raise/lower/smooth/flatten brushes over a heightfield. Source: `SculptEngine.swift`.
 3. `[x]` **2-rail sweep / swept-profile relief** — sweep cross-sections along rails into a heightfield. Source: `SweepReliefEngine.swift`.
 4. `[ ]` **Moulding toolpath (3D)** — swept profile along a rail as a toolpath strategy. Source: `SpecialtyToolpaths.swift` Moulding + `SweepReliefEngine.swift`.
-5. `[ ]` **Grayscale bitmap ↔ heightfield** — export relief as grayscale PNG/BMP + import grayscale → relief (reuses BitmapTracer). Model menu items "Export as Grayscale Bitmap" / import.
-6. `[ ]` **Modeling resolution / remesh** — resample a heightfield to a new cell size (Standard → 1M points equivalent).
+5. `[x]` **Grayscale bitmap ↔ heightfield** — export relief as grayscale PNG/BMP + import grayscale → relief (reuses BitmapTracer). Model menu items "Export as Grayscale Bitmap" / import.
+6. `[x]` **Modeling resolution / remesh** — resample a heightfield to a new cell size (Standard → 1M points equivalent).
 7. `[ ]` **Sketch carving as 3D strategy** — depth-ramped carving along traced contours (upgrade SketchCarve port).
 8. `[ ]` **V3M 3D clipart** — minimal V3M reader/writer for clipart import/export (stub with honest status if format is opaque).
 
