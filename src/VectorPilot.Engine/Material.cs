@@ -9,6 +9,9 @@ public sealed class Material
     public double? RecommendedFeedRate { get; set; }
     public double? RecommendedPlungeRate { get; set; }
     public double? RecommendedSpindleSpeed { get; set; }
+    /// <summary>Swift parity fields (Material.swift): feed/depth limits in mm.</summary>
+    public double MaxFeedRateMmPerMin { get; set; } = 1500;
+    public double MaxDepthOfCutMm { get; set; } = 6.0;
 
     public static Material Pine() => new() { Name = "Pine", DisplayColor = System.Drawing.Color.FromArgb(0xD8, 0xC0, 0x8A), RecommendedFeedRate = 120, RecommendedSpindleSpeed = 16000 };
     public static Material Oak() => new() { Name = "Oak", DisplayColor = System.Drawing.Color.FromArgb(0xB0, 0x8A, 0x5A), RecommendedFeedRate = 100, RecommendedSpindleSpeed = 14000 };
