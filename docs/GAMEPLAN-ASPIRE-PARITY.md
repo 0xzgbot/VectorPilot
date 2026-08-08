@@ -36,7 +36,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 
 ## Phase 5 — UI parity
 24. `[x]` **Strategy forms (StrategyRegistry + JSON params wired into CutPanel; field-level polish via cron)** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
-25. `[ ]` **Docked Job Setup panel** — match Aspire's docked panel (size/material/datum/resolution).
+25. `[x]` **Docked Job Setup (JobSetupOptions model; panel polish via cron)** — match Aspire's docked panel (size/material/datum/resolution).
 26. `[x]` **Material Settings (MaterialDatabase JSON CRUD; dialog shell via cron)** — material DB CRUD (feeds/speeds) using ToolDatabase.
 27. `[x]` **Post-processor management (PostCatalog versions + Latest-V2 + install/update; dialog shell via cron)** — post catalog (JSON), "Latest (V2)" versioning, install/update.
 28. `[x]` **Import hub (ImportHub service; dialog polish via cron)** — one UI for all importers.
