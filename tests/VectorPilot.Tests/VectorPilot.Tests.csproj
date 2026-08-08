@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -14,5 +15,6 @@
     <ProjectReference Include="..\..\src\VectorPilot.Engine\VectorPilot.Engine.csproj" />
     <ProjectReference Include="..\..\src\VectorPilot.Serial\VectorPilot.Serial.csproj" />
     <ProjectReference Include="..\..\src\VectorPilot.Geometry\VectorPilot.Geometry.csproj" />
+    <ProjectReference Include="..\..\src\VectorPilot.App\VectorPilot.App.csproj" />
   </ItemGroup>
 </Project>
