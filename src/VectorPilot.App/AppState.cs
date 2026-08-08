@@ -7,6 +7,8 @@ namespace VectorPilot.App;
 public static class AppState
 {
     public static Job CurrentJob { get; private set; } = Job.CreateDefault();
+    /// <summary>Heightfield from the latest 3D import (drives 3D strategies).</summary>
+    public static HeightfieldData? Heightfield { get; set; }
     public static ToolpathTree Toolpaths { get; } = new();
 
     public static MachineProfile Profile { get; set; } = MachineProfile.Simulator();

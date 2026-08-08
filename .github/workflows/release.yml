@@ -1,0 +1,23 @@
+name: build-release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish (self-contained)
+        run: dotnet publish src/VectorPilot.App/VectorPilot.App.csproj -c Release -r win-x64 --self-contained -o publish
+      - name: Run test suite
+        run: dotnet test VectorPilot.sln -c Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vectorpilot-win-x64
+          path: publish/**

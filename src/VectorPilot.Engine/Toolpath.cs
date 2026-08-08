@@ -25,6 +25,8 @@ public sealed class Toolpath
     public string Name { get; set; } = "Toolpath 1";
     public ToolpathStrategy Strategy { get; set; }
     public Guid ToolId { get; set; }
+    /// <summary>Strategy params as JSON (registry round-trip for the form).</summary>
+    public string ParamsJson { get; set; } = "{}";
     public double CutDepth { get; set; } = 0.25;
     public double StartDepth { get; set; }
     public double Stepdown { get; set; } = 0.125;
@@ -35,6 +37,8 @@ public sealed class Toolpath
     public double SafeZ { get; set; } = 0.2;
     public double ClearanceZ { get; set; } = 0.05;
     public bool IsDirty { get; set; } = true;
+    /// <summary>Estimated cut time from the last calculation (seconds).</summary>
+    public double EstimatedTimeSeconds { get; set; }
     public List<string> GCode { get; } = new();
     public List<Guid> SelectedShapeIds { get; } = new();
 

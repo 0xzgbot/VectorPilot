@@ -41,6 +41,10 @@ public partial class CutPanel : UserControl
         }
     }
 
+    private static readonly StrategyRegistry Registry = new();
+
+    private static string StrategyKey(ToolpathStrategy s) => s.ToString().ToLowerInvariant();
+
     private void BtnAdd_Click(object sender, RoutedEventArgs e)
     {
         var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
@@ -54,6 +58,7 @@ public partial class CutPanel : UserControl
         var tp = AppState.Toolpaths.Add(SelectedStrategy);
         tp.CutDepth = depth;
         tp.FeedRate = feed;
+        tp.ParamsJson = Registry.Find(StrategyKey(SelectedStrategy))?.DefaultsJson ?? "{}";
         foreach (var s in layer.Shapes) tp.SelectedShapeIds.Add(s.Id);
         RefreshList();
     }
@@ -72,13 +77,27 @@ public partial class CutPanel : UserControl
             var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
             if (shapes.Count == 0) continue;
 
-            var g = new List<string> { $"(VectorPilot {tp.Strategy} — {tp.Name})" };
-            foreach (var shape in shapes)
+            var entry = Registry.Find(StrategyKey(tp.Strategy));
+            if (entry is null)
             {
-                g.AddRange(ToolpathGenerator.GenerateProfile(shape, tp.CutDepth, 0.2, tp.FeedRate, tp.FeedRate * 0.5, 12000));
+                // Legacy path: profile-only generator.
+                var g = new List<string> { $"(VectorPilot {tp.Strategy} — {tp.Name})" };
+                foreach (var shape in shapes)
+                {
+                    g.AddRange(ToolpathGenerator.GenerateProfile(shape, tp.CutDepth, 0.2, tp.FeedRate, tp.FeedRate * 0.5, 12000));
+                }
+                tp.GCode.Clear();
+                tp.GCode.AddRange(g);
+                tp.IsDirty = false;
+                continue;
             }
+
+            var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
+            var header = new List<string> { $"(VectorPilot {entry.DisplayName} — {tp.Name})" };
+            header.AddRange(result.Gcode);
             tp.GCode.Clear();
-            tp.GCode.AddRange(g);
+            tp.GCode.AddRange(header);
+            tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
             tp.IsDirty = false;
         }
         RefreshList();
