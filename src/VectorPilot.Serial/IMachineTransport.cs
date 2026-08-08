@@ -14,4 +14,13 @@ public interface IMachineTransport : IAsyncDisposable
     Task CloseAsync();
     /// <summary>Send one line (without newline). Async fire-and-forget with ack surfaced via events.</summary>
     Task WriteLineAsync(string line, CancellationToken ct = default);
+
+    /// <summary>GRBL feed override (M220 S&lt;percent&gt;, 10-200).</summary>
+    Task SetFeedOverrideAsync(int percent, CancellationToken ct = default);
+    /// <summary>GRBL spindle override (M221 S&lt;percent&gt;, 10-200).</summary>
+    Task SetSpindleOverrideAsync(int percent, CancellationToken ct = default);
+    /// <summary>Cycle pause (GRBL realtime '!') — alias of the streamer's hold.</summary>
+    Task PauseAsync(CancellationToken ct = default);
+    /// <summary>Cycle resume (GRBL realtime '~').</summary>
+    Task ResumeAsync(CancellationToken ct = default);
 }

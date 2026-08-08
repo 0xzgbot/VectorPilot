@@ -94,4 +94,16 @@ public sealed class SerialTransport : IMachineTransport
     private void Emit(TransportEventType type, string payload) => EventReceived?.Invoke(TransportEvent.Of(type, payload));
 
     public async ValueTask DisposeAsync() => await CloseAsync();
+
+    // ---- Overrides / cycle control (GRBL 1.1) ----
+
+    public Task SetFeedOverrideAsync(int percent, CancellationToken ct = default)
+        => WriteLineAsync($"M220 S{Math.Clamp(percent, 10, 200)}", ct);
+
+    public Task SetSpindleOverrideAsync(int percent, CancellationToken ct = default)
+        => WriteLineAsync($"M221 S{Math.Clamp(percent, 10, 200)}", ct);
+
+    public Task PauseAsync(CancellationToken ct = default) => WriteLineAsync("!", ct);
+
+    public Task ResumeAsync(CancellationToken ct = default) => WriteLineAsync("~", ct);
 }

@@ -48,6 +48,12 @@ public sealed class SimulatorTransport : IMachineTransport
             Emit(TransportEventType.Status, BuildStatusLine());
             return;
         }
+        if (line.StartsWith("M220") || line.StartsWith("M221"))
+        {
+            // Feed/spindle override: accepted as a normal command → ok.
+            Emit(TransportEventType.Ok, "ok");
+            return;
+        }
         if (line == "!")
         {
             if (_state == MachineState.Run) { _state = MachineState.Hold; Emit(TransportEventType.Status, BuildStatusLine()); }
@@ -199,4 +205,16 @@ public sealed class SimulatorTransport : IMachineTransport
     private void Emit(TransportEventType type, string payload) => EventReceived?.Invoke(TransportEvent.Of(type, payload));
 
     public async ValueTask DisposeAsync() => await CloseAsync();
+
+    // ---- Overrides / cycle control (GRBL 1.1) ----
+
+    public Task SetFeedOverrideAsync(int percent, CancellationToken ct = default)
+        => WriteLineAsync($"M220 S{Math.Clamp(percent, 10, 200)}", ct);
+
+    public Task SetSpindleOverrideAsync(int percent, CancellationToken ct = default)
+        => WriteLineAsync($"M221 S{Math.Clamp(percent, 10, 200)}", ct);
+
+    public Task PauseAsync(CancellationToken ct = default) => WriteLineAsync("!", ct);
+
+    public Task ResumeAsync(CancellationToken ct = default) => WriteLineAsync("~", ct);
 }
