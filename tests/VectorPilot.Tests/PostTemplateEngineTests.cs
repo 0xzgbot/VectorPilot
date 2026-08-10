@@ -94,4 +94,87 @@ public class PostTemplateEngineTests
         Assert.Contains(r.Lines, l => l == "O=TEST");
         Assert.Equal(0, r.MoveCount);
     }
+
+    // ---- Verify1134 parity cases (exact expectations from the Mac CLT) ----
+
+    [Fact]
+    public void Verify1134_Diameter_Token_And_Per_Word_Rebuild()
+    {
+        var template = new PostTemplate
+        {
+            Id = "t",
+            Text = """
+                [D|A|-|1.1] mm diameter
+                (--- moves ---)
+                [G] [A|A|A|1.2] [X|A|X|1.3] [F|C|F|1.0]
+                (--- end ---)
+                """
+        };
+        // Move carrying an A word (rotary post output) — per-word rebuild.
+        var r = PostTemplateEngine.Emit(new List<string> { "G1 X5 A6 F100" }, template);
+        Assert.Contains("50.0 mm diameter", r.Lines);
+        Assert.Contains("G1 A6.00 X5.000 F100", r.Lines); // verify-1134 exact golden
+    }
+
+    [Fact]
+    public void Verify1134_C_Mode_Suppresses_Unchanged()
+    {
+        var template = new PostTemplate
+        {
+            Id = "t",
+            Text = """
+                (--- moves ---)
+                [G] [X|A|X|1.3] [F|C|F|1.0]
+                (--- end ---)
+                """
+        };
+        var r = PostTemplateEngine.Emit(new List<string> { "G1 X1 F200", "G1 X2 F200", "G1 X3 F300" }, template);
+        Assert.Equal("G1 X1.000 F200", r.Lines[0]);
+        Assert.Equal("G1 X2.000", r.Lines[1]);            // F unchanged → suppressed
+        Assert.Equal("G1 X3.000 F300", r.Lines[2]);       // F changed → re-emitted
+    }
+
+    [Fact]
+    public void Verify1134_I_Mode_Emits_Deltas()
+    {
+        var template = new PostTemplate
+        {
+            Id = "t",
+            Text = """
+                (--- moves ---)
+                [G] [X|I|X|1.3]
+                (--- end ---)
+                """
+        };
+        var r = PostTemplateEngine.Emit(new List<string> { "G1 X10", "G1 X12" }, template);
+        Assert.Equal("G1 X10.000", r.Lines[0]);
+        Assert.Equal("G1 X2.000", r.Lines[1]); // delta 12 − 10
+    }
+
+    [Fact]
+    public void Verify1134_Sparse_Moves_Emit_Nothing_For_Missing_Words()
+    {
+        var template = new PostTemplate
+        {
+            Id = "t",
+            Text = """
+                (--- moves ---)
+                [G] [X|A|X|1.3] [Y|A|Y|1.3] [Z|A|Z|1.3]
+                (--- end ---)
+                """
+        };
+        var r = PostTemplateEngine.Emit(new List<string> { "G0 X9" }, template);
+        Assert.Equal("G0 X9.000", r.Lines[0]); // no Y/Z tokens emitted
+    }
+
+    [Fact]
+    public void Verify1134_Rotary_Full_Wrap_Is_180_Degrees()
+    {
+        // Half circumference on Ø50 → 180°.
+        var template = PostTemplate.GrblRotaryWrap(diameterMm: 50);
+        var r = PostTemplateEngine.Emit(new List<string> { "G0 X0 Y78.539816" }, template);
+        var line = r.Lines.FirstOrDefault(l => l.Contains("A180.000"));
+        Assert.NotNull(line);
+        Assert.DoesNotContain(" Y", r.Lines.First(l => l.Contains("X0.000")));
+    }
 }

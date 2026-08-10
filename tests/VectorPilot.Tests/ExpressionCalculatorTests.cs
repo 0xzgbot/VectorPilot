@@ -65,4 +65,36 @@ public class ExpressionCalculatorTests
         var dim = new DrivenDimension { Key = "halfWidth", Expression = "stockWidth / 2" };
         Assert.Equal(300.0, ExpressionCalculator.Resolve(dim, Vars) ?? double.NaN, 6);
     }
+
+    // ---- Verify0209 parity cases (exact expectations from the Mac CLT) ----
+
+    [Theory]
+    [InlineData("2*3+4", 10.0)]   // precedence
+    [InlineData("2 * 3 + 4", 10.0)]
+    [InlineData("2440 / 2", 1220.0)]
+    [InlineData("10/4", 2.5)]
+    [InlineData("7-2-1", 4.0)]    // left-assoc minus
+    [InlineData("1.5*2", 3.0)]    // decimals
+    [InlineData("2*(3+4)", 14.0)]
+    [InlineData("2*π", 2 * Math.PI)]
+    public void Verify0209_Arithmetic(string expr, double expected)
+    {
+        Assert.Equal(expected, ExpressionCalculator.Evaluate(expr) ?? double.NaN, 9);
+    }
+
+    [Fact]
+    public void Verify0209_Longest_Key_Substitution()
+    {
+        // "wide"→7 and "width"→100: longest key first must not clobber.
+        var v = new List<DocumentVariable>
+        {
+            new() { Key = "wide", Value = "7" },
+            new() { Key = "width", Value = "100" },
+            new() { Key = "depth", Value = "4" }
+        };
+        Assert.Equal(7.0, ExpressionCalculator.Evaluate("wide", v) ?? double.NaN, 6);
+        Assert.Equal(100.0, ExpressionCalculator.Evaluate("width", v) ?? double.NaN, 6);
+        Assert.Equal(400.0, ExpressionCalculator.Evaluate("width*depth", v) ?? double.NaN, 6);
+        Assert.Equal(2 * Math.PI * 3, ExpressionCalculator.Evaluate("2*pi*r", v.Concat(new[] { new DocumentVariable { Key = "r", Value = "3" } }).ToList()) ?? double.NaN, 9);
+    }
 }
