@@ -34,6 +34,26 @@ public static class TapExporter
         return outputPath;
     }
 
+    /// <summary>SPK-1134: export through the post template engine (rotary wrap,
+    /// GRBL mm/in, line numbers) instead of the legacy wrapper.</summary>
+    public static string ExportWithTemplate(string outputPath, IReadOnlyList<Toolpath> toolpaths, PostTemplate template)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"(VectorPilot job export)");
+        sb.AppendLine($"(Exported {DateTime.Now:yyyy-MM-dd HH:mm})");
+
+        foreach (var tp in toolpaths)
+        {
+            sb.AppendLine($"");
+            sb.AppendLine($"(Toolpath: {tp.Name} — {tp.Strategy})");
+            var result = PostTemplateEngine.Emit(tp.GCode, template);
+            sb.AppendLine(string.Join("\n", result.Lines));
+        }
+
+        File.WriteAllText(outputPath, sb.ToString());
+        return outputPath;
+    }
+
     /// <summary>Default export path next to the job file.</summary>
     public static string DefaultPath(string jobPath) => Path.ChangeExtension(jobPath, ".tap");
 }

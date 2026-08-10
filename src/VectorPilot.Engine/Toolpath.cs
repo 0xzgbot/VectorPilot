@@ -39,8 +39,29 @@ public sealed class Toolpath
     public bool IsDirty { get; set; } = true;
     /// <summary>Estimated cut time from the last calculation (seconds).</summary>
     public double EstimatedTimeSeconds { get; set; }
+    /// <summary>Previous computed G-code (SPK-0316 ghost diff): snapshotted by
+    /// SetResult when the new result differs; nil when never generated.</summary>
+    public List<string>? PreviousGCode { get; private set; }
+    /// <summary>Feed rate used by the last calculation (SPK-1135 job sheet).</summary>
+    public double? ParamFeedRate { get; set; }
+    /// <summary>Cut depth used by the last calculation (SPK-1135 job sheet).</summary>
+    public double? ParamCutDepth { get; set; }
     public List<string> GCode { get; } = new();
     public List<Guid> SelectedShapeIds { get; } = new();
+
+    /// <summary>Write a computed result, snapshotting the outgoing value as
+    /// PreviousGCode only when it differs (no-op regen keeps the old path).</summary>
+    public void SetResult(IEnumerable<string> gcode)
+    {
+        var newGcode = gcode.ToList();
+        if (GCode.Count > 0 && !newGcode.SequenceEqual(GCode))
+        {
+            PreviousGCode = GCode.ToList();
+        }
+        GCode.Clear();
+        GCode.AddRange(newGcode);
+        IsDirty = false;
+    }
 
     public void MarkDirty() => IsDirty = true;
 

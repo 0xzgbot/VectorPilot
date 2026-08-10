@@ -32,6 +32,29 @@ public class TapExporterTests
             if (Directory.Exists(dir)) Directory.Delete(dir, true);
         }
     }
+
+    [Fact]
+    public void Export_With_Template_Uses_Template_Engine()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"vp-tap-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var tp = new Toolpath { Name = "Rotary part", Strategy = ToolpathStrategy.Profile };
+            tp.GCode.AddRange(new[] { "G1 X10 Y25 Z-1 F500", "M30" });
+
+            var outPath = Path.Combine(dir, "rotary.tap");
+            TapExporter.ExportWithTemplate(outPath, new[] { tp }, PostTemplate.GrblRotaryWrap(diameterMm: 50));
+            var text = File.ReadAllText(outPath);
+            Assert.Contains("A57.296", text);   // Y wrapped to A degrees
+            Assert.DoesNotContain("Y25", text);
+            Assert.Contains("N10", text);       // line numbers from template
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        }
+    }
 }
 
 public class JobSheetHtmlTests
