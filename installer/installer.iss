@@ -5,7 +5,8 @@
 #define MyAppName "VectorPilot"
 #define MyAppVersion "0.3.0"
 #define MyAppPublisher "0xzgbot"
-#define MyAppExeName "VectorPilot.App.exe"
+; The App project's assembly name is "VectorPilot" — the publish output is VectorPilot.exe.
+#define MyAppExeName "VectorPilot.exe"
 
 [Setup]
 AppId={{9E4B2F1C-5D2A-4E7B-9C3F-4B2A7E5D1C09}
