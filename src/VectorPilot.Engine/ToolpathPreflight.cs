@@ -9,6 +9,35 @@ namespace VectorPilot.Engine;
 
 public enum ToolpathPreflightSeverity { Error, Warning }
 
+/// <summary>SPK-0604: V-Carve open-vector gate issue (blocking, with a
+/// plain-English fix CTA targeting the real shape indices).</summary>
+public sealed class VCarveGateIssue
+{
+    public int ShapeIndex { get; init; }
+    public string SuggestedFix { get; init; } = "Close open vector";
+    public string Description { get; init; } = "V-Carve cannot run on open vectors — close them first";
+}
+
+/// <summary>SPK-0604: V-Carve open-vector gate. Returns null when every vector
+/// is closed (carve proceeds); otherwise a blocking report whose issues carry
+/// the exact indices of the open shapes. Non-open issues (degenerate, gap,
+/// self-intersection) do NOT block.</summary>
+public static class VCarveOpenPathGate
+{
+    public static List<VCarveGateIssue>? Check(IReadOnlyList<VectorShape> shapes)
+    {
+        var issues = new List<VCarveGateIssue>();
+        for (int i = 0; i < shapes.Count; i++)
+        {
+            if (!shapes[i].Closed)
+            {
+                issues.Add(new VCarveGateIssue { ShapeIndex = i });
+            }
+        }
+        return issues.Count == 0 ? null : issues;
+    }
+}
+
 /// <summary>The plain-English fix a preflight issue offers (FM mapping CTAs).</summary>
 public sealed class ToolpathPreflightFix
 {
