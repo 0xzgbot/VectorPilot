@@ -75,14 +75,9 @@ public class OkWaitProtocolTests
     {
         public event Action<TransportEvent>? EventReceived;
         public List<string> Sent { get; } = new();
-        private readonly TaskCompletionSource _opened = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private TaskCompletionSource _ackGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task OpenAsync(MachineProfile profile, CancellationToken ct = default)
-        {
-            _opened.TrySetResult();
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         public bool IsOpen => true;
         public string Name => "gated";
@@ -96,8 +91,6 @@ public class OkWaitProtocolTests
 
         public void SendNextAck()
         {
-            _ackGate.TrySetResult();
-            _ackGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             EventReceived?.Invoke(new TransportEvent(TransportEventType.Ok, "ok", DateTime.UtcNow));
         }
 

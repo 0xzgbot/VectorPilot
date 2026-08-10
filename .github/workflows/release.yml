@@ -9,8 +9,8 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -22,7 +22,7 @@ jobs:
       - name: Run test suite
         run: dotnet test VectorPilot.sln -c Release
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: vectorpilot-win-x64
           path: src/VectorPilot.App/bin/Release/net8.0-windows/win-x64/publish/**
@@ -37,7 +37,7 @@ jobs:
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           & $iscc installer/installer.iss
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: vectorpilot-setup
           path: dist/*-setup.exe
