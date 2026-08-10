@@ -19,6 +19,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; Per-user install (no UAC) — a consumer CNC app shouldn't demand admin.
+PrivilegesRequired=lowest
 OutputDir=..\dist
 OutputBaseFilename=VectorPilot-{#MyAppVersion}-setup
 ArchitecturesInstallIn64BitMode=x64compatible
