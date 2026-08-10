@@ -19,7 +19,33 @@
         </Border>
 
         <Grid Grid.Row="1">
-            <Border Background="White" BorderBrush="#CCC" BorderThickness="1" Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="190"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#F4F4F6" BorderBrush="#CCC" BorderThickness="1" Margin="8,8,0,8" Padding="6">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="＋" Width="28" Height="24" Click="AddLayer_Click" ToolTip="Add layer"/>
+                        <Button Content="🗑" Width="28" Height="24" Margin="6,0,0,0" Click="DeleteLayer_Click" ToolTip="Delete layer"/>
+                    </StackPanel>
+                    <TextBlock Text="Layers" FontWeight="Bold" Margin="2,0,0,6"/>
+                    <ListBox x:Name="LayersList" Background="Transparent" BorderThickness="0"
+                             SelectionChanged="LayersList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox IsChecked="{Binding Visible}" Checked="LayerToggle_Changed" Unchecked="LayerToggle_Changed" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="White" BorderBrush="#CCC" BorderThickness="1" Margin="8">
                 <Canvas x:Name="DrawCanvas" Background="White"
                         MouseLeftButtonDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseUp">
                     <Canvas.RenderTransform>

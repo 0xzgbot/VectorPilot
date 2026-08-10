@@ -35,8 +35,52 @@ public partial class DesignPanel : UserControl
         var job = AppState.CurrentJob;
         if (job is null) return;
         LayerLabel.Text = $"{job.ActiveSheet.Name} · {job.ActiveSheet.ActiveLayer.Name} · {job.ActiveSheet.Layers.Count} layer(s)";
+        RefreshLayers();
         FitView();
         RedrawShapes();
+    }
+
+    private void RefreshLayers()
+    {
+        var sheet = AppState.CurrentJob?.ActiveSheet;
+        if (sheet is null) return;
+        LayersList.ItemsSource = null;
+        LayersList.ItemsSource = sheet.Layers;
+        LayersList.SelectedItem = sheet.ActiveLayer;
+    }
+
+    private void LayersList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (AppState.CurrentJob?.ActiveSheet is { } sheet && LayersList.SelectedItem is Layer layer)
+        {
+            sheet.ActiveLayer = layer;
+            LayerLabel.Text = $"{sheet.Name} · {layer.Name} · {sheet.Layers.Count} layer(s)";
+        }
+    }
+
+    private void LayerToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        // Visibility toggle: the binding already wrote back to the Layer — re-render.
+        RedrawShapes();
+    }
+
+    private void AddLayer_Click(object sender, RoutedEventArgs e)
+    {
+        var sheet = AppState.CurrentJob?.ActiveSheet;
+        if (sheet is null) return;
+        var layer = sheet.AddLayer($"Layer {sheet.Layers.Count + 1}");
+        sheet.ActiveLayer = layer;
+        Refresh();
+    }
+
+    private void DeleteLayer_Click(object sender, RoutedEventArgs e)
+    {
+        var sheet = AppState.CurrentJob?.ActiveSheet;
+        if (sheet is null || sheet.Layers.Count <= 1) return;
+        var layer = LayersList.SelectedItem as Layer ?? sheet.ActiveLayer;
+        sheet.Layers.Remove(layer);
+        if (sheet.ActiveLayer == layer) sheet.ActiveLayer = sheet.Layers[^1];
+        Refresh();
     }
 
     private void FitView()
