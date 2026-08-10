@@ -71,11 +71,22 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
   pause/resume, preflight rules (R013/R014/R017/keep-out) ✅
 - Inno Setup installer + CI + release workflow ✅
 
-## Remaining (cron)
+## Status
 
-Dialog shells for the UI services (material dialog, post manager window,
-command palette window, job-setup panel polish), 3D preview view-mode polish,
-README driver notes, and deeper verify-CLT parity ports (33 → goal 109).
+- **463/463 tests green** (xUnit); CI (build + test on windows-latest) green;
+  release workflow (self-contained publish → tests → Inno Setup installer)
+  green — the `vectorpilot-setup` exe is built per tag.
+- **Done:** full Mac parity wave (SPK-0209 expressions + document variables,
+  0216 unified import router, 0315 dirty-region resim, 0316 ghost diff,
+  1134 post template engine v2 + rotary Y2A wrap, 1135 HTML job sheet → PDF,
+  D13 fit curves, E22 model offset, H04 wrapped fluting), all dialog shells
+  (materials, machine config, posts, command palette, preferences), layers
+  panel, expression-enabled strategy param forms, sort/merge + dirty recalc,
+  autosave + crash recovery, Ctrl+K palette, .tap/HTML/PDF exports, machine
+  E2E loopback + ok-wait protocol tests, ShapeTransformer (flip/scale/rotate).
+- **Honest stubs (spec/SDK-pending):** V3M, SKP, 3DM importers.
+- **Not verifiable here:** machine control on physical hardware (simulator
+  loopback is the maximum coverage; GRBL wiring notes below).
 
 ## Driver & Connection Notes
 
