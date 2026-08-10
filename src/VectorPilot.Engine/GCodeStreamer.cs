@@ -38,6 +38,10 @@ public sealed class GCodeStreamer : IAsyncDisposable
 
     public GCodeStreamer(IMachineTransport transport) => _transport = transport;
 
+    /// <summary>Machine state from the latest status line — the send loop
+    /// holds while the controller reports Hold (E-stop semantics).</summary>
+    public MachineState MachineState { get; private set; } = MachineState.Idle;
+
     public async Task StartAsync(IEnumerable<string> lines, CancellationToken ct = default)
     {
         var all = lines.Where(l => !string.IsNullOrWhiteSpace(l.Trim()) && !l.TrimStart().StartsWith('(') && !l.TrimStart().StartsWith(';')).ToList();
@@ -60,6 +64,11 @@ public sealed class GCodeStreamer : IAsyncDisposable
             if (ev.Type == TransportEventType.Ok) tcs.TrySetResult(ev.Payload);
             else if (ev.Type == TransportEventType.Alarm) tcs.TrySetException(new IOException($"Alarm during stream: {ev.Payload}"));
             else if (ev.Type is TransportEventType.Error or TransportEventType.ConnectionError) tcs.TrySetException(new IOException(ev.Payload));
+            else if (ev.Type == TransportEventType.Status)
+            {
+                // Track the controller state so the send loop can honor E-stop holds.
+                MachineState = ParseState(ev.Payload);
+            }
         };
         _transport.EventReceived += handler;
 
@@ -71,6 +80,12 @@ public sealed class GCodeStreamer : IAsyncDisposable
                 _cts.Token.ThrowIfCancellationRequested();
                 while (_paused)
                 {
+                    await Task.Delay(50, _cts.Token).ConfigureAwait(false);
+                }
+                while (MachineState == MachineState.Hold)
+                {
+                    // Controller is on feed hold (!) — stop sending until resumed (~).
+                    _cts.Token.ThrowIfCancellationRequested();
                     await Task.Delay(50, _cts.Token).ConfigureAwait(false);
                 }
 
@@ -139,6 +154,16 @@ public sealed class GCodeStreamer : IAsyncDisposable
     }
 
     private void Emit() => ProgressChanged?.Invoke(new StreamProgress(CurrentLine, TotalLines, Phase));
+
+    private static MachineState ParseState(string statusPayload)
+    {
+        // "<Hold|MPos:...|..." — first field inside < > is the state.
+        var open = statusPayload.IndexOf('<');
+        var close = statusPayload.IndexOf('|', open + 1);
+        if (open < 0 || close < 0) return MachineState.Unknown;
+        var name = statusPayload.Substring(open + 1, close - open - 1).Trim();
+        return Enum.TryParse<MachineState>(name, ignoreCase: true, out var state) ? state : MachineState.Unknown;
+    }
 
     public async ValueTask DisposeAsync()
     {

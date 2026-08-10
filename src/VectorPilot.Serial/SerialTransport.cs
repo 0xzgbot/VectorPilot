@@ -106,4 +106,7 @@ public sealed class SerialTransport : IMachineTransport
     public Task PauseAsync(CancellationToken ct = default) => WriteLineAsync("!", ct);
 
     public Task ResumeAsync(CancellationToken ct = default) => WriteLineAsync("~", ct);
+
+    public Task JogAsync(double x, double y, double z, double rate, CancellationToken ct = default)
+        => WriteLineAsync($"$J=G91X{x:0.###}Y{y:0.###}Z{z:0.###}F{(int)rate}", ct);
 }

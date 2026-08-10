@@ -23,4 +23,7 @@ public interface IMachineTransport : IAsyncDisposable
     Task PauseAsync(CancellationToken ct = default);
     /// <summary>Cycle resume (GRBL realtime '~').</summary>
     Task ResumeAsync(CancellationToken ct = default);
+
+    /// <summary>GRBL jog ($J=G91X..Y..Z..F.., relative).</summary>
+    Task JogAsync(double x, double y, double z, double rate, CancellationToken ct = default);
 }

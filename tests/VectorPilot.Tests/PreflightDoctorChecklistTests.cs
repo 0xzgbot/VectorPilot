@@ -32,7 +32,7 @@ public class VectorPreflightDoctorTests
         var issues = VectorPreflightDoctor.Check(new[] { bowtie });
         Assert.Contains(issues, i => i.Kind == VectorDoctorKind.SelfIntersection && i.Severity == VectorDoctorSeverity.Warning);
 
-        Assert.Empty(VectorPreflightDoctor.Check(new[] { square }).Where(i => i.Kind == VectorDoctorKind.SelfIntersection));
+        Assert.DoesNotContain(VectorPreflightDoctor.Check(new[] { square }), i => i.Kind == VectorDoctorKind.SelfIntersection);
     }
 
     [Fact]

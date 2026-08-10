@@ -111,6 +111,9 @@ public sealed class SimulatorTransport : IMachineTransport
             }
             else if (upper.StartsWith("G0") || upper.StartsWith("G1") || upper.StartsWith("G2") || upper.StartsWith("G3"))
             {
+                // Executing a move — Run state makes the E-stop (!) path reachable.
+                // Never leave Hold via a move: while held, lines ack but the state stays Hold.
+                if (_state != MachineState.Hold) _state = MachineState.Run;
                 MoveMachine(line);
                 Emit(TransportEventType.Ok, "ok");
                 Emit(TransportEventType.Status, BuildStatusLine());
@@ -217,4 +220,7 @@ public sealed class SimulatorTransport : IMachineTransport
     public Task PauseAsync(CancellationToken ct = default) => WriteLineAsync("!", ct);
 
     public Task ResumeAsync(CancellationToken ct = default) => WriteLineAsync("~", ct);
+
+    public Task JogAsync(double x, double y, double z, double rate, CancellationToken ct = default)
+        => WriteLineAsync($"$J=G91X{x:0.###}Y{y:0.###}Z{z:0.###}F{(int)rate}", ct);
 }
