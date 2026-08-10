@@ -55,7 +55,7 @@ public sealed class MaterialDatabase
         }
     }
 
-    public void Save() => File.WriteAllText(FilePath, JsonSerializer.Serialize(Materials, Options));
+    public void Save() { var dir = Path.GetDirectoryName(FilePath); if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir); File.WriteAllText(FilePath, JsonSerializer.Serialize(Materials, Options)); }
 
     public Material Add(Material m)
     {
@@ -134,7 +134,7 @@ public sealed class PostCatalog
         }
     }
 
-    public void Save() => File.WriteAllText(FilePath, JsonSerializer.Serialize(Posts, Options));
+    public void Save() { var dir = Path.GetDirectoryName(FilePath); if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir); File.WriteAllText(FilePath, JsonSerializer.Serialize(Posts, Options)); }
 
     public PostDefinition? Latest(string name) => Posts.FirstOrDefault(p => p.Name == name && p.IsLatest);
 

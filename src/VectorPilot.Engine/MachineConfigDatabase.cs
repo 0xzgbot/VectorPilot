@@ -68,7 +68,12 @@ public sealed class MachineConfigDatabase
         }
     }
 
-    public void Save() => File.WriteAllText(FilePath, JsonSerializer.Serialize(Machines, Options));
+    public void Save()
+    {
+        var dir = Path.GetDirectoryName(FilePath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(Machines, Options));
+    }
 
     public MachineConfigEntry Add(MachineConfigEntry m)
     {

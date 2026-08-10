@@ -50,7 +50,7 @@ public sealed class PreferencesStore
         }
     }
 
-    public void Save() => File.WriteAllText(FilePath, JsonSerializer.Serialize(Value, Options));
+    public void Save() { var dir = Path.GetDirectoryName(FilePath); if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir); File.WriteAllText(FilePath, JsonSerializer.Serialize(Value, Options)); }
 
     public void Update(Action<Preferences> mutate)
     {
