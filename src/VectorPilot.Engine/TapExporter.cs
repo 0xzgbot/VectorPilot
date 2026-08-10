@@ -10,6 +10,28 @@ namespace VectorPilot.Engine;
 /// </summary>
 public static class TapExporter
 {
+    /// <summary>SPK-0603 dirty-toolpath export gate: skips toolpaths that are
+    /// dirty (edited since last calculation) and reports them as warnings.
+    /// Clean toolpaths export normally.</summary>
+    public static (string Path, List<string> Warnings) ExportWithGate(string outputPath, IReadOnlyList<Toolpath> toolpaths, PostProcessorType post = PostProcessorType.Grbl)
+    {
+        var warnings = new List<string>();
+        var clean = toolpaths.Where(tp =>
+        {
+            if (tp.IsDirty)
+            {
+                warnings.Add($"{tp.Name}: dirty (recalculate before export) — skipped");
+                return false;
+            }
+            return true;
+        }).ToList();
+        if (clean.Count == 0)
+        {
+            throw new InvalidOperationException("All toolpaths are dirty — nothing to export. Recalculate first.");
+        }
+        return (Export(outputPath, clean, post), warnings);
+    }
+
     /// <summary>Write toolpaths to a .tap file; returns the file path.</summary>
     public static string Export(string outputPath, IReadOnlyList<Toolpath> toolpaths, PostProcessorType post = PostProcessorType.Grbl)
     {
