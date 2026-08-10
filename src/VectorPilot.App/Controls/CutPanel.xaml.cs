@@ -18,10 +18,101 @@ public partial class CutPanel : UserControl
     private void RefreshList()
     {
         ToolpathList.Items.Clear();
-        foreach (var tp in AppState.Toolpaths.Toolpaths)
+        for (int i = 0; i < AppState.Toolpaths.Toolpaths.Count; i++)
         {
+            var tp = AppState.Toolpaths.Toolpaths[i];
             var flag = tp.IsDirty ? " ⚠ dirty" : "";
             ToolpathList.Items.Add($"{tp.Name} [{tp.Strategy}]{flag} — {tp.GCode.Count} lines");
+        }
+    }
+
+    private Toolpath? _selectedToolpath;
+
+    private void ToolpathList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var index = ToolpathList.SelectedIndex;
+        _selectedToolpath = index >= 0 && index < AppState.Toolpaths.Toolpaths.Count
+            ? AppState.Toolpaths.Toolpaths[index]
+            : null;
+        RefreshParamsForm(_selectedToolpath);
+    }
+
+    private sealed class ParamRow
+    {
+        public string Key { get; set; } = "";
+        public string Text { get; set; } = "";
+    }
+
+    /// <summary>Build the params form from the selected toolpath's ParamsJson
+    /// (one expression-enabled text box per numeric parameter, SPK-0209).</summary>
+    private void RefreshParamsForm(Toolpath? tp)
+    {
+        ParamsGrid.ItemsSource = null;
+        if (tp is null) return;
+        try
+        {
+            var obj = System.Text.Json.Nodes.JsonNode.Parse(tp.ParamsJson)?.AsObject();
+            if (obj is null) return;
+            var rows = new List<ParamRow>();
+            foreach (var kv in obj)
+            {
+                if (kv.Value is not null && kv.Value.GetValueKind() == System.Text.Json.JsonValueKind.Number)
+                {
+                    rows.Add(new ParamRow { Key = kv.Key, Text = kv.Value.ToString() });
+                }
+            }
+            ParamsGrid.ItemsSource = rows;
+        }
+        catch
+        {
+            ParamsGrid.ItemsSource = null;
+        }
+    }
+
+    /// <summary>Resolve every params-row expression and write the result back
+    /// into tp.ParamsJson (plain numbers pass through; "2440/2" and "$width/2"
+    /// evaluate; unresolved expressions fall back to a numeric parse).</summary>
+    private static void CommitParamsForm(Toolpath tp)
+    {
+        try
+        {
+            var obj = System.Text.Json.Nodes.JsonNode.Parse(tp.ParamsJson)?.AsObject();
+            if (obj is null) return;
+            var variables = LoadDocumentVariables();
+            foreach (var kv in obj)
+            {
+                var raw = kv.Value?.ToString();
+                if (raw is null) continue;
+                var resolved = ExpressionCalculator.Evaluate(raw, variables);
+                if (resolved is { } r)
+                {
+                    obj[kv.Key] = r;
+                }
+                else if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+                {
+                    obj[kv.Key] = d;
+                }
+            }
+            tp.ParamsJson = obj.ToJsonString();
+        }
+        catch
+        {
+            // Leave ParamsJson untouched on any parse failure.
+        }
+    }
+
+    private static List<DocumentVariable> LoadDocumentVariables()
+    {
+        try
+        {
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorPilot", "document-variables.json");
+            if (!File.Exists(path)) return new List<DocumentVariable>();
+            return System.Text.Json.JsonSerializer.Deserialize<List<DocumentVariable>>(File.ReadAllText(path)) ?? new List<DocumentVariable>();
+        }
+        catch
+        {
+            return new List<DocumentVariable>();
         }
     }
 
@@ -77,6 +168,8 @@ public partial class CutPanel : UserControl
 
     private void RecalculateToolpath(Toolpath tp)
     {
+        // Commit the params form (expression resolution) before dispatch.
+        CommitParamsForm(tp);
         var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
         if (layer is null) return;
         var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
