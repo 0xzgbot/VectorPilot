@@ -122,7 +122,7 @@ public class OkWaitProtocolTests
         await Task.Delay(200);
 
         // No acks delivered yet — only the FIRST line may have been sent.
-        Assert.Equal(1, transport.Sent.Count);
+        Assert.Single(transport.Sent);
         Assert.Equal("G1 X1", transport.Sent[0]);
 
         transport.SendNextAck();

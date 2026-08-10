@@ -71,7 +71,7 @@ public class NestingEngineTests
         // Tall narrow part fits rotated in a wide-short space.
         var tall = new List<VectorShape> { VectorShape.Rectangle(0, 0, 5, 30) };
         var r = NestingEngine.Nest(tall, sheetWidth: 40, sheetHeight: 20, margin: 0);
-        Assert.Equal(1, r.Parts.Count);
+        Assert.Single(r.Parts);
         Assert.Equal(Math.PI / 2, r.Parts[0].Rotation, 6);
     }
 }

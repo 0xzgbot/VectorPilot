@@ -21,7 +21,7 @@ public sealed class QuickEngraveParams
 
 public sealed class QuickEngraveResult
 {
-    public QuickEngraveParams Params { get; init; }
+    public required QuickEngraveParams Params { get; init; }
     public List<string> GcodeLines { get; init; } = new();
     public double EstimatedTimeSeconds { get; init; }
     public int PassCount { get; init; } = 1;

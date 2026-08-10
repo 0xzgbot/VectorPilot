@@ -5,7 +5,7 @@ namespace VectorPilot.Engine;
 /// <summary>A single part placed on the stock sheet (ported from NestPart.swift).</summary>
 public sealed class NestPart
 {
-    public VectorShape Shape { get; init; }
+    public required VectorShape Shape { get; init; }
     public VectorPoint Position { get; init; }
     public double Rotation { get; init; }
     public int Index { get; init; }

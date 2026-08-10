@@ -93,7 +93,7 @@ public class ComponentModifierEngineTests
         Assert.Equal(hf.Width, tilted.Width);
         Assert.Equal(hf.Height, tilted.Height);
         Assert.Equal(hf.CellSizeMm, tilted.CellSizeMm);
-        Assert.True(tilted.Heights.Any(v => v > 0));
+        Assert.Contains(tilted.Heights, v => v > 0);
     }
 
     [Fact]

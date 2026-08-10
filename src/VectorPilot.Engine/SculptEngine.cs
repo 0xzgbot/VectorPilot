@@ -26,7 +26,7 @@ public sealed class SculptStrokeParams
 
 public sealed class SculptStrokeResult
 {
-    public HeightfieldData Heightfield { get; init; }
+    public required HeightfieldData Heightfield { get; init; }
     public int CellsAffected { get; init; }
     public double MinHeight { get; init; }
     public double MaxHeight { get; init; }

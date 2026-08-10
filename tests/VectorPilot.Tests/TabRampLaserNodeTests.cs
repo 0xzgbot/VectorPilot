@@ -48,8 +48,8 @@ public class TabRampTests
         var ramp = RampGenerator.BuildRamp(RampGenerator.RampType.Smooth,
             new VectorPoint(0, 0), new VectorPoint(10, 0), fromZ: 0, toZ: -4, rampDistanceMm: 5, feed: 1000, plungeFeed: 300);
         Assert.True(ramp.Count > 3);
-        Assert.True(ramp[0].Contains("Z-")); // already descending at step 1
-        Assert.True(ramp[^1].Contains("Z-4.000")); // full depth at the end
+        Assert.Contains("Z-", ramp[0]); // already descending at step 1
+        Assert.Contains("Z-4.000", ramp[^1]); // full depth at the end
         Assert.All(ramp, l => l.StartsWith("G1 X"));
     }
 
@@ -82,7 +82,7 @@ public class LaserEngineTests
         Assert.Equal("O=LASER_FILL_TOOLPATH", r.GcodeLines[1]);
         Assert.True(r.FeatureCount >= 2);
         // Fill lines stay inside 0..10.
-        Assert.All(r.GcodeLines.Where(l => l.StartsWith("G1 X")), l => Assert.True(l.Contains("X10.000")));
+        Assert.All(r.GcodeLines.Where(l => l.StartsWith("G1 X")), l => Assert.Contains("X10.000", l));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class NodeEditTests
         var pts = Square();
         Assert.True(NodeEditEngine.DeletePoint(pts, new VectorPoint(10, 0)));
         Assert.Equal(3, pts.Count);
-        Assert.False(pts.Contains(new VectorPoint(10, 0)));
+        Assert.DoesNotContain(new VectorPoint(10, 0), pts);
     }
 
     [Fact]
