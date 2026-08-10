@@ -22,6 +22,27 @@ public sealed class ShopPilotManifest
     public int SheetCount { get; set; } = 1;
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, string>? DocumentVariables { get; set; }
+
+    /// <summary>Keep-out zones (SPK-0308 persist). Null = document predates
+    /// zones — legacy-safe decode.</summary>
+    public List<KeepOutZoneDto>? KeepOutZones { get; set; }
+}
+
+/// <summary>Keep-out zone DTO (SPK-0308 persist; mirrors KeepOutZone).</summary>
+public sealed class KeepOutZoneDto
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Name { get; set; } = "Keep Out";
+    public string Type { get; set; } = "Rectangle";
+    public double? CircleCenterX { get; set; }
+    public double? CircleCenterY { get; set; }
+    public double? CircleRadiusMm { get; set; }
+    public double? RectMinX { get; set; }
+    public double? RectMinY { get; set; }
+    public double? RectMaxX { get; set; }
+    public double? RectMaxY { get; set; }
+    public List<List<double>>? PolygonPoints { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>Persisted toolpath (subset of the Mac PersistedToolpath; additive keys tolerated).</summary>
@@ -92,9 +113,46 @@ public static class DocumentJson
             Name = job.Name,
             CreatedAt = DateTime.UtcNow.ToString("o"),
             SheetCount = job.Sheets.Count,
-            DocumentVariables = null
+            DocumentVariables = null,
+            KeepOutZones = job.KeepOutZones.Count > 0 ? job.KeepOutZones.Select(ToZone).ToList() : null
         };
         return manifest;
+    }
+
+    // ---- Keep-out zones (SPK-0308 persist) ----
+
+    public static KeepOutZoneDto ToZone(KeepOutZone zone) => new()
+    {
+        Id = zone.Id.ToString(),
+        Name = zone.Name,
+        Type = zone.Type.ToString(),
+        CircleCenterX = zone.CircleCenter?.X,
+        CircleCenterY = zone.CircleCenter?.Y,
+        CircleRadiusMm = zone.CircleRadiusMm,
+        RectMinX = zone.RectMinX,
+        RectMinY = zone.RectMinY,
+        RectMaxX = zone.RectMaxX,
+        RectMaxY = zone.RectMaxY,
+        PolygonPoints = zone.PolygonPoints?.Select(p => new List<double> { p.X, p.Y }).ToList(),
+        IsActive = zone.IsActive
+    };
+
+    public static KeepOutZone FromZone(KeepOutZoneDto dto)
+    {
+        return new KeepOutZone
+        {
+            Id = Guid.TryParse(dto.Id, out var id) ? id : Guid.NewGuid(),
+            Name = dto.Name,
+            Type = Enum.TryParse<KeepOutZoneType>(dto.Type, ignoreCase: true, out var t) ? t : KeepOutZoneType.Rectangle,
+            CircleCenter = dto.CircleCenterX is { } cx && dto.CircleCenterY is { } cy ? new VectorPoint(cx, cy) : null,
+            CircleRadiusMm = dto.CircleRadiusMm,
+            RectMinX = dto.RectMinX,
+            RectMinY = dto.RectMinY,
+            RectMaxX = dto.RectMaxX,
+            RectMaxY = dto.RectMaxY,
+            PolygonPoints = dto.PolygonPoints?.Select(p => p.Count >= 2 ? new VectorPoint(p[0], p[1]) : new VectorPoint(0, 0)).ToList(),
+            IsActive = dto.IsActive
+        };
     }
 
     public static DtoSheet ToSheet(Sheet sheet) => new()
@@ -137,6 +195,10 @@ public static class DocumentJson
     {
         var job = Job.CreateEmpty();
         job.Name = manifest.Name;
+        if (manifest.KeepOutZones is { } zones)
+        {
+            job.KeepOutZones.AddRange(zones.Select(FromZone));
+        }
         return job;
     }
 

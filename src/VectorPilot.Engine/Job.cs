@@ -24,6 +24,7 @@ public sealed class Job
     public bool IsDirty { get; set; }
     public bool IsDoubleSided { get; set; }
     public bool IsRotary { get; set; }
+    public List<KeepOutZone> KeepOutZones { get; } = new();
 
     public static Job CreateDefault() => new();
 }

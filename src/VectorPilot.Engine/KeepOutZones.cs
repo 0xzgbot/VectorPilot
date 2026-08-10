@@ -8,7 +8,7 @@ public enum KeepOutZoneType { Circle, Rectangle, Polygon }
 /// <summary>A zone toolpaths must avoid (ported from KeepOutZone.swift).</summary>
 public sealed class KeepOutZone
 {
-    public Guid Id { get; } = Guid.NewGuid();
+    public Guid Id { get; init; } = Guid.NewGuid();
     public string Name { get; set; } = "Keep Out";
     public KeepOutZoneType Type { get; init; }
     public VectorPoint? CircleCenter { get; init; }
