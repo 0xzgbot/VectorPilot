@@ -32,4 +32,16 @@ public static class Transform2D
         foreach (var p in shape.Points) copy.Points.Add(fn(p));
         return copy;
     }
+
+    /// <summary>Mirror a point across the vertical line x = centerX (flip horizontal).</summary>
+    public static VectorPoint FlipHorizontal(VectorPoint p, double centerX) => new(2 * centerX - p.X, p.Y);
+
+    /// <summary>Mirror a point across the horizontal line y = centerY (flip vertical).</summary>
+    public static VectorPoint FlipVertical(VectorPoint p, double centerY) => new(p.X, 2 * centerY - p.Y);
+
+    public static VectorShape FlipHorizontalShape(VectorShape shape, double centerX)
+        => TransformShape(shape, p => FlipHorizontal(p, centerX));
+
+    public static VectorShape FlipVerticalShape(VectorShape shape, double centerY)
+        => TransformShape(shape, p => FlipVertical(p, centerY));
 }
