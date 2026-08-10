@@ -3,7 +3,7 @@
 ; Produces a signed-ready Windows installer with .shoppilot file association.
 
 #define MyAppName "VectorPilot"
-#define MyAppVersion "0.3.0"
+#define MyAppVersion "0.4.0"
 #define MyAppPublisher "0xzgbot"
 ; The App project's assembly name is "VectorPilot" — the publish output is VectorPilot.exe.
 #define MyAppExeName "VectorPilot.exe"
