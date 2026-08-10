@@ -79,8 +79,11 @@ public class GoldenGcodeTests
         }
 
         string golden = File.ReadAllText(path);
+        // EOL-agnostic compare: the repo stores CRLF blobs while checkouts and
+        // CI may normalize to LF (or vice versa) — normalize both sides.
+        string Normalize(string s) => s.Replace("\r\n", "\n").Replace('\r', '\n');
         Assert.True(
-            string.Equals(golden, actual, StringComparison.Ordinal),
+            string.Equals(Normalize(golden), Normalize(actual), StringComparison.Ordinal),
             $"G-code drift for {name}:\n--- golden ---\n{golden}\n--- actual ---\n{actual}");
     }
 }

@@ -23,7 +23,7 @@ public static class DxfImporter
         if (content is null) return shapes;
 
         var lines = content
-            .Split(new[] { '\n', '\r' }, StringSplitOptions.None)
+            .Split('\n')
             .Select(l => l.Trim())
             .ToArray();
         if (lines.Length == 0) return shapes;
