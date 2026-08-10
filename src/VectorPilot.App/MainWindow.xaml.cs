@@ -60,6 +60,11 @@ public partial class MainWindow : Window
             var w = new Controls.CommandPaletteWindow(reg) { Owner = Application.Current.MainWindow };
             w.ShowDialog();
         }));
+        reg.Register(new CommandRegistry.Command("preferences", "Preferences…", null, "Tools", () =>
+        {
+            var w = new Controls.PreferencesWindow { Owner = Application.Current.MainWindow };
+            w.ShowDialog();
+        }));
         return reg;
     }
 
