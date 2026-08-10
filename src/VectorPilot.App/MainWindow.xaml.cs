@@ -1,5 +1,7 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using VectorPilot.App.Controls;
 using VectorPilot.Engine;
 
@@ -19,6 +21,82 @@ public partial class MainWindow : Window
         _machine.RailStatusChanged += s => RailStatus.Text = s;
         _machine.DocumentTitleChanged += t => DocTitle.Text = t;
         StageHost.Content = _setup;
+        PreviewKeyDown += MainWindow_PreviewKeyDown;   // Ctrl+K palette hook
+        StartAutosaveTimer();                           // crash-recovery autosave
+        CheckForRecoverableWork();                      // .autosave newer than save?
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.K && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            var w = new Controls.CommandPaletteWindow(PaletteCommands) { Owner = this };
+            w.ShowDialog();
+            e.Handled = true;
+        }
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _autosaveTimer;
+
+    private static string AutosaveDir() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorPilot", "autosave.shoppilot");
+
+    private void StartAutosaveTimer()
+    {
+        var prefs = new PreferencesStore(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorPilot", "preferences.json"));
+        _autosaveTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(Math.Max(30, prefs.Value.AutosaveIntervalSeconds))
+        };
+        _autosaveTimer.Tick += (_, _) => AutosaveNow();
+        _autosaveTimer.Start();
+    }
+
+    private void AutosaveNow()
+    {
+        try
+        {
+            var job = AppState.CurrentJob;
+            var toolpaths = AppState.Toolpaths.Toolpaths.Select(VectorPilot.Engine.ToolpathPersistence.ToPersisted).ToList();
+            VectorPilot.Engine.IO.DocumentSaver.Save(job, toolpaths, AutosaveDir());
+        }
+        catch
+        {
+            // Autosave failures are silent — the manual save path surfaces errors.
+        }
+    }
+
+    private void CheckForRecoverableWork()
+    {
+        try
+        {
+            var autosaveDir = AutosaveDir();
+            if (!VectorPilot.Engine.IO.DocumentSaver.Exists(autosaveDir)) return;
+            if (AppState.CurrentJob.FilePath is { } manualPath && File.Exists(manualPath) &&
+                File.GetLastWriteTimeUtc(manualPath) >= Directory.GetLastWriteTimeUtc(autosaveDir))
+            {
+                return; // manual save is newer — nothing to recover
+            }
+            var result = MessageBox.Show(
+                "VectorPilot found an autosave newer than the last manual save.\n\nRecover it?",
+                "Recover unsaved work", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+            var loaded = VectorPilot.Engine.IO.DocumentLoader.Load(autosaveDir);
+            if (loaded.Job is { } job)
+            {
+                AppState.RestoreJob(job);
+                if (loaded.Toolpaths is { } toolpaths)
+                {
+                    AppState.Toolpaths.Toolpaths.Clear();
+                    AppState.Toolpaths.Toolpaths.AddRange(toolpaths.Select(VectorPilot.Engine.ToolpathPersistence.FromPersisted));
+                }
+            }
+        }
+        catch
+        {
+            // Recovery prompt must never crash startup.
+        }
     }
 
     private void Stage_Click(object sender, RoutedEventArgs e)

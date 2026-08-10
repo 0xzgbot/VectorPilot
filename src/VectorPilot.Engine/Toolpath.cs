@@ -22,6 +22,8 @@ public enum ToolpathStrategy
 public sealed class Toolpath
 {
     public Guid Id { get; init; } = Guid.NewGuid();
+
+    internal void SetId(Guid id) => GetType().GetProperty(nameof(Id))?.SetValue(this, id);
     public string Name { get; set; } = "Toolpath 1";
     public ToolpathStrategy Strategy { get; set; }
     public Guid ToolId { get; set; }

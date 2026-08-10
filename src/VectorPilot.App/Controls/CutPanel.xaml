@@ -25,6 +25,8 @@
             <Button x:Name="BtnAdd" Content="+ Add Toolpath" Margin="10,0,0,0" Padding="12,6" Click="BtnAdd_Click"/>
             <Button x:Name="BtnCalc" Content="Calculate All" Margin="8,0,0,0" Padding="12,6" Click="BtnCalc_Click"/>
             <Button x:Name="BtnSend" Content="→ Machine" Margin="8,0,0,0" Padding="12,6" Click="BtnSend_Click"/>
+            <Button x:Name="BtnSort" Content="Sort by Tool" Margin="8,0,0,0" Padding="12,6" Click="Sort_Click"/>
+            <Button x:Name="BtnRecalcDirty" Content="Recalc Dirty" Margin="8,0,0,0" Padding="12,6" Click="RecalcDirty_Click"/>
         </StackPanel>
 
         <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,8"/>

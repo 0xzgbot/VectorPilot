@@ -30,6 +30,46 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         ToolpathModel.Content = segments is null ? null : BuildLines(segments);
     }
 
+    /// <summary>
+    /// Ghost-diff overlay (SPK-0316): old toolpath rendered in amber, new toolpath in the
+    /// existing blue, both drawn on top of each other. Simple v1 — the index-paired diff
+    /// from <see cref="ToolpathDiff.CompareLines"/> is used only to decide whether a ghost
+    /// overlay is needed at all; when nothing changed the regular blue path is shown.
+    /// </summary>
+    public void ShowGhostDiff(IReadOnlyList<string>? oldGcode, IReadOnlyList<string>? newGcode)
+    {
+        if (oldGcode is null || newGcode is null) return;
+
+        var newSegments = WireframeRenderer.GenerateSegments(newGcode);
+        var diff = ToolpathDiff.CompareLines(oldGcode, newGcode);
+
+        bool anyDiff = false;
+        foreach (var d in diff)
+        {
+            if (d.OnlyInOld || d.OnlyInNew)
+            {
+                anyDiff = true;
+                break;
+            }
+        }
+        if (!anyDiff)
+        {
+            ShowToolpath(newSegments);
+            return;
+        }
+
+        var oldSegments = WireframeRenderer.GenerateSegments(oldGcode);
+        var group = new Model3DGroup
+        {
+            Children =
+            {
+                BuildLinesColored(oldSegments, Color.FromRgb(0xC0, 0x80, 0x20)), // amber ghost
+                BuildLinesColored(newSegments, Color.FromRgb(0x20, 0x60, 0xC0))  // current blue
+            }
+        };
+        ToolpathModel.Content = group;
+    }
+
     private static Model3DGroup BuildMesh(HeightfieldData hf, double maxZ)
     {
         var mesh = new MeshGeometry3D();
@@ -97,19 +137,34 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         var group = new Model3DGroup();
         foreach (var seg in segments)
         {
-            var line = new MeshGeometry3D();
-            var s = new Point3D(seg.Start.X, seg.Start.Y, 0.01);
-            var e = new Point3D(seg.End.X, seg.End.Y, 0.01);
-            line.Positions.Add(s);
-            line.Positions.Add(e);
-            line.Freeze();
-            var brush = new SolidColorBrush(seg.IsRapid ? Color.FromRgb(0xC0, 0x30, 0x30) : Color.FromRgb(0x20, 0x60, 0xC0));
-            brush.Freeze();
-            var mat = new DiffuseMaterial(brush);
-            mat.Freeze();
-            group.Children.Add(new GeometryModel3D(line, mat));
+            var color = seg.IsRapid ? Color.FromRgb(0xC0, 0x30, 0x30) : Color.FromRgb(0x20, 0x60, 0xC0);
+            group.Children.Add(CreateLineModel(seg, color));
         }
         return group;
+    }
+
+    /// <summary>Single-color line overlay (ghost diff): every segment drawn in the given color.</summary>
+    private static Model3DGroup BuildLinesColored(IEnumerable<WireframeRenderer.Segment> segments, Color color)
+    {
+        var group = new Model3DGroup();
+        foreach (var seg in segments)
+        {
+            group.Children.Add(CreateLineModel(seg, color));
+        }
+        return group;
+    }
+
+    private static GeometryModel3D CreateLineModel(WireframeRenderer.Segment seg, Color color)
+    {
+        var line = new MeshGeometry3D();
+        line.Positions.Add(new Point3D(seg.Start.X, seg.Start.Y, 0.01));
+        line.Positions.Add(new Point3D(seg.End.X, seg.End.Y, 0.01));
+        line.Freeze();
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        var mat = new DiffuseMaterial(brush);
+        mat.Freeze();
+        return new GeometryModel3D(line, mat);
     }
 
     /// <summary>Rotate the view (degrees).</summary>

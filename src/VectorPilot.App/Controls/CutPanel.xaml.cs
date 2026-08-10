@@ -70,38 +70,72 @@ public partial class CutPanel : UserControl
             MessageBox.Show("Add a toolpath first.", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        foreach (var tp in AppState.Toolpaths.Toolpaths)
-        {
-            var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
-            if (layer is null) continue;
-            var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
-            if (shapes.Count == 0) continue;
-
-            var entry = Registry.Find(StrategyKey(tp.Strategy));
-            if (entry is null)
-            {
-                // Legacy path: profile-only generator.
-                var g = new List<string> { $"(VectorPilot {tp.Strategy} — {tp.Name})" };
-                foreach (var shape in shapes)
-                {
-                    g.AddRange(ToolpathGenerator.GenerateProfile(shape, tp.CutDepth, 0.2, tp.FeedRate, tp.FeedRate * 0.5, 12000));
-                }
-                tp.GCode.Clear();
-                tp.GCode.AddRange(g);
-                tp.IsDirty = false;
-                continue;
-            }
-
-            var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
-            var header = new List<string> { $"(VectorPilot {entry.DisplayName} — {tp.Name})" };
-            header.AddRange(result.Gcode);
-            tp.GCode.Clear();
-            tp.GCode.AddRange(header);
-            tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
-            tp.IsDirty = false;
-        }
+        foreach (var tp in AppState.Toolpaths.Toolpaths) RecalculateToolpath(tp);
         RefreshList();
         GCodePreview.Text = string.Join("\n", AppState.Toolpaths.Toolpaths.SelectMany(t => t.GCode).Take(60));
+    }
+
+    private void RecalculateToolpath(Toolpath tp)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) return;
+        var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
+        if (shapes.Count == 0) return;
+
+        var entry = Registry.Find(StrategyKey(tp.Strategy));
+        if (entry is null)
+        {
+            // Legacy path: profile-only generator.
+            var g = new List<string> { $"(VectorPilot {tp.Strategy} — {tp.Name})" };
+            foreach (var shape in shapes)
+            {
+                g.AddRange(ToolpathGenerator.GenerateProfile(shape, tp.CutDepth, 0.2, tp.FeedRate, tp.FeedRate * 0.5, 12000));
+            }
+            tp.GCode.Clear();
+            tp.GCode.AddRange(g);
+            tp.IsDirty = false;
+            return;
+        }
+
+        var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
+        var header = new List<string> { $"(VectorPilot {entry.DisplayName} — {tp.Name})" };
+        header.AddRange(result.Gcode);
+        tp.GCode.Clear();
+        tp.GCode.AddRange(header);
+        tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
+        tp.IsDirty = false;
+    }
+
+    private void Sort_Click(object sender, RoutedEventArgs e)
+    {
+        var sorted = ToolpathSorter.Sort(AppState.Toolpaths.Toolpaths, ToolpathSortMode.ByTool);
+        AppState.Toolpaths.Toolpaths.Clear();
+        AppState.Toolpaths.Toolpaths.AddRange(sorted);
+        RefreshList();
+    }
+
+    private void RecalcDirty_Click(object sender, RoutedEventArgs e)
+    {
+        var all = AppState.Toolpaths.Toolpaths;
+        if (all.Count == 0)
+        {
+            MessageBox.Show("Add a toolpath first.", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var dirty = new DirtyRegionManager();
+        foreach (var tp in all)
+        {
+            if (tp.IsDirty) dirty.MarkFullTreeDirty();
+        }
+        if (!dirty.NeedsResimulation)
+        {
+            MessageBox.Show("Nothing to recalculate — no dirty toolpaths.", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        foreach (var tp in ToolpathResimPlanner.AffectedToolpaths(all, dirty)) RecalculateToolpath(tp);
+        dirty.Clear();
+        RefreshList();
+        GCodePreview.Text = string.Join("\n", all.SelectMany(t => t.GCode).Take(60));
     }
 
     private void BtnSend_Click(object sender, RoutedEventArgs e)
