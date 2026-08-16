@@ -24,7 +24,14 @@ public sealed class Job
     public bool IsDirty { get; set; }
     public bool IsDoubleSided { get; set; }
     public bool IsRotary { get; set; }
-    public List<KeepOutZone> KeepOutZones { get; } = new();
+    public List<KeepOutZone> KeepOutZones { get; set; } = new();
+
+    // SPK-1106a: precomputed V-Carve from sign recipe (carries full result so
+    // the tree node can materialize in Cut/preview/machine handoff).
+    public int VcarvePasses { get; set; }
+    public double VcarveTimeSeconds { get; set; }
+    public List<string>? VcarveGCode { get; set; }
+    public string? VcarveParamsJSON { get; set; }
 
     public static Job CreateDefault() => new();
 }
