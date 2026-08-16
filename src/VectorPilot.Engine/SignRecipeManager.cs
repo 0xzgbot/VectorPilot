@@ -51,7 +51,7 @@ public static class SignRecipeManager
         borderLayer.Shapes.Add(borderInStock);
         sheet.Layers.Add(borderLayer);
 
-        var job = new Job { Name = jobName };
+        var job = Job.CreateEmpty();
         job.Sheets.Add(sheet);
 
         // Pre-calculate V-Carve for text vectors
