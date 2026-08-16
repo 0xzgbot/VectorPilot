@@ -2,15 +2,6 @@ using System.Globalization;
 
 namespace VectorPilot.Engine;
 
-/// <summary>Document variable (ported from DocumentVariable.swift, SPK-0512).</summary>
-public sealed class DocumentVariable
-{
-    public Guid Id { get; init; } = Guid.NewGuid();
-    public string Key { get; set; } = "";
-    public string Value { get; set; } = "";
-    public string Category { get; set; } = "General";
-}
-
 /// <summary>Driven dimension (computed value from an expression; SPK-0512).</summary>
 public sealed class DrivenDimension
 {

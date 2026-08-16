@@ -1,3 +1,4 @@
+using System.IO;
 using VectorPilot.Engine;
 using Xunit;
 
@@ -11,7 +12,7 @@ public class DocumentVariablesTests
         var m = new DocumentVariablesModel(Path.Combine(Path.GetTempPath(), $"dv-{Guid.NewGuid():N}.json"));
         m.AddVariable("material", "MDF", "Stock");
         m.AddVariable("width", "1219", "Stock");
-        Assert.Equal(m.Variables.Count, 2);
+        Assert.Equal(2, m.Variables.Count);
         var id = m.Variables[0].Id;
         Assert.True(m.UpdateVariable(id, "material", "Plywood"));
         Assert.Equal("Plywood", m.Variables[0].Value);
