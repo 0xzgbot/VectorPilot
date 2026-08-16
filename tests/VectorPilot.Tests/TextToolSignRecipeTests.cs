@@ -36,11 +36,11 @@ public class TextToolSignRecipeTests
         var job = SignRecipeManager.CreateSignJob(text: "TEST");
         Assert.Equal("Sign Job", job.Name);
         var sheet = job.Sheets[^1];
-        Assert.Equal(2, sheet.Layers.Count);
-        Assert.Equal("Text", sheet.Layers[0].Name);
-        Assert.Equal("Border", sheet.Layers[1].Name);
-        Assert.Equal(4, sheet.Layers[0].Shapes.Count);
-        Assert.Single(sheet.Layers[1].Shapes);
+        Assert.Equal(3, sheet.Layers.Count); // default Layer 1 + Text + Border
+        Assert.Equal("Text", sheet.Layers[1].Name);
+        Assert.Equal("Border", sheet.Layers[2].Name);
+        Assert.Equal(4, sheet.Layers[1].Shapes.Count);
+        Assert.Single(sheet.Layers[2].Shapes);
     }
 
     [Fact]
@@ -58,11 +58,11 @@ public class TextToolSignRecipeTests
     public void SignRecipe_Border_Is_In_Stock_Coordinates()
     {
         var job = SignRecipeManager.CreateSignJob();
-        var border = job.Sheets[^1].Layers[1].Shapes[0];
+        var border = job.Sheets[^1].Layers[2].Shapes[0];
         double cx = border.Points.Average(p => p.X);
         double cy = border.Points.Average(p => p.Y);
         Assert.InRange(cx, 200, 260);
-        Assert.InRange(cy, 180, 230);
+        Assert.InRange(cy, 280, 330); // stockD/2 = 304.8
     }
 
     [Fact]
