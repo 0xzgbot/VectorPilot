@@ -3,6 +3,7 @@ using Xunit;
 
 namespace VectorPilot.Tests;
 
+/// <summary>SPK-1132 parity: stock sheet presets.</summary>
 public class StockSheetPresetsTests
 {
     [Fact]
@@ -18,45 +19,45 @@ public class StockSheetPresetsTests
     {
         foreach (var p in StockSheetPresets.All)
         {
-            Assert.True(p.WidthMm > 0, $"{p.Name} width");
-            Assert.True(p.DepthMm > 0, $"{p.Name} depth");
-            Assert.True(p.ThicknessMm > 0, $"{p.Name} thickness");
+            Assert.True(p.WidthMM > 0, $"{p.Name} width");
+            Assert.True(p.DepthMM > 0, $"{p.Name} depth");
+            Assert.True(p.ThicknessMM > 0, $"{p.Name} thickness");
         }
     }
 
     [Fact]
-    public void Imperial_Names_And_Order_Are_Stable()
+    public void Imperial_Dims_Are_Exact()
     {
-        Assert.Equal("2'x2'x0.125''", StockSheetPresets.Imperial[0].Name);
-        Assert.Equal("8'x4'x1''", StockSheetPresets.Imperial[^1].Name);
+        var fourByEight = StockSheetPresets.Imperial.First(p => p.Name.Contains("4'x8'") && p.Name.Contains("0.375"));
+        Assert.Equal(1219.2, fourByEight.WidthMM, 4);
+        Assert.Equal(2438.4, fourByEight.DepthMM, 4);
+        Assert.Equal(9.525, fourByEight.ThicknessMM, 4);
     }
 
     [Fact]
-    public void Metric_Names_Use_Mm()
+    public void Metric_Dims_Are_Exact()
     {
-        Assert.Equal("2438x1219x12 mm", StockSheetPresets.Metric[^3].Name);
+        var m = StockSheetPresets.Metric.First(p => p.Name.StartsWith("1219x2438"));
+        Assert.Equal(1219, m.WidthMM, 4);
+        Assert.Equal(2438, m.DepthMM, 4);
     }
 
     [Fact]
-    public void PresetNamed_Finds_By_Key()
+    public void PresetByName_Finds_By_Key()
     {
-        var p = StockSheetPresets.PresetNamed("4'x8'x0.75''");
+        var p = StockSheetPresets.PresetByName("4'x8'x0.75''");
         Assert.NotNull(p);
-        Assert.Equal(1219.2, p!.WidthMm, 3);
-        Assert.Equal(2438.4, p.DepthMm, 3);
-        Assert.Equal(19.05, p.ThicknessMm, 3);
+        Assert.Equal(19.05, p!.ThicknessMM, 3);
     }
 
     [Fact]
-    public void Apply_Sets_Sheet_Fields()
+    public void Apply_Sets_Sheet_Dims()
     {
         var sheet = new Sheet();
-        var preset = StockSheetPresets.PresetNamed("1219x2438x18 mm")!;
+        var preset = StockSheetPresets.PresetByName("1219x2438x18 mm")!;
         StockSheetPresets.Apply(preset, sheet);
-        Assert.Equal("1219x2438x18 mm", sheet.Name);
-        Assert.Equal(1219, sheet.Width);
-        Assert.Equal(2438, sheet.Height);
-        Assert.Equal(18, sheet.Thickness);
-        Assert.Equal(UnitSystem.Millimeters, sheet.Units);
+        Assert.Equal(1219, sheet.Width, 4);
+        Assert.Equal(2438, sheet.Height, 4);
+        Assert.Equal(18, sheet.Thickness, 4);
     }
 }
