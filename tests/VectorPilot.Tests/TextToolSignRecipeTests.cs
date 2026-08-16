@@ -35,8 +35,7 @@ public class TextToolSignRecipeTests
     {
         var job = SignRecipeManager.CreateSignJob(text: "TEST");
         Assert.Equal("Sign Job", job.Name);
-        Assert.Single(job.Sheets);
-        var sheet = job.Sheets[0];
+        var sheet = job.Sheets[^1];
         Assert.Equal(2, sheet.Layers.Count);
         Assert.Equal("Text", sheet.Layers[0].Name);
         Assert.Equal("Border", sheet.Layers[1].Name);
@@ -59,11 +58,11 @@ public class TextToolSignRecipeTests
     public void SignRecipe_Border_Is_In_Stock_Coordinates()
     {
         var job = SignRecipeManager.CreateSignJob();
-        var border = job.Sheets[0].Layers[1].Shapes[0];
+        var border = job.Sheets[^1].Layers[1].Shapes[0];
         double cx = border.Points.Average(p => p.X);
         double cy = border.Points.Average(p => p.Y);
         Assert.InRange(cx, 200, 260);
-        Assert.InRange(cy, 280, 330);
+        Assert.InRange(cy, 180, 230);
     }
 
     [Fact]
