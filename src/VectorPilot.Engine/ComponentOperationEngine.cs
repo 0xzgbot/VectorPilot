@@ -91,6 +91,10 @@ public static class ComponentOperationEngine
         return New(hf, rebased);
     }
 
+    /// <summary>Bake the visible component stack into the active relief (delegates to compositor).</summary>
+    public static HeightfieldData? Bake(IReadOnlyList<ReliefComponent> components)
+        => ComponentCompositor.Composite(components);
+
     private static HeightfieldData New(HeightfieldData hf, double[] heights)
         => new(hf.Width, hf.Height, hf.CellSizeMm, hf.MinX, hf.MinY, heights);
 }

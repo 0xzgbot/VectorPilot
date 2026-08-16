@@ -2,15 +2,8 @@ using VectorPilot.Geometry;
 
 namespace VectorPilot.Engine;
 
-// ---------------------------------------------------------------------------
-// Toolpath preflight rules (ported from ToolpathPreflight.swift + MachineStartPreflight.swift:
-// FM-06/07/10/12 → R013/R014/R017/R019, plus SPK-0308 keep-out).
-// ---------------------------------------------------------------------------
-
 public enum ToolpathPreflightSeverity { Error, Warning }
 
-/// <summary>SPK-0604: V-Carve open-vector gate issue (blocking, with a
-/// plain-English fix CTA targeting the real shape indices).</summary>
 public sealed class VCarveGateIssue
 {
     public int ShapeIndex { get; init; }
@@ -18,10 +11,6 @@ public sealed class VCarveGateIssue
     public string Description { get; init; } = "V-Carve cannot run on open vectors — close them first";
 }
 
-/// <summary>SPK-0604: V-Carve open-vector gate. Returns null when every vector
-/// is closed (carve proceeds); otherwise a blocking report whose issues carry
-/// the exact indices of the open shapes. Non-open issues (degenerate, gap,
-/// self-intersection) do NOT block.</summary>
 public static class VCarveOpenPathGate
 {
     public static List<VCarveGateIssue>? Check(IReadOnlyList<VectorShape> shapes)
@@ -29,23 +18,17 @@ public static class VCarveOpenPathGate
         var issues = new List<VCarveGateIssue>();
         for (int i = 0; i < shapes.Count; i++)
         {
-            if (!shapes[i].Closed)
-            {
-                issues.Add(new VCarveGateIssue { ShapeIndex = i });
-            }
+            if (!shapes[i].Closed) issues.Add(new VCarveGateIssue { ShapeIndex = i });
         }
         return issues.Count == 0 ? null : issues;
     }
 }
 
-/// <summary>The plain-English fix a preflight issue offers (FM mapping CTAs).</summary>
 public sealed class ToolpathPreflightFix
 {
     public enum FixKind { SetFlatDepth, AddTabs, SplitFiles, UseMeasuredValue, WarnOnly }
-
     public FixKind Kind { get; init; }
     public double? RecommendedMm { get; init; }
-
     public string Title => Kind switch
     {
         FixKind.SetFlatDepth => "Set Flat Depth",
@@ -54,15 +37,13 @@ public sealed class ToolpathPreflightFix
         FixKind.UseMeasuredValue => "Use Measured Value",
         _ => "Warn Only"
     };
-
-    public static ToolpathPreflightFix SetFlatDepth(double recommendedMm) => new() { Kind = FixKind.SetFlatDepth, RecommendedMm = recommendedMm };
+    public static ToolpathPreflightFix SetFlatDepth(double r) => new() { Kind = FixKind.SetFlatDepth, RecommendedMm = r };
     public static ToolpathPreflightFix AddTabs { get; } = new() { Kind = FixKind.AddTabs };
     public static ToolpathPreflightFix SplitFiles { get; } = new() { Kind = FixKind.SplitFiles };
     public static ToolpathPreflightFix UseMeasuredValue { get; } = new() { Kind = FixKind.UseMeasuredValue };
     public static ToolpathPreflightFix WarnOnly { get; } = new() { Kind = FixKind.WarnOnly };
 }
 
-/// <summary>A single toolpath-level preflight issue found on a tree node.</summary>
 public sealed class ToolpathPreflightIssue
 {
     public Guid Id { get; } = Guid.NewGuid();
@@ -74,22 +55,16 @@ public sealed class ToolpathPreflightIssue
     public ToolpathPreflightFix Fix { get; init; } = ToolpathPreflightFix.WarnOnly;
 }
 
-/// <summary>Pure preflight rule functions — no UI, no tree dependency (R019/checkTree
-/// need the toolpath tree model; they land with the tree in the UI layer).</summary>
 public static class ToolpathPreflight
 {
     public const double FlatDepthSafetyMarginMm = 0.5;
 
-    /// <summary>Depth the V-bit must reach to span `gapWidth` with a `vBitAngleDegrees`
-    /// tool: tipWidth(depth) = 2·depth·tan(halfAngle) → depth = gap / (2·tan(θ/2)).</summary>
     public static double MaxVDepth(double vBitAngleDegrees, double gapWidthMm)
     {
         double halfAngle = Math.PI / 180.0 * vBitAngleDegrees / 2.0;
         return gapWidthMm / (2.0 * Math.Tan(halfAngle));
     }
 
-    /// <summary>Widest "channel" the carve must bridge: the maximum, over every pair
-    /// of vectors, of the nearest-point distance between them.</summary>
     public static double MaxVectorGapWidth(IReadOnlyList<VectorShape> vectors)
     {
         if (vectors.Count < 2) return 0;
@@ -120,102 +95,112 @@ public static class ToolpathPreflight
         return Math.Sqrt(widest);
     }
 
-    /// <summary>R013: V-bit punch-through (FM-06). Error with a Set Flat Depth CTA.</summary>
     public static ToolpathPreflightIssue? VCarvePunchThrough(
-        VCarveParams params_,
-        IReadOnlyList<VectorShape> vectors,
-        double materialThicknessMm,
-        double startDepthMm = 0,
-        Guid? nodeId = null,
-        string nodeName = "V-Carve")
+        VCarveParams p, IReadOnlyList<VectorShape> vectors,
+        double materialThicknessMm, double startDepthMm = 0,
+        Guid? nodeId = null, string nodeName = "V-Carve")
     {
-        double availableDepth = materialThicknessMm - startDepthMm;
-        if (availableDepth <= 0) return null; // R009 territory
+        double avail = materialThicknessMm - startDepthMm;
+        if (avail <= 0) return null;
         double gap = MaxVectorGapWidth(vectors);
         if (gap <= 0) return null;
-        double depthNeeded = MaxVDepth(params_.VBitAngleDegrees, gap);
-        if (depthNeeded <= availableDepth) return null;
-        if (params_.FlatBottomMode) return null; // floor caps the depth
-
-        double recommended = Math.Max(0.1, availableDepth - FlatDepthSafetyMarginMm);
+        double need = MaxVDepth(p.VBitAngleDegrees, gap);
+        if (need <= avail) return null;
+        if (p.FlatBottomMode) return null;
+        double rec = Math.Max(0.1, avail - FlatDepthSafetyMarginMm);
         return new ToolpathPreflightIssue
         {
-            NodeId = nodeId ?? Guid.NewGuid(),
-            NodeName = nodeName,
-            RuleId = "R013",
-            Severity = ToolpathPreflightSeverity.Error,
-            Message = $"“{nodeName}” can go through your material — the V-bit must reach {depthNeeded:0.0}mm to span the widest gap, but only {availableDepth:0.0}mm is available. Set a flat depth to floor the carve.",
-            Fix = ToolpathPreflightFix.SetFlatDepth(recommended)
+            NodeId = nodeId ?? Guid.NewGuid(), NodeName = nodeName,
+            RuleId = "R013", Severity = ToolpathPreflightSeverity.Error,
+            Message = $"\"{nodeName}\" can go through your material — V-bit must reach {need:0.0}mm to span the widest gap, but only {avail:0.0}mm is available. Set a flat depth to floor the carve.",
+            Fix = ToolpathPreflightFix.SetFlatDepth(rec)
         };
     }
 
-    /// <summary>R014: through-cut without hold-down (FM-07). Warning with Add Tabs CTA.</summary>
     public static ToolpathPreflightIssue? ThroughCutWithoutHoldDown(
-        ProfileToolpathParams params_,
-        double materialThicknessMm,
-        bool vacuumHoldDown,
-        Guid? nodeId = null,
-        string nodeName = "Profile")
+        ProfileToolpathParams p, double materialThicknessMm, bool vacuumHoldDown,
+        Guid? nodeId = null, string nodeName = "Profile")
     {
-        if (params_.MaxDepthOfCutMm < materialThicknessMm) return null;
-        if (params_.AddTabs) return null;
+        if (p.MaxDepthOfCutMm < materialThicknessMm) return null;
+        if (p.AddTabs) return null;
         if (vacuumHoldDown) return null;
         return new ToolpathPreflightIssue
         {
-            NodeId = nodeId ?? Guid.NewGuid(),
-            NodeName = nodeName,
-            RuleId = "R014",
-            Severity = ToolpathPreflightSeverity.Warning,
-            Message = $"“{nodeName}” cuts the part free with nothing holding it — it can fly out of place on the last pass. Add tabs or use hold-down.",
+            NodeId = nodeId ?? Guid.NewGuid(), NodeName = nodeName,
+            RuleId = "R014", Severity = ToolpathPreflightSeverity.Warning,
+            Message = $"\"{nodeName}\" cuts the part free with nothing holding it — it can fly out of place. Add tabs or use hold-down.",
             Fix = ToolpathPreflightFix.AddTabs
         };
     }
 
-    /// <summary>SPK-0308: a CUT (non-rapid) segment entering an active keep-out zone.</summary>
     public static ToolpathPreflightIssue? KeepOutZoneViolation(
-        string nodeName,
-        IReadOnlyList<KeepOutZone> zones,
-        IReadOnlyList<string> gcodeLines,
-        Guid? nodeId = null)
+        string nodeName, IReadOnlyList<KeepOutZone> zones,
+        IReadOnlyList<string> gcodeLines, Guid? nodeId = null)
     {
         if (zones.Count == 0) return null;
         var segments = WireframeRenderer.GenerateSegments(gcodeLines);
-        foreach (var segment in segments.Where(s => !s.IsRapid))
+        foreach (var seg in segments.Where(s => !s.IsRapid))
         {
-            foreach (var zone in zones.Where(z => z.IsActive && z.IntersectsLine(segment.Start, segment.End)))
+            foreach (var zone in zones.Where(z => z.IsActive && z.IntersectsLine(seg.Start, seg.End)))
             {
                 return new ToolpathPreflightIssue
                 {
-                    NodeId = nodeId ?? Guid.NewGuid(),
-                    NodeName = nodeName,
-                    RuleId = "KEEP-OUT",
-                    Severity = ToolpathPreflightSeverity.Warning,
-                    Message = $"“{nodeName}” enters keep-out zone “{zone.Name}” — move the toolpath or disable the zone before cutting.",
+                    NodeId = nodeId ?? Guid.NewGuid(), NodeName = nodeName,
+                    RuleId = "KEEP-OUT", Severity = ToolpathPreflightSeverity.Warning,
+                    Message = $"\"{nodeName}\" enters keep-out zone \"{zone.Name}\" — move the toolpath or disable the zone before cutting.",
                     Fix = ToolpathPreflightFix.WarnOnly
                 };
             }
         }
         return null;
     }
+
+    public static ToolpathPreflightIssue? MultiToolSingleFile(
+        IReadOnlyList<Toolpath> toolpaths, bool supportsToolChange, string nodeName = "Save Toolpaths")
+    {
+        if (supportsToolChange) return null;
+        var buckets = new HashSet<string>();
+        foreach (var tp in toolpaths) buckets.Add(tp.ToolId != Guid.Empty ? tp.ToolId.ToString() : "Unassigned");
+        if (buckets.Count < 2) return null;
+        return new ToolpathPreflightIssue
+        {
+            NodeName = nodeName, RuleId = "R019",
+            Severity = ToolpathPreflightSeverity.Error,
+            Message = $"Saving {toolpaths.Count} toolpaths that use {buckets.Count} different tools to a single file, but the selected post can't change tools. Split to multiple files.",
+            Fix = ToolpathPreflightFix.SplitFiles
+        };
+    }
+
+    public static List<(string ToolKey, List<string> Lines)> ToolpathGroupsByTool(IReadOnlyList<Toolpath> toolpaths)
+    {
+        var groups = new List<(string, List<string>)>();
+        var seen = new Dictionary<string, int>();
+        foreach (var tp in toolpaths)
+        {
+            var key = tp.ToolId != Guid.Empty ? tp.ToolId.ToString() : "Unassigned";
+            if (!seen.TryGetValue(key, out var idx))
+            {
+                idx = groups.Count; seen[key] = idx;
+                groups.Add((key, new List<string>()));
+            }
+            groups[idx].Item2.AddRange(tp.GCode);
+        }
+        return groups;
+    }
 }
 
-/// <summary>Machine-start preflight (ported from MachineStartPreflight.swift, FM-10 → R017).</summary>
 public static class MachineStartPreflight
 {
     public const double ThicknessDriftToleranceMm = 0.25;
-
-    /// <summary>R017 — thickness drift warning when measured vs job setup differs beyond tolerance.</summary>
     public static ToolpathPreflightIssue? ThicknessDrift(double jobThicknessMm, double? measuredThicknessMm, string nodeName = "Machine Start")
     {
         if (measuredThicknessMm is not { } measured) return null;
-        double drift = Math.Abs(measured - jobThicknessMm);
-        if (drift <= ThicknessDriftToleranceMm) return null;
+        if (Math.Abs(measured - jobThicknessMm) <= ThicknessDriftToleranceMm) return null;
         return new ToolpathPreflightIssue
         {
-            NodeName = nodeName,
-            RuleId = "R017",
+            NodeName = nodeName, RuleId = "R017",
             Severity = ToolpathPreflightSeverity.Warning,
-            Message = $"Measured material thickness {measured:0.00}mm differs from the job setup {jobThicknessMm:0.00}mm — verify the cut depth before starting. Use the measured value to update the job.",
+            Message = $"Measured material thickness {measured:0.00}mm differs from the job setup {jobThicknessMm:0.00}mm — verify the cut depth before starting.",
             Fix = ToolpathPreflightFix.UseMeasuredValue
         };
     }

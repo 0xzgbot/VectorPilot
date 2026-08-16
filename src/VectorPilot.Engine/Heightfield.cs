@@ -59,6 +59,7 @@ public sealed class HeightfieldData
     }
 
     public double MaxHeight => Heights.Length == 0 ? 0 : Heights.Max();
+    public double MinHeight => Heights.Length == 0 ? 0 : Heights.Min();
 
     public (double MinX, double MinY, double MaxX, double MaxY) Bounds
         => (MinX, MinY, MinX + (double)Width * CellSizeMm, MinY + (double)Height * CellSizeMm);
