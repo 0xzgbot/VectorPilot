@@ -346,10 +346,15 @@ public partial class CutPanel : UserControl
         var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
         if (result.Gcode.Count == 0)
         {
+            // Prefer the strategy's own reason ("needs a 3D model…") over a generic
+            // message, and never leave a runnable-looking stub behind.
+            string why = result.Error
+                ?? $"{entry.DisplayName} produced no moves — check the parameters or selection.";
+
             tp.GCode.Clear();
-            tp.GCode.Add($"({entry.DisplayName}: produced no moves for the current selection)");
+            tp.GCode.Add($"({entry.DisplayName}: {why})");
             tp.IsDirty = true;
-            SetCalcNote($"{entry.DisplayName} produced no moves — check the parameters or selection.");
+            SetCalcNote(why);
             return;
         }
 

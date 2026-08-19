@@ -49,7 +49,11 @@ public class StrategyRegistryTests
         var withHf = rough.Compute(new[] { Square() }, Ridge(), rough.DefaultsJson);
         Assert.Contains(withHf.Gcode, l => l.StartsWith("G0"));
         var without = rough.Compute(new[] { Square() }, null, rough.DefaultsJson);
-        Assert.Contains(without.Gcode, l => l.Contains("No heightfield"));
+        // No relief must yield NO program plus a reason. This previously asserted the
+        // presence of a "(No heightfield loaded)" line — i.e. it pinned a runnable
+        // two-line stub that streamed to the machine as a successful no-op cut.
+        Assert.Empty(without.Gcode);
+        Assert.False(string.IsNullOrWhiteSpace(without.Error));
     }
 
     [Fact]

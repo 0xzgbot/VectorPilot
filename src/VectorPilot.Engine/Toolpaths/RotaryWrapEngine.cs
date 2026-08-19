@@ -71,6 +71,13 @@ public sealed class SpecialtyResult
     public List<string> GcodeLines { get; init; } = new();
     public double EstimatedTimeSeconds { get; init; }
     public int FeatureCount { get; init; }
+
+    /// <summary>
+    /// Why this strategy produced nothing, when it produced nothing. Null on success.
+    /// A strategy lacking input must return zero lines plus this reason rather than a
+    /// runnable-looking stub program.
+    /// </summary>
+    public string? Error { get; init; }
 }
 
 /// <summary>

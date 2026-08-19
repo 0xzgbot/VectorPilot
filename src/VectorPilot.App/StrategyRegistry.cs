@@ -13,6 +13,9 @@ public sealed class StrategyResult
     public List<string> Gcode { get; init; } = new();
     public double EstimatedTimeSeconds { get; init; }
     public int FeatureCount { get; init; }
+
+    /// <summary>Why nothing was produced, when nothing was produced. Null on success.</summary>
+    public string? Error { get; init; }
 }
 
 /// <summary>Pocket params shim — PocketEngine takes positional args; this gives it a form surface.</summary>
@@ -99,7 +102,7 @@ public sealed class StrategyRegistry
             {
                 var p = JsonSerializer.Deserialize<T>(paramsJson, Json) ?? new T();
                 var r = compute(shapes, heightfield, p);
-                return new StrategyResult { Gcode = r.GcodeLines, EstimatedTimeSeconds = r.EstimatedTimeSeconds, FeatureCount = r.FeatureCount };
+                return new StrategyResult { Gcode = r.GcodeLines, EstimatedTimeSeconds = r.EstimatedTimeSeconds, FeatureCount = r.FeatureCount, Error = r.Error };
             }));
         }
 
@@ -168,12 +171,21 @@ public sealed class StrategyRegistry
             });
             return StrategyAdapters.ToSpecialty(finish);
         });
-        Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty() : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
-        Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty() : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
-        Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty() : PhotoVCarveEngine.Compute(hf, p));
-        Add<SketchCarveToolpathParams>("sketch-carve", "Sketch Carving", true, (_, hf, p) => hf is null ? Empty() : SketchCarveEngine.Compute(hf, p));
+        Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty("3D Rough needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
+        Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty("3D Finish needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
+        Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty("Photo V-Carve needs a 3D model or image — load one in the Model stage first.") : PhotoVCarveEngine.Compute(hf, p));
+        Add<SketchCarveToolpathParams>("sketch-carve", "Sketch Carving", true, (_, hf, p) => hf is null ? Empty("Sketch Carving needs a 3D model or image — load one in the Model stage first.") : SketchCarveEngine.Compute(hf, p));
 
-        static SpecialtyResult Empty() => new() { GcodeLines = new List<string> { "%", "(No heightfield loaded)" }, FeatureCount = 0 };
+        // A strategy with no input must NOT emit a runnable-looking program. The old
+        // Empty() returned "%" + "(No heightfield loaded)" — a valid two-line G-code
+        // file that posts and streams as a successful no-op cut. Returning zero lines
+        // plus a reason lets the Cut UI say why nothing was produced.
+        static SpecialtyResult Empty(string why) => new()
+        {
+            GcodeLines = new List<string>(),
+            FeatureCount = 0,
+            Error = why
+        };
     }
 
     private static DrillPoint ToDrillPoint(VectorShape s)

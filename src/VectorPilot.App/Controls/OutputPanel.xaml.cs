@@ -49,12 +49,24 @@ public partial class OutputPanel : UserControl
         return name;
     }
 
+    /// <summary>Does this toolpath contain a real move, or only comments?</summary>
+    private static bool HasCuttingMoves(Toolpath t)
+        => t.GCode.Any(l =>
+        {
+            var s = l.TrimStart();
+            return s.StartsWith("G0") || s.StartsWith("G1") || s.StartsWith("G2") || s.StartsWith("G3");
+        });
+
     private void ExportTap_Click(object sender, RoutedEventArgs e)
     {
-        var toolpaths = AppState.Toolpaths.Toolpaths.Where(t => t.GCode.Count > 0).ToList();
+        // A toolpath whose program is nothing but a comment must not be exportable: it
+        // posts and streams as a successful no-op cut.
+        var toolpaths = AppState.Toolpaths.Toolpaths.Where(t => t.GCode.Count > 0 && HasCuttingMoves(t)).ToList();
         if (toolpaths.Count == 0)
         {
-            MessageBox.Show("Nothing to export — calculate toolpaths in the Cut stage first.", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                "Nothing to export — no toolpath has any cutting moves. Calculate in the Cut stage and check for a warning there.",
+                "Export", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
