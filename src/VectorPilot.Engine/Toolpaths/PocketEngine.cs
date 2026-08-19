@@ -12,7 +12,7 @@ public static class PocketEngine
     /// <param name="shapes">Shapes to pocket.</param>
     /// <param name="cutDepth">Total depth below start (positive).</param>
     /// <param name="stepdown">Max depth per Z slice (positive).</param>
-    /// <param name="stepoverPercent">Raster line spacing as a percentage of the shape's larger extent.</param>
+    /// <param name="stepoverPercent">Raster spacing as a percentage of the tool diameter (typical 40–60).</param>
     public static List<string> Generate(
         ICollection<VectorShape> shapes,
         double cutDepth,
@@ -21,7 +21,8 @@ public static class PocketEngine
         double feedRate,
         double plungeRate,
         double spindleSpeed,
-        double safeZ)
+        double safeZ,
+        double toolDiameter = 0.25)
     {
         var g = new List<string>
         {
@@ -32,7 +33,7 @@ public static class PocketEngine
             $"M3 S{spindleSpeed.ToString("F0", CultureInfo.InvariantCulture)} ; spindle on"
         };
 
-        double step = Math.Max(0.01, stepoverPercent / 100.0 * 0.5); // 40% -> 0.2" spacing
+        double step = Math.Max(0.01, toolDiameter * stepoverPercent / 100.0);
         double depth = 0;
         while (depth < cutDepth - 1e-9)
         {
@@ -40,7 +41,7 @@ public static class PocketEngine
             depth += slice;
             foreach (var shape in shapes)
             {
-                GenerateSlice(shape, -depth, step, feedRate, plungeRate, safeZ, g);
+                GenerateSlice(shape, -depth, step, toolDiameter / 2, feedRate, plungeRate, safeZ, g);
             }
         }
 
@@ -49,41 +50,96 @@ public static class PocketEngine
         return g;
     }
 
-    private static void GenerateSlice(VectorShape shape, double z, double step, double feedRate, double plungeRate, double safeZ, List<string> g)
+    private static void GenerateSlice(VectorShape shape, double z, double step, double toolRadius, double feedRate, double plungeRate, double safeZ, List<string> g)
     {
         string F(double v) => v.ToString("F4", CultureInfo.InvariantCulture);
         var b = shape.Bounds();
         if (b.IsEmpty) return;
 
-        // Raster lines across the shape's bounding box, alternating direction.
-        double inset = step / 2;
+        // Raster scanlines CLIPPED TO THE SHAPE (was: the bounding box, which cut a
+        // rectangle for every outline). Each scanline yields one span per interior
+        // interval, so pockets follow the real boundary and islands are skipped.
+        double inset = toolRadius;
         double y = b.MinY + inset;
         bool leftToRight = true;
         bool first = true;
 
         while (y <= b.MaxY - inset + 1e-9)
         {
-            double x0 = b.MinX + inset, x1 = b.MaxX - inset;
-            if (x1 - x0 < 1e-6) break;
+            var spans = ScanlineSpans(shape, y, inset);
+            if (spans.Count == 0) { y += step; continue; }
 
-            if (first)
+            if (!leftToRight) spans.Reverse();
+
+            foreach (var (sx, ex) in spans)
             {
-                g.Add($"G0 Z{F(safeZ)} ; rapid to safe Z");
-                g.Add($"G0 X{F(leftToRight ? x0 : x1)} Y{F(y)} ; rapid to start");
-                g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)} ; plunge");
-                first = false;
-            }
-            else
-            {
-                g.Add($"G0 Z{F(safeZ)}");
-                g.Add($"G0 X{F(leftToRight ? x0 : x1)} Y{F(y)}");
-                g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)}");
+                double x0 = leftToRight ? sx : ex;
+                double x1 = leftToRight ? ex : sx;
+                if (Math.Abs(x1 - x0) < 1e-6) continue;
+
+                if (first)
+                {
+                    g.Add($"G0 Z{F(safeZ)} ; rapid to safe Z");
+                    g.Add($"G0 X{F(x0)} Y{F(y)} ; rapid to start");
+                    g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)} ; plunge");
+                    first = false;
+                }
+                else
+                {
+                    g.Add($"G0 Z{F(safeZ)}");
+                    g.Add($"G0 X{F(x0)} Y{F(y)}");
+                    g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)}");
+                }
+
+                g.Add($"G1 X{F(x1)} Y{F(y)} F{feedRate.ToString("F1", CultureInfo.InvariantCulture)} ; raster");
             }
 
-            g.Add($"G1 X{F(leftToRight ? x1 : x0)} Y{F(y)} F{feedRate.ToString("F1", CultureInfo.InvariantCulture)} ; raster");
             leftToRight = !leftToRight;
             y += step;
         }
         g.Add($"G0 Z{F(safeZ)} ; retract");
+    }
+
+    /// <summary>
+    /// Interior x-spans where the horizontal line y intersects the shape, inset by
+    /// the tool radius. Even-odd crossings; circles handled analytically.
+    /// </summary>
+    private static List<(double Start, double End)> ScanlineSpans(VectorShape shape, double y, double inset)
+    {
+        var spans = new List<(double, double)>();
+
+        if (shape.Type == ShapeType.Circle && shape.Points.Count > 0)
+        {
+            var c = shape.Points[0];
+            double r = shape.Radius - inset;
+            if (r <= 0) return spans;
+            double dy = y - c.Y;
+            if (Math.Abs(dy) >= r) return spans;
+            double half = Math.Sqrt(r * r - dy * dy);
+            spans.Add((c.X - half, c.X + half));
+            return spans;
+        }
+
+        var pts = shape.Points;
+        if (pts.Count < 3) return spans;
+
+        var xs = new List<double>();
+        for (int i = 0; i < pts.Count; i++)
+        {
+            var a = pts[i];
+            var b = pts[(i + 1) % pts.Count];
+            if (Math.Abs(a.Y - b.Y) < 1e-12) continue;             // horizontal edge
+            if ((y >= a.Y && y < b.Y) || (y >= b.Y && y < a.Y))    // half-open: no double count at vertices
+                xs.Add(a.X + (y - a.Y) / (b.Y - a.Y) * (b.X - a.X));
+        }
+        if (xs.Count < 2) return spans;
+
+        xs.Sort();
+        for (int i = 0; i + 1 < xs.Count; i += 2)
+        {
+            double s = xs[i] + inset, e = xs[i + 1] - inset;
+            if (e - s > 1e-6) spans.Add((s, e));
+        }
+        return spans;
     }
 }

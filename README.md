@@ -85,7 +85,7 @@ These are locked in by goldens and are **not** Aspire-equivalent:
 
 | Strategy | Actual behaviour |
 |---|---|
-| Pocket | Raster zigzag across the **bounding box**, not contour offset — a circle gets a rectangle of passes |
+
 | V-carve | Depth from Y position (`z = actualZ * (0.3 + 0.7 * normalizedY)`), not medial-axis width |
 | Weave | Volume/area estimate only — no mesh, no toolpath |
 
