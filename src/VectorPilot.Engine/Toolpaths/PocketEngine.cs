@@ -13,6 +13,11 @@ public static class PocketEngine
     /// <param name="cutDepth">Total depth below start (positive).</param>
     /// <param name="stepdown">Max depth per Z slice (positive).</param>
     /// <param name="stepoverPercent">Raster spacing as a percentage of the tool diameter (typical 40–60).</param>
+    /// <param name="contourFirst">
+    /// Run contour-parallel offset loops before the raster pass. Scanline rastering
+    /// alone leaves a stair-stepped wall on curved boundaries; the loops follow the
+    /// real outline so a circular pocket finishes as a circle.
+    /// </param>
     public static List<string> Generate(
         ICollection<VectorShape> shapes,
         double cutDepth,
@@ -22,7 +27,8 @@ public static class PocketEngine
         double plungeRate,
         double spindleSpeed,
         double safeZ,
-        double toolDiameter = 0.25)
+        double toolDiameter = 0.25,
+        bool contourFirst = false)
     {
         var g = new List<string>
         {
@@ -41,6 +47,12 @@ public static class PocketEngine
             depth += slice;
             foreach (var shape in shapes)
             {
+                // Contour loops first: they finish the wall along the true outline.
+                if (contourFirst && shape.Points.Count >= 3)
+                {
+                    g.AddRange(ContourPocketEngine.GenerateSlice(
+                        shape.Points, -depth, toolDiameter, step, feedRate, plungeRate, safeZ));
+                }
                 GenerateSlice(shape, -depth, step, toolDiameter / 2, feedRate, plungeRate, safeZ, g);
             }
         }

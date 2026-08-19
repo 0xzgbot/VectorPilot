@@ -25,6 +25,13 @@ public sealed class PocketParams
     public double PlungeRateMmPerMin { get; set; } = 300;
     public double SpindleRpm { get; set; } = 12000;
     public double SafeZHeightMm { get; set; } = 5.0;
+
+    /// <summary>
+    /// Contour-parallel offset loops before the raster pass. Scanline rastering alone
+    /// stair-steps a curved wall; the loops follow the true outline.
+    /// </summary>
+    public bool ContourFirst { get; set; } = true;
+    public double ToolDiameterMm { get; set; } = 6.0;
 }
 
 /// <summary>Result adapters: engine-specific result types → SpecialtyResult.</summary>
@@ -99,7 +106,7 @@ public sealed class StrategyRegistry
         Add<ProfileToolpathParams>("profile", "Profile", false, (s, _, p) => StrategyAdapters.ToSpecialty(ProfileToolpathEngine.Compute(s, p)));
         Add<PocketParams>("pocket", "Pocket", false, (s, _, p) => new SpecialtyResult
         {
-            GcodeLines = PocketEngine.Generate(s.ToList(), p.CutDepthMm, p.StepDownMm, p.StepOverPercent, p.FeedRateMmPerMin, p.PlungeRateMmPerMin, p.SpindleRpm, p.SafeZHeightMm).ToList()
+            GcodeLines = PocketEngine.Generate(s.ToList(), p.CutDepthMm, p.StepDownMm, p.StepOverPercent, p.FeedRateMmPerMin, p.PlungeRateMmPerMin, p.SpindleRpm, p.SafeZHeightMm, p.ToolDiameterMm, p.ContourFirst).ToList()
         });
         Add<VCarveParams>("vcarve", "V-Carve", false, (s, _, p) => StrategyAdapters.ToSpecialty(VCarveEngine.Compute(s, p)));
         Add<DrillParams>("drill", "Drill", false, (s, _, p) => StrategyAdapters.ToSpecialty(DrillEngine.Compute(s.Select(ToDrillPoint).ToList(), p)));
