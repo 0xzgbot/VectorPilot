@@ -156,20 +156,25 @@ public partial class OutputPanel : UserControl
 
     private void JobSheetPdf_Click(object sender, RoutedEventArgs e)
     {
-        // The PDF renderer lands via the JobSheetPdfRenderer port (delegation wave);
-        // guard on its presence so the button degrades gracefully if absent.
-        var rendererType = typeof(JobSheetData).Assembly.GetType("VectorPilot.Engine.JobSheetPdfRenderer")
-                          ?? typeof(JobSheetData).Assembly.GetType("VectorPilot.Engine.Post.JobSheetPdfRenderer");
-        if (rendererType is null || rendererType.GetMethod("RenderPdf") is null)
+        // Direct call: JobSheetPdfRenderer.RenderPdf ships in VectorPilot.Engine. The
+        // old reflection probe plus "not available yet" dialog meant this button told
+        // the user the feature was missing while the renderer sat right there.
+        try
         {
-            MessageBox.Show("PDF job-sheet renderer is not available yet — use the HTML job sheet.", "Job sheet", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            var pdf = JobSheetPdfRenderer.RenderPdf(BuildJobSheetData());
+            if (pdf.Length == 0)
+            {
+                TxtExportInfo.Text = "Job sheet PDF came back empty — nothing written.";
+                return;
+            }
+
+            var path = Path.Combine(OutputDir(), Sanitize(AppState.CurrentJob.Name) + "-jobsheet.pdf");
+            File.WriteAllBytes(path, pdf);
+            TxtExportInfo.Text = $"Wrote {path} ({pdf.Length:N0} bytes)";
         }
-        var data = BuildJobSheetData();
-        var pdf = rendererType.GetMethod("RenderPdf")!.Invoke(null, new object[] { data }) as byte[];
-        if (pdf is null) return;
-        var path = Path.Combine(OutputDir(), Sanitize(AppState.CurrentJob.Name) + "-jobsheet.pdf");
-        File.WriteAllBytes(path, pdf);
-        TxtExportInfo.Text = $"Wrote {path}";
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            TxtExportInfo.Text = $"Could not write the job sheet: {ex.Message}";
+        }
     }
 }
