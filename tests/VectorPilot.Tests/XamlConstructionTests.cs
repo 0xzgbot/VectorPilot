@@ -67,6 +67,14 @@ public class XamlConstructionTests
     });
 
     [Fact]
+    public void ShortcutDialog_Constructs() => OnSta(() =>
+    {
+        var dlg = new ShortcutDialog(new VectorPilot.App.ShortcutStore());
+        Assert.NotNull(dlg.FindName("CommandList"));
+        Assert.NotNull(dlg.FindName("CaptureBox"));
+    });
+
+    [Fact]
     public void MachinePanel_Drives_A_MachineSession_Not_Its_Own_Transport()
     {
         OnSta(() =>

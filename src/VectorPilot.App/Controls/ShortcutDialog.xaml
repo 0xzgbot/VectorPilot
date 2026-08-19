@@ -1,0 +1,35 @@
+<Window x:Class="VectorPilot.App.Controls.ShortcutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Keyboard shortcuts" Width="440" Height="440"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Select a command, then press the new key combination."
+                   Foreground="#777" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+        <ListBox x:Name="CommandList" Grid.Row="1" SelectionChanged="CommandList_SelectionChanged"/>
+
+        <Border Grid.Row="2" Background="#F4F4F6" BorderBrush="#CCC" BorderThickness="1"
+                Padding="10" Margin="0,10,0,0">
+            <StackPanel>
+                <TextBlock x:Name="CaptureLabel" Text="No command selected" FontWeight="Bold"/>
+                <TextBox x:Name="CaptureBox" Margin="0,6,0,0" IsReadOnly="True"
+                         Text="press a key combination…" PreviewKeyDown="CaptureBox_PreviewKeyDown"/>
+                <TextBlock x:Name="Note" Foreground="#B22" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Reset this" Width="88" Height="26" Click="ResetOne_Click"/>
+            <Button Content="Reset all" Width="80" Height="26" Margin="8,0,0,0" Click="ResetAll_Click"/>
+            <Button Content="Close" Width="80" Height="26" Margin="8,0,0,0" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

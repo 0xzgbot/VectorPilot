@@ -157,6 +157,12 @@ public partial class MainWindow : Window
             var dlg = new Controls.PostManagerDialog { Owner = Application.Current.MainWindow };
             dlg.ShowDialog();
         }));
+        reg.Register(new CommandRegistry.Command("shortcuts", "Keyboard Shortcuts…", null, "Tools", () =>
+        {
+            var dlg = new Controls.ShortcutDialog { Owner = Application.Current?.MainWindow };
+            dlg.ShowDialog();
+        }));
+
         reg.Register(new CommandRegistry.Command("recipe", "New from Recipe…", null, "File", () =>
         {
             var owner = Application.Current?.MainWindow;
