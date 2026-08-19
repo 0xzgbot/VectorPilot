@@ -117,10 +117,14 @@ def main():
     try:
         if "--tree" in sys.argv:
             # Optional stage to navigate to first: --tree Model
+            # Optional extra control to click before dumping: --tree Setup RbDouble
             args = [a for a in sys.argv[2:] if not a.startswith("-")]
             if args:
                 invoke(proc.pid, args[0])
                 time.sleep(1.5)
+            for extra in args[1:]:
+                invoke(proc.pid, extra)
+                time.sleep(1.0)
             for r in tree(proc.pid):
                 print(f"  {r['type']:<12} id={r['id']:<18} enabled={r['enabled']}  {r['name']}")
             return 0

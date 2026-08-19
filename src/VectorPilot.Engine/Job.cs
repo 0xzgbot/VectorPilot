@@ -26,6 +26,12 @@ public sealed class Job
     public bool IsRotary { get; set; }
     public List<KeepOutZone> KeepOutZones { get; set; } = new();
 
+    /// <summary>Which way the stock is turned over on a two-sided job.</summary>
+    public FlipAxis FlipAxis { get; set; } = FlipAxis.Vertical;
+
+    /// <summary>Datum holes for re-aligning the stock after the flip.</summary>
+    public List<VectorPilot.Geometry.VectorPoint> RegistrationHoles { get; set; } = new();
+
     // SPK-1106a: precomputed V-Carve from sign recipe (carries full result so
     // the tree node can materialize in Cut/preview/machine handoff).
     public int VcarvePasses { get; set; }

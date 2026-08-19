@@ -8,8 +8,18 @@
 
             <TextBlock Text="Job Type" FontWeight="SemiBold"/>
             <RadioButton x:Name="RbSingle" Content="Single Sided" IsChecked="True" GroupName="JobType" Margin="0,4,0,0"/>
-            <RadioButton x:Name="RbDouble" Content="Double Sided" GroupName="JobType" Margin="0,4,0,0"/>
+            <RadioButton x:Name="RbDouble" Content="Double Sided" GroupName="JobType" Margin="0,4,0,0" Checked="JobType_Changed" Unchecked="JobType_Changed"/>
             <RadioButton x:Name="RbRotary" Content="Rotary" GroupName="JobType" Margin="0,4,0,0"/>
+
+            <StackPanel x:Name="DualSidedOptions" Margin="18,8,0,0" Visibility="Collapsed">
+                <TextBlock Text="Flip direction" FontSize="11" Foreground="#555"/>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <RadioButton x:Name="RbFlipVertical" Content="Left-to-right (mirror X)" IsChecked="True" GroupName="FlipAxis"/>
+                    <RadioButton x:Name="RbFlipHorizontal" Content="Front-to-back (mirror Y)" GroupName="FlipAxis" Margin="16,0,0,0"/>
+                </StackPanel>
+                <CheckBox x:Name="ChkRegistrationHoles" Content="Add registration holes for re-alignment" IsChecked="True" Margin="0,6,0,0"/>
+                <TextBlock x:Name="DualSidedNote" Foreground="#777" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
 
             <TextBlock Text="Size" FontWeight="SemiBold" Margin="0,16,0,0"/>
             <Grid Margin="0,6,0,0">

@@ -31,6 +31,22 @@ public partial class SetupPanel : UserControl
         }
     }
 
+    /// <summary>Reveal the flip options only for a two-sided job.</summary>
+    private void JobType_Changed(object sender, RoutedEventArgs e)
+    {
+        if (DualSidedOptions is null) return;   // fires during XAML init
+
+        bool dual = RbDouble.IsChecked == true;
+        DualSidedOptions.Visibility = dual ? Visibility.Visible : Visibility.Collapsed;
+
+        if (dual)
+        {
+            DualSidedNote.Text =
+                "The back face is mirrored automatically. You will be prompted to turn the " +
+                "stock over and re-zero Z between the two programs.";
+        }
+    }
+
     private void BtnCreateJob_Click(object sender, RoutedEventArgs e)
     {
         if (!double.TryParse(TxtWidth.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var w) ||
@@ -47,6 +63,21 @@ public partial class SetupPanel : UserControl
         var job = AppState.CurrentJob;
         job.IsDoubleSided = RbDouble.IsChecked == true;
         job.IsRotary = RbRotary.IsChecked == true;
+
+        if (job.IsDoubleSided)
+        {
+            job.FlipAxis = RbFlipHorizontal.IsChecked == true
+                ? FlipAxis.Horizontal
+                : FlipAxis.Vertical;
+
+            if (ChkRegistrationHoles.IsChecked == true)
+            {
+                job.RegistrationHoles.Clear();
+                job.RegistrationHoles.AddRange(
+                    DualSidedMachining.RegistrationHoles(w, h, job.FlipAxis));
+            }
+        }
+
         JobCreated?.Invoke();
         MessageBox.Show($"Job created: {w:0.##} x {h:0.##} x {t:0.###} {UnitConversions.Suffix(units)}\n{job.ActiveSheet.Layers.Count} layer(s). Switch to Design to draw.", "VectorPilot");
     }
