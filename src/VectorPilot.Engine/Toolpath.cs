@@ -25,6 +25,12 @@ public sealed class Toolpath
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 
+    /// <summary>
+    /// Exact StrategyRegistry key ("photo-vcarve", "inlay-plug", ...). The Strategy
+    /// enum is coarser than the registry, so recalculation keys off this when set.
+    /// </summary>
+    public string? StrategyKey { get; set; }
+
     internal void SetId(Guid id) => GetType().GetProperty(nameof(Id))?.SetValue(this, id);
     public string Name { get; set; } = "Toolpath 1";
     public ToolpathStrategy Strategy { get; set; }

@@ -12,6 +12,7 @@ public partial class CutPanel : UserControl
     public CutPanel()
     {
         InitializeComponent();
+        PopulateStrategies();
         RefreshList();
     }
 
@@ -149,27 +150,28 @@ public partial class CutPanel : UserControl
         }
     }
 
-    private ToolpathStrategy SelectedStrategy
-    {
-        get
-        {
-            var item = CmbStrategy.SelectedItem as ComboBoxItem;
-            var label = item?.Content as string;
-            return label switch
-            {
-                "Pocket" => ToolpathStrategy.Pocket,
-                "V-Carve" => ToolpathStrategy.VCarve,
-                "Drill" => ToolpathStrategy.Drill,
-                "Moulding" => ToolpathStrategy.Moulding,
-                "Weave" => ToolpathStrategy.Weave,
-                _ => ToolpathStrategy.Profile
-            };
-        }
-    }
-
     private static readonly StrategyRegistry Registry = new();
 
-    private static string StrategyKey(ToolpathStrategy s) => s.ToString().ToLowerInvariant();
+    /// <summary>The registry entry the user has selected in the combo.</summary>
+    private StrategyRegistry.Entry? SelectedEntry => CmbStrategy.SelectedItem as StrategyRegistry.Entry;
+
+    private ToolpathStrategy SelectedStrategy
+        => SelectedEntry is { } e ? StrategyKeyMap.ToStrategy(e.Key) : ToolpathStrategy.Profile;
+
+    /// <summary>
+    /// Resolve the registry entry for a toolpath. Prefers the exact key stored on the
+    /// toolpath; falls back to the enum mapping for documents saved before keys existed.
+    /// </summary>
+    private StrategyRegistry.Entry? EntryFor(Toolpath tp)
+        => (tp.StrategyKey is { Length: > 0 } k ? Registry.Find(k) : null)
+           ?? Registry.Find(StrategyKeyMap.ToKey(tp.Strategy));
+
+    /// <summary>Fill the combo from the registry so every strategy is selectable.</summary>
+    private void PopulateStrategies()
+    {
+        CmbStrategy.ItemsSource = Registry.Entries;
+        if (Registry.Entries.Count > 0) CmbStrategy.SelectedIndex = 0;
+    }
 
     private void BtnAdd_Click(object sender, RoutedEventArgs e)
     {
@@ -184,7 +186,14 @@ public partial class CutPanel : UserControl
         var tp = AppState.Toolpaths.Add(SelectedStrategy);
         tp.CutDepth = depth;
         tp.FeedRate = feed;
-        tp.ParamsJson = Registry.Find(StrategyKey(SelectedStrategy))?.DefaultsJson ?? "{}";
+        // Store the EXACT registry key: the enum is coarser than the registry.
+        tp.StrategyKey = SelectedEntry?.Key;
+        if (SelectedEntry is { } entry)
+        {
+            tp.Name = $"{entry.DisplayName} {AppState.Toolpaths.Toolpaths.Count}";
+            tp.ParamsJson = entry.DefaultsJson;
+        }
+        else tp.ParamsJson = "{}";
         foreach (var s in layer.Shapes) tp.SelectedShapeIds.Add(s.Id);
         RefreshList();
     }
@@ -196,6 +205,7 @@ public partial class CutPanel : UserControl
             MessageBox.Show("Add a toolpath first.", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+        SetCalcNote("");
         foreach (var tp in AppState.Toolpaths.Toolpaths) RecalculateToolpath(tp);
         RefreshList();
         GCodePreview.Text = string.Join("\n", AppState.Toolpaths.Toolpaths.SelectMany(t => t.GCode).Take(60));
@@ -208,30 +218,56 @@ public partial class CutPanel : UserControl
         var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
         if (layer is null) return;
         var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
-        if (shapes.Count == 0) return;
+        if (shapes.Count == 0)
+        {
+            SetCalcNote($"{tp.Name}: no source shapes — select geometry in Design.");
+            return;
+        }
 
-        var entry = Registry.Find(StrategyKey(tp.Strategy));
+        var entry = EntryFor(tp);
         if (entry is null)
         {
-            // Legacy path: profile-only generator.
-            var g = new List<string> { $"(VectorPilot {tp.Strategy} — {tp.Name})" };
-            foreach (var shape in shapes)
-            {
-                g.AddRange(ToolpathGenerator.GenerateProfile(shape, tp.CutDepth, 0.2, tp.FeedRate, tp.FeedRate * 0.5, 12000));
-            }
+            // No silent profile substitution: say what happened instead of cutting
+            // something the user did not ask for.
             tp.GCode.Clear();
-            tp.GCode.AddRange(g);
-            tp.IsDirty = false;
+            tp.GCode.Add($"(VectorPilot: no strategy registered for '{tp.StrategyKey ?? tp.Strategy.ToString()}')");
+            tp.IsDirty = true;
+            SetCalcNote($"{tp.Name}: strategy '{tp.StrategyKey ?? tp.Strategy.ToString()}' is not registered — nothing calculated.");
+            return;
+        }
+
+        if (entry.UsesHeightfield && AppState.Heightfield is null)
+        {
+            tp.GCode.Clear();
+            tp.GCode.Add($"({entry.DisplayName}: needs a 3D relief — bake one in the Model stage)");
+            tp.IsDirty = true;
+            SetCalcNote($"{entry.DisplayName} needs a relief. Build one in the Model stage, then Calculate.");
             return;
         }
 
         var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
+        if (result.Gcode.Count == 0)
+        {
+            tp.GCode.Clear();
+            tp.GCode.Add($"({entry.DisplayName}: produced no moves for the current selection)");
+            tp.IsDirty = true;
+            SetCalcNote($"{entry.DisplayName} produced no moves — check the parameters or selection.");
+            return;
+        }
+
         var header = new List<string> { $"(VectorPilot {entry.DisplayName} — {tp.Name})" };
         header.AddRange(result.Gcode);
         tp.GCode.Clear();
         tp.GCode.AddRange(header);
         tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
         tp.IsDirty = false;
+    }
+
+    /// <summary>Surface why Calculate produced nothing, instead of failing silently.</summary>
+    private void SetCalcNote(string message)
+    {
+        CalcNote.Text = message;
+        CalcNote.Visibility = string.IsNullOrEmpty(message) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void Sort_Click(object sender, RoutedEventArgs e)

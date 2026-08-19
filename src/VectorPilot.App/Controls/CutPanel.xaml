@@ -15,13 +15,12 @@
                    Foreground="#666" Margin="0,2,0,10"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
-            <ComboBox x:Name="CmbStrategy" Width="170" SelectedIndex="0">
-                <ComboBoxItem Content="Profile"/>
-                <ComboBoxItem Content="Pocket"/>
-                <ComboBoxItem Content="V-Carve"/>
-                <ComboBoxItem Content="Drill"/>
-                <ComboBoxItem Content="Moulding"/>
-                <ComboBoxItem Content="Weave"/>
+            <ComboBox x:Name="CmbStrategy" Width="200" ToolTip="Every registered strategy">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding DisplayName}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
             </ComboBox>
             <TextBox x:Name="TxtDepth" Text="0.25" Width="70" Margin="8,0,0,0" ToolTip="Cut depth"/>
             <TextBox x:Name="TxtFeed" Text="100" Width="60" Margin="6,0,0,0" ToolTip="Feed rate"/>
@@ -33,6 +32,9 @@
         </StackPanel>
 
         <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>
+        <TextBlock x:Name="CalcNote" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                   Margin="0,0,4,0" FontSize="11" Foreground="#B22" TextWrapping="Wrap" MaxWidth="320"
+                   Visibility="Collapsed"/>
         <TextBlock x:Name="SourceLinkLabel" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Right"
                    Margin="0,0,8,-16" FontSize="11" Foreground="DimGray"/>
         <Border Grid.Row="3" Background="#F4F4F6" BorderBrush="#CCC" BorderThickness="1" Padding="8">

@@ -60,7 +60,15 @@ public sealed class StrategyRegistry
         string DisplayName,
         bool UsesHeightfield,
         string DefaultsJson,
-        Func<IReadOnlyList<VectorShape>, HeightfieldData?, string, StrategyResult> Compute);
+        Func<IReadOnlyList<VectorShape>, HeightfieldData?, string, StrategyResult> Compute)
+    {
+        /// <summary>
+        /// What the user sees. A record's synthesized ToString() dumps every member —
+        /// including the whole DefaultsJson blob — into the combo row and into the
+        /// UIAutomation name, which made the strategy list unreadable.
+        /// </summary>
+        public override string ToString() => DisplayName;
+    }
 
     public List<Entry> Entries { get; } = new();
 
