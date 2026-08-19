@@ -113,6 +113,15 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Card P1: refresh every stage after a recipe replaces the job.</summary>
+    internal void ReloadAfterRecipe()
+    {
+        _design.RefreshIfVisible();
+        _output.Refresh();
+        StageHost.Content = _design;
+        DocTitle.Text = AppState.CurrentJob.Name;
+    }
+
     private void Stage_Click(object sender, RoutedEventArgs e)
     {
         var tag = ((Button)sender).Tag as string;
@@ -148,6 +157,17 @@ public partial class MainWindow : Window
             var dlg = new Controls.PostManagerDialog { Owner = Application.Current.MainWindow };
             dlg.ShowDialog();
         }));
+        reg.Register(new CommandRegistry.Command("recipe", "New from Recipe…", null, "File", () =>
+        {
+            var owner = Application.Current?.MainWindow;
+            var dlg = new RecipeDialog { Owner = owner };
+            if (dlg.ShowDialog() == true && dlg.CreatedJob is { } job)
+            {
+                AppState.RestoreJob(job);
+                if (owner is MainWindow mw) mw.ReloadAfterRecipe();
+            }
+        }));
+
         reg.Register(new CommandRegistry.Command("tools", "Tool Database…", null, "Tools", () =>
         {
             var path = System.IO.Path.Combine(

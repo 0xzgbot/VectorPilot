@@ -72,7 +72,7 @@ Rules:
 
 ## Tier 3 — Product polish
 
-- [ ] **P1. Recipe picker + first-run welcome** — calibration + sign recipes surfaced in the UI, welcome sheet on first launch.
+- [x] **P1. Recipe picker + first-run welcome** — calibration + sign recipes surfaced in the UI, welcome sheet on first launch.
   Gate: `FullyQualifiedName~RecipePicker` — ≥4 tests.
 
 - [ ] **P2. Follow-source link** — art edit marks dependent toolpaths dirty; coach copy in the Cut panel. Uses `DirtyRegionManager`.

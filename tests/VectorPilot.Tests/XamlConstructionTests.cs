@@ -57,6 +57,16 @@ public class XamlConstructionTests
     });
 
     [Fact]
+    public void RecipeDialog_Constructs_With_Both_Recipes() => OnSta(() =>
+    {
+        var dlg = new RecipeDialog();
+        Assert.NotNull(dlg.FindName("RecipeList"));
+        Assert.NotNull(dlg.FindName("TxtSignText"));
+        Assert.NotNull(dlg.FindName("CmbFont"));
+        Assert.Null(dlg.CreatedJob);   // nothing created until the user confirms
+    });
+
+    [Fact]
     public void MachinePanel_Drives_A_MachineSession_Not_Its_Own_Transport()
     {
         OnSta(() =>
