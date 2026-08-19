@@ -1,0 +1,42 @@
+<UserControl x:Class="VectorPilot.App.Controls.ModelPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:VectorPilot.App.Controls">
+    <Grid Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="6,4,6,12">
+            <TextBlock Text="3D Model" FontSize="19" FontWeight="Bold"/>
+            <TextBlock Text="Build a relief from components. Each component combines into the composite below it."
+                       Foreground="#777" Margin="0,2,0,0"/>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <Button x:Name="BtnImportRelief" Content="Import heightfield…" Height="26" Padding="10,0"
+                        Click="ImportRelief_Click" ToolTip="STL / OBJ / 3MF / bitmap → relief component"/>
+                <Button x:Name="BtnAddShape" Content="Add shape relief" Height="26" Padding="10,0" Margin="6,0,0,0"
+                        Click="AddShape_Click" ToolTip="Dome / round / ramp primitive"/>
+                <Button x:Name="BtnBake" Content="Bake to job" Height="26" Padding="10,0" Margin="6,0,0,0"
+                        Click="Bake_Click" ToolTip="Send the composite to the Toolpaths stage"/>
+                <TextBlock x:Name="StatusLabel" Foreground="#555" VerticalAlignment="Center" Margin="14,0,0,0"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" Margin="6,0,6,6">
+            <Grid>
+                <c:ThreeDPreview x:Name="Preview"/>
+                <TextBlock x:Name="EmptyHint" Text="No components yet — import a heightfield or add a shape relief."
+                           Foreground="#999" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,6,6">
+            <c:ComponentTreePanel x:Name="Tree"/>
+        </Border>
+    </Grid>
+</UserControl>

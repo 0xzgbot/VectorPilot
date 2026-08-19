@@ -12,6 +12,7 @@ public partial class MainWindow : Window
 {
     private readonly SetupPanel _setup = new();
     private readonly DesignPanel _design = new();
+    private readonly ModelPanel _model = new();
     private readonly CutPanel _cut = new();
     private readonly MachinePanel _machine = new();
     private readonly OutputPanel _output = new();
@@ -118,6 +119,7 @@ public partial class MainWindow : Window
         StageHost.Content = tag switch
         {
             "design" => _design,
+            "model" => _model,
             "cut" => _cut,
             "machine" => _machine,
             "output" => _output,

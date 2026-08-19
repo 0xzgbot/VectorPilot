@@ -1,36 +1,41 @@
-# VectorPilot — Agent Operating Manual
+# VectorPilot — agent operating rules
 
-> Point any local Hermes (or other) agent at this file to begin work.
-> This repo is the **Windows port** of the ShopPilot CNC suite (new app: **VectorPilot**).
+Port of macOS ShopPilot to Windows (C#/.NET 8 + WPF). Mac source of truth, read-only:
+`../ShopPilot/Sources/**`. Match semantics exactly — identical numbers, not approximations.
 
-| Field | Value |
-| --- | --- |
-| **Project root** | this repo (clone: `github.com/0xzgbot/VectorPilot`) |
-| **Product** | VectorPilot — native Windows CNC suite: design + toolpaths + preview + machine control (GRBL/FluidNC) |
-| **Stack** | C#/.NET 8 · WPF · DirectX 11 · System.IO.Ports · xUnit |
-| **Plan** | [`PLAN.md`](./PLAN.md) — milestones M0–M7, exit gates, risks. **Read it first.** |
-| **Task board** | [`MASTER_KANBAN.md`](./MASTER_KANBAN.md) — claim work here |
-| **Mac flagship** | `github.com/0xzgbot/ShopPilot` (Swift) — clone read-only; **the engine-semantics authority** |
-| **DoD** | Ported verify harness green (identical numbers) + `dotnet build`; NOT build alone |
-| **Last updated** | 2026-08-06 |
+## Hard rules
 
-## Startup protocol
+1. **No status reports.** Do not write summary tables, "where we stand", or progress
+   recaps. The user has explicitly said they have no time for it. Ship code; the
+   commit log is the report.
+2. **No stopping between cards.** Finish a card, commit, take the next one from
+   `PARITY_QUEUE.md`. Never end a turn with "next up is X" — just do X.
+3. **A card is not `[x]` until a UI element invokes it.** Grep the panel
+   `.xaml`/`.xaml.cs` for a real call-site. A class only tests import is NOT done.
+   This rule has been violated on A1, A5, and A6 — check yourself before claiming.
+4. **UI first, tests second.** The engine is 14.8k LOC; the app is the bottleneck.
+   Never add an engine class when the gap is wiring.
+5. **`./verify.sh [filter]` is the only gate.** Never hand-roll a verification
+   script for the solution. It enforces Release + zero warnings and fails on
+   empty filters and `MSB302x` locks.
+6. **Do not delegate.** 7/7 subagents on this key died to HTTP 429 without
+   writing a file. Do the work directly.
+7. **Test counts are not progress.** A green filter on an unreachable class is
+   make-work. Prefer one wired feature over ten tested-but-orphaned classes.
 
-1. Read [`PLAN.md`](./PLAN.md) §1–2 (mission, DoD), §7 (principles), §8 (milestones).
-2. Open [`MASTER_KANBAN.md`](./MASTER_KANBAN.md); claim `[ ]` → `[~]` + append worklog.
-3. Clone the Mac repo read-only for semantics: `git clone https://github.com/0xzgbot/ShopPilot.git ../ShopPilot-mac` (do not push to it).
-4. Implement **Engine + Data + Harness + (UI when milestone calls)** per card. Run the ported xUnit tests — green is the gate.
-5. Mark `[x]` + worklog. Never mark `[x]` on build-only. No stub-file landings.
+## Environment
 
-## Rules
+- `dotnet` is NOT on PATH: `export PATH="$PATH:/c/Program Files/dotnet"`
+- Kill `VectorPilot.exe` before building; a running app locks the DLLs (`MSB3021`).
+- Shell is git-bash. Native tools need `C:/...` paths, not `/c/...`.
+- Real UI automation works: `python tools/ui_verify.py` (UIA + pyautogui).
+  Use `--automated` to suppress startup modals.
 
-- **Harness-gated:** a card is done when its verify tests pass with identical numbers to the Mac CLTs, and goldens match byte-for-byte.
-- **Anti-loop:** 3+ similar failures on one card → change strategy, don't retry the same approach.
-- **Safety (product requirements, ported verbatim):** e-stop/reset always visible; no auto-start streaming; disconnect/port error → stop + alarm; raw TX/RX console toggle; software is not a substitute for a hardware e-stop. No live machine motion without explicit user consent per action.
-- **Simulator-first:** implement `IMachineTransport` + `SimulatorTransport` before any hardware path.
-- **Commit per card:** `git add -A` (scoped to your files) + push. Never commit files a sibling left dirty.
-- **Parallelism:** milestones run sequentially in-session (shared wiring files, one compile lock). Delegate only disjoint-file work.
+## Known lies to fix, not repeat
 
-## Status legend
-
-`[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocked on human-only action · `[-]` cancelled/deferred
+- Pocket = raster zigzag across the **bounding box**, not contour offset.
+- V-carve depth = `actualZ * (0.3 + 0.7 * normalizedY)` — from Y position, not
+  medial-axis width. Goldens encode this; regenerate them when fixing.
+- Weave = volume/area estimate. No mesh, no toolpath.
+- `MASTER_KANBAN.md` and `GAMEPLAN-ASPIRE-PARITY.md` are stale. `PARITY_QUEUE.md`
+  is current.
