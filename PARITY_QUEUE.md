@@ -63,7 +63,7 @@ Rules:
 - [ ] **E2. Moulding + Weave toolpaths** — the two remaining unported strategies. Register in `StrategyRegistry`.
   Gate: `FullyQualifiedName~MouldingWeave` — ≥6 tests vs Mac numbers.
 
-- [ ] **E3. Post catalog breadth** — expand shipped posts from 3 toward the Mac's reference set (GRBL mm/in, FluidNC, Marlin, LinuxCNC, Mach3/4, Shapeoko, Onefinity, Avid, plus rotary variants).
+- [x] **E3. Post catalog breadth** — expand shipped posts from 3 toward the Mac's reference set (GRBL mm/in, FluidNC, Marlin, LinuxCNC, Mach3/4, Shapeoko, Onefinity, Avid, plus rotary variants).
   Gate: `FullyQualifiedName~PostCatalog` — ≥10 tests (each post's header/footer/move formatting round-trips).
 
 - [x] **E4. Full-job time estimate** — aggregate across toolpaths with cutting/travel split and tool-change overhead.

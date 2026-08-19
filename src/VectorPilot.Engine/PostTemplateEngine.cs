@@ -38,12 +38,23 @@ public sealed class PostTemplate
         WrapDiameterMm = diameterMm
     };
 
-    public static readonly List<PostTemplate> Shipped = new()
+    /// <summary>
+    /// Every shipped post: the three GRBL built-ins plus the controller catalog
+    /// in <see cref="ShippedPostCatalog"/> (card E3).
+    /// </summary>
+    public static readonly List<PostTemplate> Shipped = BuildShipped();
+
+    private static List<PostTemplate> BuildShipped()
     {
-        Grbl(GCodeUnits.Millimeter),
-        Grbl(GCodeUnits.Inch),
-        GrblRotaryWrap()
-    };
+        var list = new List<PostTemplate>
+        {
+            Grbl(GCodeUnits.Millimeter),
+            Grbl(GCodeUnits.Inch),
+            GrblRotaryWrap()
+        };
+        list.AddRange(ShippedPostCatalog.Additional);
+        return list;
+    }
 
     public static PostTemplate? ShippedById(string id) => Shipped.FirstOrDefault(t => t.Id == id);
 

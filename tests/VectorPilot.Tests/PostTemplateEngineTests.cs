@@ -77,7 +77,8 @@ public class PostTemplateEngineTests
     [Fact]
     public void Shipped_Templates_Exist()
     {
-        Assert.Equal(3, PostTemplate.Shipped.Count);
+        // Card E3 expanded the catalog from 3 to the full controller set.
+        Assert.True(PostTemplate.Shipped.Count >= 20, $"got {PostTemplate.Shipped.Count}");
         Assert.NotNull(PostTemplate.ShippedById("grbl-mm"));
         Assert.NotNull(PostTemplate.ShippedById("grbl-in"));
         Assert.NotNull(PostTemplate.ShippedById("grbl-rotary-y2a"));
