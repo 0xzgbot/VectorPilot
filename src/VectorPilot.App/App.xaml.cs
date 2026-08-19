@@ -56,7 +56,7 @@ public partial class App : Application
             Log("SMOKE: MainWindow shown");
 
             // Exercise each rail stage (initializes the panels).
-            foreach (var tag in new[] { "design", "cut", "machine", "output" })
+            foreach (var tag in new[] { "design", "model", "cut", "machine", "output" })
             {
                 foreach (var button in FindVisualChildren<System.Windows.Controls.Button>(main))
                 {

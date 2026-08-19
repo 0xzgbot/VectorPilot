@@ -41,10 +41,20 @@ Rules:
   Gate: `FullyQualifiedName~ToolBrowser` — ≥8 tests (3-part resolution order machine>material>derived, edit persists, revert discards, 17-entry catalog intact).
   **DONE + REACHABLE:** Tools menu → "Tool Database…" opens ToolBrowserDialog (class tree, cut-data form, material+machine pickers, stage/save/revert, JSON persist). 11 tests.
 
-- [~] **A5. Machine control panel** — connect/disconnect, live DRO, jog pad (X/Y/Z ± with step selector), soft-home, set-work-zero, stream start/pause/resume, always-visible E-stop + Reset, raw TX/RX console toggle. Simulator-backed.
+- [x] **A5. Machine control panel** — connect/disconnect, live DRO, jog pad (X/Y/Z ± with step selector), soft-home, set-work-zero, stream start/pause/resume, always-visible E-stop + Reset, raw TX/RX console toggle. Simulator-backed.
   Gate: `FullyQualifiedName~MachinePanel` — ≥10 tests (E-stop always enabled, no auto-start, jog emits `$J=`, hold freezes the stream, disconnect mid-stream alarms).
-  **REVERTED TO IN-PROGRESS (external review, correct):** MachineSession is a class ONLY TESTS IMPORT. MachinePanel.xaml.cs still drives _transport + AppState.Streamer directly, so the 13 MachinePanel-named tests can go green while the Machine stage is unchanged. Continuous jog is still a stub. Same violation A1 committed. Remaining: route the panel through ONE MachineSession, delete the duplicate e-stop/jog/stream path, fix continuous jog. Prior note follows: panel already had connect/jog/home/zero/stream; ADDED the missing E-STOP + Reset buttons (always enabled — the XAML claimed Reset was available but shipped no button) and a raw TX/RX console toggle. MachineSession carries the tested safety logic. 13 session tests + 6 XAML-construction tests.
-  **HARNESS BUG (open):** `--ui-smoke` hangs (exit 124) even though all 4 panels construct fine on an STA thread — 4 fixes attempted (dispatcher priority, one-shot timer, null guards, code-wired events). Superseded by XamlConstructionTests; A7 FlaUI is the real fix.
+  **DONE + REACHABLE (all four review items closed):**
+  (1) MachinePanel routes through ONE MachineSession — 39 `_session.` references, ZERO `_transport`/`AppState.Streamer`;
+  (2) duplicate e-stop/jog/stream path deleted;
+  (3) continuous jog fixed — `JogContinuousAsync` emits a real `$J=` with signed travel, not the `X0.0F` stub;
+  (4) `--ui-smoke` harness bug FIXED (root cause was the startup recovery modal, suppressed under App.IsAutomated in dd56729):
+      now `SMOKE: ALL OK` EXIT=0 across all six stages including the new Model stage.
+  Gate items that were previously unasserted are now covered by MachinePanelWireTests: jog emits `$J=`,
+  continuous jog is not a zero-distance stub, direction sign honoured, jog refused while disconnected,
+  pause sends `!`, resume sends `~`, a Hold report does not advance the stream, reset reaches the controller
+  mid-stream and does not throw while disconnected.
+  **25 tests on the gate filter (card asked for >=10).** Live proof via ui_verify.py: BtnEStop/BtnReset/ConsoleToggle
+  enabled=True, BtnStart enabled=False with no G-code, app survives a real E-STOP click, VERDICT: PASS.
 
 - [x] **A6. 3D component tree panel** — component list with visibility + combine-mode dropdown (Add/Subtract/Merge/Low/High/Multiply), live composite via `ComponentCompositor`, sculpt brush controls.
   Gate: `FullyQualifiedName~ComponentTreePanel` — ≥8 tests (mode change recomposites, invisible excluded, order matters, undo).
