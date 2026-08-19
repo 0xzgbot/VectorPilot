@@ -78,7 +78,35 @@ public partial class MainWindow : Window
         // gates startup (and hung --ui-smoke). Ask once the shell is up, and skip
         // entirely in automation.
         if (App.IsAutomated) return;
-        Dispatcher.BeginInvoke(new Action(PromptForRecovery), DispatcherPriority.Loaded);
+        Dispatcher.BeginInvoke(new Action(ShowWelcomeThenRecovery), DispatcherPriority.Loaded);
+    }
+
+    private readonly FirstRunState _firstRun = new();
+
+    /// <summary>
+    /// First-run welcome, then the recovery prompt. Sequenced so two modals never
+    /// fight over the same startup moment.
+    /// </summary>
+    private void ShowWelcomeThenRecovery()
+    {
+        if (_firstRun.IsFirstRun)
+        {
+            var dlg = new WelcomeDialog { Owner = this };
+            dlg.ShowDialog();
+
+            if (dlg.SuppressFuture || dlg.ChosenAction is not null) _firstRun.MarkShown();
+
+            switch (dlg.ChosenAction)
+            {
+                case "recipe":
+                    PaletteCommands.Search("recipe").FirstOrDefault()?.Execute();
+                    return;                       // the recipe replaces the job
+                case "blank":
+                    break;                        // the default empty job is already loaded
+            }
+        }
+
+        PromptForRecovery();
     }
 
     private void PromptForRecovery()

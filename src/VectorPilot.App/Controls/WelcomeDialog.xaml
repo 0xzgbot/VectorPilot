@@ -1,0 +1,39 @@
+<Window x:Class="VectorPilot.App.Controls.WelcomeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to VectorPilot" Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <StackPanel Margin="20">
+        <TextBlock Text="VectorPilot" FontSize="24" FontWeight="Bold"/>
+        <TextBlock Text="Design, toolpath and cut — start with a recipe or an empty sheet."
+                   Foreground="#777" Margin="0,4,0,16" TextWrapping="Wrap"/>
+
+        <Border BorderBrush="#E0A" BorderThickness="0,0,0,0" Background="#FFF6F6"
+                Padding="12" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="⚠  Safety first" FontWeight="Bold" Foreground="#B22"/>
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#733"
+                           Text="Software is not a substitute for a hardware e-stop. Always dry-run above the stock, and keep a physical stop within reach before cutting."/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Start" FontWeight="Bold" Margin="0,0,0,6"/>
+        <StackPanel Orientation="Horizontal">
+            <Button x:Name="BtnRecipe" Content="New from recipe…" Width="140" Height="30" Click="Recipe_Click"/>
+            <Button x:Name="BtnBlank" Content="Empty sheet" Width="110" Height="30" Margin="8,0,0,0" Click="Blank_Click"/>
+        </StackPanel>
+
+        <TextBlock Text="Good to know" FontWeight="Bold" Margin="0,18,0,6"/>
+        <StackPanel>
+            <TextBlock Text="•  Stages run left to right: Setup → Design → Model → Toolpaths → Machine → Output." TextWrapping="Wrap" Margin="0,1"/>
+            <TextBlock Text="•  Ctrl+K opens the command palette for anything not on screen." TextWrapping="Wrap" Margin="0,1"/>
+            <TextBlock Text="•  The Machine stage keeps E-STOP and Reset enabled at all times, even offline." TextWrapping="Wrap" Margin="0,1"/>
+            <TextBlock Text="•  Simulate cut (Output) sweeps the program through your stock before you run it." TextWrapping="Wrap" Margin="0,1"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <CheckBox x:Name="ChkDontShow" Content="Don't show this again" VerticalAlignment="Center"/>
+            <Button Content="Close" Width="88" Height="28" Margin="14,0,0,0" IsCancel="True" IsDefault="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

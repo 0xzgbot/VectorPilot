@@ -75,6 +75,16 @@ public class XamlConstructionTests
     });
 
     [Fact]
+    public void WelcomeDialog_Constructs_With_Safety_Warning() => OnSta(() =>
+    {
+        var dlg = new WelcomeDialog();
+        Assert.NotNull(dlg.FindName("BtnRecipe"));
+        Assert.NotNull(dlg.FindName("BtnBlank"));
+        Assert.NotNull(dlg.FindName("ChkDontShow"));
+        Assert.Null(dlg.ChosenAction);   // nothing chosen until the user clicks
+    });
+
+    [Fact]
     public void MachinePanel_Drives_A_MachineSession_Not_Its_Own_Transport()
     {
         OnSta(() =>
