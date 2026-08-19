@@ -64,6 +64,12 @@ public partial class CutPanel : UserControl
             : missing > 0
                 ? $"cuts {present} shape(s) — {missing} source shape(s) deleted, recalculate"
                 : $"cuts {present} shape(s)";
+
+        // Keep-out zones apply to whatever is cut here; say so on the Cut stage rather
+        // than only drawing them on the Design canvas.
+        int activeZones = AppState.CurrentJob?.KeepOutZones.Count(z => z.IsActive) ?? 0;
+        if (activeZones > 0)
+            SourceLinkLabel.Text += $"  ·  {activeZones} keep-out zone(s) active";
         SourceLinkLabel.Foreground = missing > 0
             ? System.Windows.Media.Brushes.Firebrick
             : System.Windows.Media.Brushes.DimGray;
@@ -353,6 +359,16 @@ public partial class CutPanel : UserControl
         tp.GCode.AddRange(header);
         tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
         tp.IsDirty = false;
+
+        // Keep-out zones are a physical-safety feature: the engine rule existed but the
+        // Cut stage never called it, so a toolpath could cut straight through a clamp
+        // with no warning anywhere in the UI.
+        var zones = AppState.CurrentJob?.KeepOutZones;
+        if (zones is { Count: > 0 } &&
+            ToolpathPreflight.KeepOutZoneViolation(tp.Name, zones, tp.GCode, tp.Id) is { } issue)
+        {
+            SetCalcNote(issue.Message);
+        }
     }
 
     /// <summary>Surface why Calculate produced nothing, instead of failing silently.</summary>
