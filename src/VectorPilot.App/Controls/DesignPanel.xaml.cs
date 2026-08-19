@@ -32,6 +32,11 @@ public partial class DesignPanel : UserControl
         SizeChanged += (_, _) => FitView();
         Loaded += (_, _) => { Refresh(); Focus(); };
         KeyDown += DesignPanel_KeyDown;
+        // Card P2: repaint when the Toolpaths stage changes which shapes are followed.
+        AppState.FollowedSourceChanged += () =>
+        {
+            if (IsLoaded) Dispatcher.BeginInvoke(new Action(RedrawShapes));
+        };
     }
 
     public void RefreshIfVisible() => Refresh();

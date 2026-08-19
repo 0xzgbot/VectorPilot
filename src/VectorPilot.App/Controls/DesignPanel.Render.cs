@@ -36,7 +36,11 @@ public partial class DesignPanel
             foreach (var shape in layer.Shapes)
             {
                 bool selected = Selection.IsSelected(shape);
-                var el = ShapeToElement(shape, selected ? Brushes.OrangeRed : brush, layer.Locked ? 0.6 : 1.0, selected);
+                bool followed = AppState.FollowedSourceShapeIds.Contains(shape.Id);
+                var stroke = selected ? Brushes.OrangeRed
+                           : followed ? Brushes.DodgerBlue      // card P2: cut by the selected toolpath
+                           : brush;
+                var el = ShapeToElement(shape, stroke, layer.Locked ? 0.6 : 1.0, selected || followed);
                 if (el is not null) { DrawCanvas.Children.Add(el); _shapeElements.Add(el); }
             }
         }

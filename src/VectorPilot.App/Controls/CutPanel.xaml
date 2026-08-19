@@ -30,7 +30,9 @@
             <Button x:Name="BtnRecalcDirty" Content="Recalc Dirty" Margin="8,0,0,0" Padding="12,6" Click="RecalcDirty_Click"/>
         </StackPanel>
 
-        <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,8" SelectionChanged="ToolpathList_SelectionChanged"/>
+        <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>
+        <TextBlock x:Name="SourceLinkLabel" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                   Margin="0,0,8,-16" FontSize="11" Foreground="DimGray"/>
         <Border Grid.Row="3" Background="#F4F4F6" BorderBrush="#CCC" BorderThickness="1" Padding="8">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Params:" VerticalAlignment="Center"/>

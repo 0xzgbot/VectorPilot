@@ -35,6 +35,39 @@ public partial class CutPanel : UserControl
             ? AppState.Toolpaths.Toolpaths[index]
             : null;
         RefreshParamsForm(_selectedToolpath);
+        PublishSourceLink(_selectedToolpath);
+    }
+
+    /// <summary>
+    /// Card P2: publish which shapes this toolpath was calculated from, so the
+    /// Design canvas can highlight them. SelectedShapeIds already existed; nothing
+    /// ever surfaced it, so a user could not tell what a toolpath actually cuts.
+    /// </summary>
+    private void PublishSourceLink(Toolpath? tp)
+    {
+        AppState.FollowedSourceShapeIds.Clear();
+        if (tp is null)
+        {
+            SourceLinkLabel.Text = "";
+            return;
+        }
+
+        foreach (var id in tp.SelectedShapeIds) AppState.FollowedSourceShapeIds.Add(id);
+
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        int present = layer?.Shapes.Count(s => tp.SelectedShapeIds.Contains(s.Id)) ?? 0;
+        int missing = tp.SelectedShapeIds.Count - present;
+
+        SourceLinkLabel.Text = tp.SelectedShapeIds.Count == 0
+            ? "no source shapes linked"
+            : missing > 0
+                ? $"cuts {present} shape(s) — {missing} source shape(s) deleted, recalculate"
+                : $"cuts {present} shape(s)";
+        SourceLinkLabel.Foreground = missing > 0
+            ? System.Windows.Media.Brushes.Firebrick
+            : System.Windows.Media.Brushes.DimGray;
+
+        AppState.RaiseFollowedSourceChanged();
     }
 
     private sealed class ParamRow

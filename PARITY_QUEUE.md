@@ -75,7 +75,7 @@ Rules:
 - [x] **P1. Recipe picker + first-run welcome** — calibration + sign recipes surfaced in the UI, welcome sheet on first launch.
   Gate: `FullyQualifiedName~RecipePicker` — ≥4 tests.
 
-- [ ] **P2. Follow-source link** — art edit marks dependent toolpaths dirty; coach copy in the Cut panel. Uses `DirtyRegionManager`.
+- [x] **P2. Follow-source link** — art edit marks dependent toolpaths dirty; coach copy in the Cut panel. Uses `DirtyRegionManager`.
   Gate: `FullyQualifiedName~FollowSource` — ≥5 tests.
 
 - [x] **P3. Keep-out zone UI** — panel to add/edit/toggle/delete zones + preview overlay. Engine already done.

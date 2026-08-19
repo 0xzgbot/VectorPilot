@@ -26,6 +26,18 @@ public static class AppState
     /// <summary>Composite relief baked from the Model stage, for 3D toolpathing.</summary>
     public static HeightfieldData? ModelHeightfield { get; set; }
 
+    /// <summary>
+    /// Card P2: shape ids belonging to the toolpath currently selected in the
+    /// Toolpaths stage. The Design canvas highlights these so the link between a
+    /// toolpath and the geometry it cuts is visible.
+    /// </summary>
+    public static HashSet<Guid> FollowedSourceShapeIds { get; } = new();
+
+    /// <summary>Raised when <see cref="FollowedSourceShapeIds"/> changes.</summary>
+    public static event Action? FollowedSourceChanged;
+
+    public static void RaiseFollowedSourceChanged() => FollowedSourceChanged?.Invoke();
+
     public static void NewJob(double width, double height, double thickness, UnitSystem units, string materialName)
     {
         CurrentJob = Job.CreateDefault();
