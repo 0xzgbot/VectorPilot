@@ -45,6 +45,9 @@ public class XamlConstructionTests
     public void OutputPanel_Constructs() => OnSta(() => _ = new OutputPanel());
 
     [Fact]
+    public void ComponentTreePanel_Constructs() => OnSta(() => _ = new ComponentTreePanel());
+
+    [Fact]
     public void MachinePanel_Has_Always_Enabled_Safety_Chrome()
     {
         OnSta(() =>

@@ -46,8 +46,9 @@ Rules:
   **DONE + REACHABLE:** panel already had connect/jog/home/zero/stream; ADDED the missing E-STOP + Reset buttons (always enabled — the XAML claimed Reset was available but shipped no button) and a raw TX/RX console toggle. MachineSession carries the tested safety logic. 13 session tests + 6 XAML-construction tests.
   **HARNESS BUG (open):** `--ui-smoke` hangs (exit 124) even though all 4 panels construct fine on an STA thread — 4 fixes attempted (dispatcher priority, one-shot timer, null guards, code-wired events). Superseded by XamlConstructionTests; A7 FlaUI is the real fix.
 
-- [ ] **A6. 3D component tree panel** — component list with visibility + combine-mode dropdown (Add/Subtract/Merge/Low/High/Multiply), live composite via `ComponentCompositor`, sculpt brush controls.
+- [x] **A6. 3D component tree panel** — component list with visibility + combine-mode dropdown (Add/Subtract/Merge/Low/High/Multiply), live composite via `ComponentCompositor`, sculpt brush controls.
   Gate: `FullyQualifiedName~ComponentTreePanel` — ≥8 tests (mode change recomposites, invisible excluded, order matters, undo).
+  **DONE + REACHABLE:** ComponentTreePanel — component list with visibility checkboxes, 7-mode combine dropdown, reorder up/down, remove, live recomposite, sculpt brush controls (tool/shape/falloff/radius/strength). 13 VM tests + construction test.
 
 - [ ] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
   Gate: `FullyQualifiedName~UiAutomation` — ≥5 tests, each driving actual mouse/keyboard input.

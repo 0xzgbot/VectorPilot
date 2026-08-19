@@ -1,0 +1,91 @@
+using VectorPilot.Engine;
+
+namespace VectorPilot.App;
+
+/// <summary>
+/// Card A6: component-tree panel model. Owns the ordered component stack,
+/// recomposites on any change (order, visibility, combine mode, sculpt), and
+/// exposes brush settings for the sculpt tool.
+/// </summary>
+public sealed class ComponentTreeViewModel
+{
+    public List<ReliefComponent> Components { get; } = new();
+    public HeightfieldData? Composite { get; private set; }
+
+    // Sculpt brush settings surfaced by the panel.
+    public BrushShape BrushShape { get; set; } = BrushShape.Sphere;
+    public BrushFalloff BrushFalloff { get; set; } = BrushFalloff.Smooth;
+    public double BrushRadiusMm { get; set; } = 5.0;
+    public double BrushStrength { get; set; } = 0.5;
+
+    public int SelectedIndex { get; set; } = -1;
+    public ReliefComponent? Selected =>
+        SelectedIndex >= 0 && SelectedIndex < Components.Count ? Components[SelectedIndex] : null;
+
+    public ReliefComponent Add(HeightfieldData hf, string name, OperationMode mode = OperationMode.CombineAdd)
+    {
+        var c = new ReliefComponent(hf) { Name = name, CombineMode = mode };
+        Components.Add(c);
+        SelectedIndex = Components.Count - 1;
+        Recomposite();
+        return c;
+    }
+
+    public bool Remove(ReliefComponent c)
+    {
+        if (!Components.Remove(c)) return false;
+        SelectedIndex = Math.Min(SelectedIndex, Components.Count - 1);
+        Recomposite();
+        return true;
+    }
+
+    public void SetVisible(ReliefComponent c, bool visible)
+    {
+        c.Visible = visible;
+        Recomposite();
+    }
+
+    public void SetMode(ReliefComponent c, OperationMode mode)
+    {
+        c.CombineMode = mode;
+        Recomposite();
+    }
+
+    /// <summary>Move a component within the stack — order changes the result.</summary>
+    public bool MoveTo(int from, int to)
+    {
+        if (from < 0 || from >= Components.Count || to < 0 || to >= Components.Count || from == to) return false;
+        var c = Components[from];
+        Components.RemoveAt(from);
+        Components.Insert(to, c);
+        SelectedIndex = to;
+        Recomposite();
+        return true;
+    }
+
+    /// <summary>Apply a sculpt stroke to the selected component's heightfield.</summary>
+    public bool Sculpt(SculptTool tool, double x, double y)
+    {
+        if (Selected is null) return false;
+
+        var stroke = new SculptStrokeParams
+        {
+            Tool = tool,
+            CenterX = x,
+            CenterY = y,
+            RadiusMm = BrushRadiusMm,
+            Strength = BrushStrength,
+            BrushShape = BrushShape,
+            BrushFalloff = BrushFalloff
+        };
+
+        var result = SculptEngine.ApplyStroke(stroke, Selected.Heightfield);
+        if (result.CellsAffected == 0) return false;
+
+        Selected.Heightfield = result.Heightfield;
+        Recomposite();
+        return true;
+    }
+
+    public void Recomposite() => Composite = ComponentCompositor.Composite(Components);
+}
