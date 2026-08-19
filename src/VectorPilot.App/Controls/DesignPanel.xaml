@@ -43,6 +43,8 @@
                 <Button x:Name="IntersectButton" Content="Intersect" Width="70" Height="24" Margin="6,0,0,0" Click="Intersect_Click" ToolTip="Keep only the overlap"/>
                 <Button x:Name="TraceButton" Content="Trace bitmap…" Width="102" Height="24" Margin="6,0,0,0" Click="Trace_Click" ToolTip="Import an image and trace its outlines to vectors"/>
                 <Button x:Name="KeepOutButton" Content="Keep-out" Width="72" Height="24" Margin="6,0,0,0" Click="KeepOut_Click" ToolTip="Mark the selection's bounds as a no-cut zone (clamps, hold-downs)"/>
+                <Button x:Name="GroupButton" Content="Group" Width="58" Height="24" Margin="6,0,0,0" Click="Group_Click" ToolTip="Group the selection (Ctrl+G) — selecting one member selects all"/>
+                <Button x:Name="UngroupButton" Content="Ungroup" Width="66" Height="24" Margin="6,0,0,0" Click="Ungroup_Click" ToolTip="Dissolve the selection's group (Ctrl+Shift+G)"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <Button Content="Fit" Width="48" Height="24" Click="Fit_Click" ToolTip="Fit sheet in view"/>
                 <TextBlock x:Name="SelectionLabel" Text="" Foreground="#555" VerticalAlignment="Center" Margin="16,0,0,0"/>

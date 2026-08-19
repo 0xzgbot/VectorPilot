@@ -80,6 +80,11 @@ public partial class DesignPanel
                 if (additive) Selection.Toggle(hit);
                 else if (!Selection.IsSelected(hit)) Selection.Select(hit);
 
+                // Grouping: touching one member selects every sibling.
+                if (Groups.GroupFor(hit) is not null)
+                    foreach (var s in Groups.ExpandSelection(Selection.Selected.ToList(), layer))
+                        if (!Selection.IsSelected(s)) Selection.Select(s, additive: true);
+
                 if (!layer.Locked && !Selection.IsEmpty)
                 {
                     _movingSelection = true;

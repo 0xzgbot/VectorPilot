@@ -93,6 +93,32 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    /// <summary>Shape grouping for this document (Mac UX-polish parity).</summary>
+    internal readonly ShapeGroupModel Groups = new();
+
+    /// <summary>Group the selection so members select together.</summary>
+    private void Group_Click(object sender, RoutedEventArgs e) => DoGroup();
+
+    private void Ungroup_Click(object sender, RoutedEventArgs e) => DoUngroup();
+
+    internal void DoGroup()
+    {
+        if (Selection.Count < 2) { SetStatus("Select two or more shapes to group"); return; }
+
+        var g = Groups.Group(Selection.Selected);
+        SetStatus(g is null ? "Nothing to group" : $"{g.Name} — {g.ShapeIds.Count} shapes");
+        UpdateEditChrome();
+    }
+
+    internal void DoUngroup()
+    {
+        if (Selection.IsEmpty) { SetStatus("Select a grouped shape to ungroup"); return; }
+
+        int n = Groups.Ungroup(Selection.Selected);
+        SetStatus(n == 0 ? "Selection is not grouped" : $"Ungrouped {n} group(s)");
+        UpdateEditChrome();
+    }
+
     /// <summary>Card P3: turn the selection's bounds into a keep-out zone.</summary>
     private void KeepOut_Click(object sender, RoutedEventArgs e)
     {
@@ -286,7 +312,8 @@ public partial class DesignPanel
     private void DesignPanel_KeyDown(object sender, KeyEventArgs e)
     {
         bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-        double step = (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? 10 : 1;
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        double step = shift ? 10 : 1;
 
         switch (e.Key)
         {
@@ -294,6 +321,8 @@ public partial class DesignPanel
             case Key.Y when ctrl: DoRedo(); e.Handled = true; break;
             case Key.D when ctrl: DoDuplicate(); e.Handled = true; break;
             case Key.A when ctrl: DoSelectAll(); e.Handled = true; break;
+            case Key.G when ctrl && shift: DoUngroup(); e.Handled = true; break;
+            case Key.G when ctrl: DoGroup(); e.Handled = true; break;
             case Key.Delete or Key.Back:
                 if (NodeEdit.IsActive && NodeEdit.HasSelectedNode) DeleteSelectedNodeWithUndo();
                 else DoDelete();
