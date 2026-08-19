@@ -30,7 +30,7 @@ public partial class DesignPanel : UserControl
     {
         InitializeComponent();
         SizeChanged += (_, _) => FitView();
-        Loaded += (_, _) => { Refresh(); Focus(); };
+        Loaded += (_, _) => { Refresh(); RefreshViewPresets(); Focus(); };
         KeyDown += DesignPanel_KeyDown;
         // Card P2: repaint when the Toolpaths stage changes which shapes are followed.
         AppState.FollowedSourceChanged += () =>
@@ -121,6 +121,45 @@ public partial class DesignPanel : UserControl
     }
 
     private void Fit_Click(object sender, RoutedEventArgs e) { FitView(); RedrawShapes(); }
+
+    /// <summary>Named view presets (Mac SPK-UXPOLISH parity).</summary>
+    internal readonly ViewPresetModel ViewPresets = new();
+
+    private bool _applyingPreset;
+
+    private void ViewPreset_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_applyingPreset) return;
+        if (CmbViewPreset.SelectedItem is not string name) return;
+        if (ViewPresets.Find(name) is not { } preset) return;
+
+        var sheet = AppState.CurrentJob.ActiveSheet;
+        double zoom = ViewPresetModel.ResolveZoom(
+            preset, DrawCanvas.ActualWidth, DrawCanvas.ActualHeight, sheet.Width, sheet.Height);
+
+        if (preset.FitToSheet)
+        {
+            FitView();
+        }
+        else
+        {
+            ViewScale.ScaleX = ViewScale.ScaleY = zoom;
+            ViewOffset.X = (DrawCanvas.ActualWidth - sheet.Width * zoom) / 2;
+            ViewOffset.Y = (DrawCanvas.ActualHeight - sheet.Height * zoom) / 2;
+        }
+
+        SetStatus($"View: {preset.Name} ({ViewScale.ScaleX:P0})");
+        RedrawShapes();
+    }
+
+    /// <summary>Populate the preset list without re-triggering the handler.</summary>
+    internal void RefreshViewPresets()
+    {
+        _applyingPreset = true;
+        CmbViewPreset.ItemsSource = ViewPresets.Presets.Select(p => p.Name).ToList();
+        CmbViewPreset.SelectedIndex = 0;
+        _applyingPreset = false;
+    }
 
     private void FitView()
     {

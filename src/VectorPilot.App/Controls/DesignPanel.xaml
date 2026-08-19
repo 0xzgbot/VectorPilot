@@ -46,7 +46,9 @@
                 <Button x:Name="GroupButton" Content="Group" Width="58" Height="24" Margin="6,0,0,0" Click="Group_Click" ToolTip="Group the selection (Ctrl+G) — selecting one member selects all"/>
                 <Button x:Name="UngroupButton" Content="Ungroup" Width="66" Height="24" Margin="6,0,0,0" Click="Ungroup_Click" ToolTip="Dissolve the selection's group (Ctrl+Shift+G)"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
-                <Button Content="Fit" Width="48" Height="24" Click="Fit_Click" ToolTip="Fit sheet in view"/>
+                <ComboBox x:Name="CmbViewPreset" Width="132" Height="24" ToolTip="View presets"
+                          SelectionChanged="ViewPreset_Changed"/>
+                <Button Content="Fit" Width="48" Height="24" Margin="6,0,0,0" Click="Fit_Click" ToolTip="Fit sheet in view"/>
                 <TextBlock x:Name="SelectionLabel" Text="" Foreground="#555" VerticalAlignment="Center" Margin="16,0,0,0"/>
             </StackPanel>
         </Border>
