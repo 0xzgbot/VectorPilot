@@ -43,6 +43,34 @@ public partial class DesignPanel
 
         DrawSelectionBounds();
         DrawNodeHandles();
+        DrawKeepOutZones();
+    }
+
+    /// <summary>Card P3: hatched red overlay for no-cut zones.</summary>
+    private void DrawKeepOutZones()
+    {
+        foreach (var z in AppState.CurrentJob.KeepOutZones)
+        {
+            if (!z.IsActive || z.Type != KeepOutZoneType.Rectangle) continue;
+            if (z.RectMinX is not { } x0 || z.RectMinY is not { } y0 ||
+                z.RectMaxX is not { } x1 || z.RectMaxY is not { } y1) continue;
+
+            var rect = new System.Windows.Shapes.Rectangle
+            {
+                Width = Math.Abs(x1 - x0),
+                Height = Math.Abs(y1 - y0),
+                Stroke = System.Windows.Media.Brushes.Firebrick,
+                StrokeThickness = 1.5,
+                StrokeDashArray = new System.Windows.Media.DoubleCollection { 4, 3 },
+                Fill = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(40, 178, 34, 34)),
+                IsHitTestVisible = false
+            };
+            Canvas.SetLeft(rect, Math.Min(x0, x1));
+            Canvas.SetTop(rect, Math.Min(y0, y1));
+            DrawCanvas.Children.Add(rect);
+            _shapeElements.Add(rect);
+        }
     }
 
     /// <summary>Card A1: draw draggable point handles while node-editing.</summary>

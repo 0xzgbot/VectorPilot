@@ -93,6 +93,30 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    /// <summary>Card P3: turn the selection's bounds into a keep-out zone.</summary>
+    private void KeepOut_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selection.IsEmpty) { SetStatus("Select shapes to mark as keep-out"); return; }
+
+        if (Selection.SelectionBounds() is not { } b) { SetStatus("Selection has no area"); return; }
+
+        var job = AppState.CurrentJob;
+        job.KeepOutZones.Add(new KeepOutZone
+        {
+            Name = $"Zone {job.KeepOutZones.Count + 1}",
+            Type = KeepOutZoneType.Rectangle,
+            RectMinX = b.MinX,
+            RectMinY = b.MinY,
+            RectMaxX = b.MaxX,
+            RectMaxY = b.MaxY,
+            IsActive = true
+        });
+        job.IsDirty = true;
+
+        SetStatus($"Keep-out zone added ({b.MaxX - b.MinX:F1} × {b.MaxY - b.MinY:F1}) — {job.KeepOutZones.Count} total");
+        RedrawShapes();
+    }
+
     /// <summary>Card A3: open the numeric transform dialog, undoably.</summary>
     internal void DoTransform()
     {

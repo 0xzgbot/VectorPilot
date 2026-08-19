@@ -78,7 +78,7 @@ Rules:
 - [ ] **P2. Follow-source link** — art edit marks dependent toolpaths dirty; coach copy in the Cut panel. Uses `DirtyRegionManager`.
   Gate: `FullyQualifiedName~FollowSource` — ≥5 tests.
 
-- [ ] **P3. Keep-out zone UI** — panel to add/edit/toggle/delete zones + preview overlay. Engine already done.
+- [x] **P3. Keep-out zone UI** — panel to add/edit/toggle/delete zones + preview overlay. Engine already done.
   Gate: `FullyQualifiedName~KeepOutPanel` — ≥5 tests.
 
 - [ ] **P4. Material simulation preview** — sheet-aware heightfield render of the cut result in the 3D preview.
