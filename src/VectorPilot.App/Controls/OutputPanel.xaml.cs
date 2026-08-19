@@ -116,6 +116,44 @@ public partial class OutputPanel : UserControl
         _ => JobSheetToolpathType.Profile
     };
 
+    /// <summary>Card P4: simulate material removal for the whole job.</summary>
+    private void Simulate_Click(object sender, RoutedEventArgs e)
+    {
+        var gcode = AppState.Toolpaths.Toolpaths.SelectMany(t => t.GCode).ToList();
+        if (gcode.Count == 0)
+        {
+            TxtExportInfo.Text = "Calculate toolpaths first — nothing to simulate";
+            return;
+        }
+
+        var sheet = AppState.CurrentJob.ActiveSheet;
+        double w = Dim(sheet.Width, 200), h = Dim(sheet.Height, 200), t = Dim(sheet.Thickness, 19.05);
+
+        var r = MaterialSimulator.Simulate(gcode, w, h, t, cellSizeMm: 1.0);
+
+        TxtExportInfo.Text =
+            $"removed {r.RemovedVolumeMm3 / 1000.0:F1} cm³ · " +
+            $"coverage {r.CoverageFraction:P0} · " +
+            $"deepest {r.MaxCutDepthMm:F2} mm" +
+            (r.CutThrough ? "  ⚠ CUTS THROUGH THE STOCK" : "");
+
+        if (r.CutThrough && !App.IsAutomated)
+        {
+            MessageBox.Show(
+                $"The program cuts {r.MaxCutDepthMm:F2} mm deep into {t:F2} mm stock.\n\n" +
+                "Check cut depths, or add a spoilboard allowance.",
+                "Cut-through warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private static double Dim(object? value, double fallback) => value switch
+    {
+        double d => d,
+        string s when double.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var p) => p,
+        _ => fallback
+    };
+
     private void JobSheetPdf_Click(object sender, RoutedEventArgs e)
     {
         // The PDF renderer lands via the JobSheetPdfRenderer port (delegation wave);

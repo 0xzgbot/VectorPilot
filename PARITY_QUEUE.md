@@ -81,7 +81,7 @@ Rules:
 - [x] **P3. Keep-out zone UI** — panel to add/edit/toggle/delete zones + preview overlay. Engine already done.
   Gate: `FullyQualifiedName~KeepOutPanel` — ≥5 tests.
 
-- [ ] **P4. Material simulation preview** — sheet-aware heightfield render of the cut result in the 3D preview.
+- [x] **P4. Material simulation preview** — sheet-aware heightfield render of the cut result in the 3D preview.
   Gate: `FullyQualifiedName~MaterialSim` — ≥5 tests.
 
 ---

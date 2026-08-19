@@ -26,6 +26,8 @@
             <Button Content="Export w/ template" Width="130" Margin="8,0,0,0" Click="ExportTemplate_Click"/>
             <Button Content="Job sheet (HTML)" Width="120" Margin="8,0,0,0" Click="JobSheetHtml_Click"/>
             <Button x:Name="BtnJobSheetPdf" Content="Job sheet (PDF)" Width="120" Margin="8,0,0,0" Click="JobSheetPdf_Click"/>
+            <Button x:Name="BtnSimulate" Content="Simulate cut" Width="110" Margin="8,0,0,0" Click="Simulate_Click"
+                    ToolTip="Sweep the G-code through the stock and report removal, coverage and cut-through"/>
         </StackPanel>
 
         <TextBlock Grid.Row="4" Text="Exports write next to the current .shoppilot job (or into Documents)." Foreground="#777" FontSize="11"/>
