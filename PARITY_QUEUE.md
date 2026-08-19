@@ -52,7 +52,7 @@ Rules:
 
 - [x] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
   Gate: `python tools/ui_verify.py` — drives the REAL app.
-  **DONE (no NuGet needed):** Windows UIAutomation via PowerShell + pyautogui clicks + screenshots + vision_analyze. tools/ui_drive.py, tools/ui_verify.py. PROVEN BY DRIVING THE APP: (1) launch is gated by a "Recover unsaved work" MODAL — the real cause of every --ui-smoke hang, which no test could see; (2) A5 E-STOP enabled=True while disconnected, invoked for real, app survived; BtnStart enabled=False with no G-code (no auto-start); (3) A6 component tree absent from ALL FIVE stages — Design=LayersList, Toolpaths=ToolpathList/ParamsGrid, Output=ListToolpaths. Grep-based reachability is now backed by live-tree inspection.
+  **DONE (no NuGet needed):** Windows UIAutomation via PowerShell + pyautogui clicks + screenshots + vision_analyze. tools/ui_verify.py (single harness; --tree dumps the live control tree). PROVEN BY DRIVING THE APP: (1) launch is gated by a "Recover unsaved work" MODAL — the real cause of every --ui-smoke hang, which no test could see; (2) A5 E-STOP enabled=True while disconnected, invoked for real, app survived; BtnStart enabled=False with no G-code (no auto-start); (3) A6 component tree absent from ALL FIVE stages — Design=LayersList, Toolpaths=ToolpathList/ParamsGrid, Output=ListToolpaths. Grep-based reachability is now backed by live-tree inspection.
 
 ## Tier 2 — Engine gaps
 
