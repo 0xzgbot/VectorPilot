@@ -8,6 +8,7 @@ for reads/invokes, pyautogui for the one click UIA can't reach.
   python tools/ui_verify.py --tree   dump the interactive tree and exit
 """
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -70,7 +71,8 @@ def launch():
     """Start the app, dismiss the recovery modal, maximize. Returns (proc, window)."""
     for f in os.listdir(APPDATA) if os.path.isdir(APPDATA) else []:
         if "autosave" in f.lower():
-            os.remove(os.path.join(APPDATA, f))
+            p = os.path.join(APPDATA, f)
+            shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
 
     proc = subprocess.Popen([EXE])
     win = None
@@ -145,7 +147,7 @@ def main():
 
         print("== A6: component tree, all stages ==")
         found = []
-        for stage in ("Setup", "Design", "Toolpaths", "Machine", "Output"):
+        for stage in ("Setup", "Design", "Model", "Toolpaths", "Machine", "Output"):
             invoke(proc.pid, stage)
             time.sleep(1.1)
             hits = [r["id"] or r["name"] for r in tree(proc.pid)

@@ -48,6 +48,15 @@ public class XamlConstructionTests
     public void ComponentTreePanel_Constructs() => OnSta(() => _ = new ComponentTreePanel());
 
     [Fact]
+    public void ModelPanel_Constructs_And_Hosts_The_Component_Tree() => OnSta(() =>
+    {
+        var panel = new ModelPanel();
+        Assert.NotNull(panel.FindName("Tree"));       // the component tree is hosted
+        Assert.NotNull(panel.FindName("Preview"));    // with a live composite preview
+        Assert.NotNull(panel.FindName("BtnBake"));
+    });
+
+    [Fact]
     public void MachinePanel_Drives_A_MachineSession_Not_Its_Own_Transport()
     {
         OnSta(() =>

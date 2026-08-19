@@ -23,6 +23,9 @@ public static class AppState
     public static List<string> LoadedGCode { get; set; } = new();
     public static string? LoadedGCodePath { get; set; }
 
+    /// <summary>Composite relief baked from the Model stage, for 3D toolpathing.</summary>
+    public static HeightfieldData? ModelHeightfield { get; set; }
+
     public static void NewJob(double width, double height, double thickness, UnitSystem units, string materialName)
     {
         CurrentJob = Job.CreateDefault();
