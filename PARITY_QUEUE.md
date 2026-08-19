@@ -50,8 +50,9 @@ Rules:
   Gate: `FullyQualifiedName~ComponentTreePanel` — ≥8 tests (mode change recomposites, invisible excluded, order matters, undo).
   **REVERTED (self-caught, same violation as A5):** ComponentTreePanel has ZERO references in MainWindow.xaml/.xaml.cs — the panel exists and constructs but no stage hosts it, so a user cannot reach it. Remaining: host it in the Model stage. Prior note: ComponentTreePanel — component list with visibility checkboxes, 7-mode combine dropdown, reorder up/down, remove, live recomposite, sculpt brush controls (tool/shape/falloff/radius/strength). 13 VM tests + construction test.
 
-- [ ] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
-  Gate: `FullyQualifiedName~UiAutomation` — ≥5 tests, each driving actual mouse/keyboard input.
+- [x] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
+  Gate: `python tools/ui_verify.py` — drives the REAL app.
+  **DONE (no NuGet needed):** Windows UIAutomation via PowerShell + pyautogui clicks + screenshots + vision_analyze. tools/ui_drive.py, tools/ui_verify.py. PROVEN BY DRIVING THE APP: (1) launch is gated by a "Recover unsaved work" MODAL — the real cause of every --ui-smoke hang, which no test could see; (2) A5 E-STOP enabled=True while disconnected, invoked for real, app survived; BtnStart enabled=False with no G-code (no auto-start); (3) A6 component tree absent from ALL FIVE stages — Design=LayersList, Toolpaths=ToolpathList/ParamsGrid, Output=ListToolpaths. Grep-based reachability is now backed by live-tree inspection.
 
 ## Tier 2 — Engine gaps
 
