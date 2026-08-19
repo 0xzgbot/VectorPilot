@@ -22,7 +22,7 @@ Rules:
 
 ## Tier 1 — App layer (the actual gap vs Aspire)
 
-- [~] **A1. Node editing** — click a shape in Select mode to enter node mode: draggable point handles, insert point on segment double-click, delete selected node (Del), Esc exits. Wire through `UndoStack`.
+- [x] **A1. Node editing** — click a shape in Select mode to enter node mode: draggable point handles, insert point on segment double-click, delete selected node (Del), Esc exits. Wire through `UndoStack`.
   Gate: `FullyQualifiedName~NodeEdit` — ≥8 tests (hit-test a node, drag updates geometry, insert splits the correct segment, delete removes, undo restores).
 
 - [ ] **A2. Boolean ops in UI** — Union / Subtract / Intersect buttons on the ops bar, operating on the current multi-selection via the existing `BooleanOps` engine. Disabled with <2 selected.
@@ -81,3 +81,4 @@ Rules:
 ## Done log
 
 (append `[x]` cards here with commit SHA + test delta)
+- [x] A1 node editing — NodeEditSession + 12 tests, 591→603
