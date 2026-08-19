@@ -71,7 +71,13 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding Visible}" Checked="LayerToggle_Changed" Unchecked="LayerToggle_Changed" VerticalAlignment="Center"/>
+                                    <CheckBox IsChecked="{Binding Visible}" Checked="LayerToggle_Changed" Unchecked="LayerToggle_Changed" VerticalAlignment="Center" ToolTip="Visible"/>
+                                    <ToggleButton IsChecked="{Binding Locked}" Content="🔒" FontSize="10" Width="20" Height="18"
+                                                  Margin="4,0,0,0" VerticalAlignment="Center" ToolTip="Lock — locked layers cannot be edited"
+                                                  Checked="LayerToggle_Changed" Unchecked="LayerToggle_Changed"/>
+                                    <Button Content="solo" FontSize="9" Width="30" Height="18" Margin="4,0,0,0"
+                                            VerticalAlignment="Center" Click="LayerSolo_Click"
+                                            Tag="{Binding Name}" ToolTip="Show only this layer (click again to show all)"/>
                                     <TextBlock Text="{Binding Name}" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </DataTemplate>

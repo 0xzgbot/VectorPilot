@@ -122,6 +122,21 @@ public partial class DesignPanel : UserControl
 
     private void Fit_Click(object sender, RoutedEventArgs e) { FitView(); RedrawShapes(); }
 
+    /// <summary>Layer solo/isolate (Mac SPK-UXPOLISH parity).</summary>
+    internal readonly LayerVisibilityModel LayerVisibility = new();
+
+    private void LayerSolo_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not string layerName) return;
+
+        var sheet = AppState.CurrentJob.ActiveSheet;
+        bool soloed = LayerVisibility.ToggleSolo(sheet, layerName);
+
+        SetStatus(soloed ? $"Solo: {layerName}" : "Solo cleared — visibility restored");
+        RefreshLayers();
+        RedrawShapes();
+    }
+
     /// <summary>Named view presets (Mac SPK-UXPOLISH parity).</summary>
     internal readonly ViewPresetModel ViewPresets = new();
 
