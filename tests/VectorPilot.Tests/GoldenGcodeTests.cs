@@ -50,7 +50,14 @@ public class GoldenGcodeTests
     public void VCarve_Engine_Matches_Golden()
     {
         var v = new VCarveParams { VBitAngleDegrees = 90, MaxDepthOfCutMm = 2.0, FeedRateMmPerMin = 1000, SpindleRpm = 12000 };
-        var r = VCarveEngine.Compute(new[] { VectorShape.Line(new VectorPoint(0, 0), new VectorPoint(10, 0)) }, v);
+
+        // A CHANNEL, not a lone line. Depth comes from the local channel width, so a
+        // single open line has no opposing edge and correctly carves nothing — which
+        // made the old golden pin "no cut" and prove nothing about V-carving.
+        var lower = VectorShape.Line(new VectorPoint(0, 0), new VectorPoint(10, 0));
+        var upper = VectorShape.Line(new VectorPoint(0, 3), new VectorPoint(10, 3));
+
+        var r = VCarveEngine.Compute(new[] { lower, upper }, v);
         AssertGolden("vcarve", r.GcodeLines);
     }
 

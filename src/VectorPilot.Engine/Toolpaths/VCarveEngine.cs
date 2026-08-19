@@ -117,11 +117,21 @@ public static class VCarveEngine
                 g.Add("G0 Z5.0");
 
                 var start = vector.Points[0];
+                // Depth at the FIRST point must come from the local width too. Plunging
+                // to the pass depth meant a 2mm slot and a 12mm channel both bottomed
+                // out at the depth limit — width drove the middle of the cut but not
+                // its entry, so the deepest Z in the program was always the clamp.
+                double startHalfWidth = VCarveGeometry.DistanceToNearestOtherEdge(vector, 0, vectors);
+                double startZ = Math.Max(
+                    VCarveGeometry.DepthForHalfWidth(startHalfWidth, params_.VBitAngleDegrees, maxDepth),
+                    actualZ);
+
                 double leadInX = start.X - params_.LeadInDistanceMm;
                 g.Add($"G0 X{F3(leadInX)} Y{F3(start.Y)}");
-                g.Add($"G1 Z{F3(actualZ)} F{(int)plunge}");
+                g.Add($"G1 Z{F3(startZ)} F{(int)plunge}");
                 g.Add($"G1 X{F3(start.X)} Y{F3(start.Y)} F{(int)feed}");
 
+                double lastZ = startZ;
                 for (int i = 1; i < vector.Points.Count; i++)
                 {
                     var p = vector.Points[i];
@@ -131,17 +141,19 @@ public static class VCarveEngine
                     double halfWidth = VCarveGeometry.DistanceToNearestOtherEdge(vector, i, vectors);
                     double z = VCarveGeometry.DepthForHalfWidth(halfWidth, params_.VBitAngleDegrees, maxDepth);
                     z = Math.Max(z, actualZ);   // never exceed this pass's depth
+                    lastZ = z;
                     g.Add($"G1 X{F3(p.X)} Y{F3(p.Y)} Z{F3(z)} F{(int)feed}");
                 }
 
                 if (vector.Closed && vector.Points.Count > 2)
                 {
                     var first = vector.Points[0];
-                    g.Add($"G1 X{F3(first.X)} Y{F3(first.Y)} Z{F3(actualZ)} F{(int)feed}");
+                    g.Add($"G1 X{F3(first.X)} Y{F3(first.Y)} Z{F3(startZ)} F{(int)feed}");
                 }
 
                 var end = vector.Points[^1];
-                g.Add($"G1 X{F3(end.X + params_.LeadOutDistanceMm)} Y{F3(end.Y)} Z{F3(actualZ)} F{(int)feed}");
+                // Lead out at the depth the cut actually ended on, not the pass clamp.
+                g.Add($"G1 X{F3(end.X + params_.LeadOutDistanceMm)} Y{F3(end.Y)} Z{F3(lastZ)} F{(int)feed}");
                 g.Add("G0 Z5.0");
             }
 
