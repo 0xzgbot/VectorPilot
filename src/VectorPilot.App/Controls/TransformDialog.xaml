@@ -1,0 +1,56 @@
+<Window x:Class="VectorPilot.App.Controls.TransformDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Transform Selection" Width="330" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <StackPanel Margin="14">
+        <TextBlock x:Name="InfoLabel" Text="" Foreground="#555" Margin="0,0,0,10"/>
+
+        <TextBlock Text="Position (lower-left)" FontWeight="Bold" Margin="0,0,0,4"/>
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="22"/><ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="22"/><ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="X" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="1" x:Name="PosX"/>
+            <TextBlock Grid.Column="3" Text="Y" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="4" x:Name="PosY"/>
+        </Grid>
+
+        <TextBlock Text="Size" FontWeight="Bold" Margin="0,0,0,4"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="22"/><ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="22"/><ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="W" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="1" x:Name="SizeW"/>
+            <TextBlock Grid.Column="3" Text="H" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="4" x:Name="SizeH"/>
+        </Grid>
+        <CheckBox x:Name="LockAspect" Content="Lock aspect ratio" IsChecked="True" Margin="0,6,0,12"/>
+
+        <TextBlock Text="Rotate / Scale" FontWeight="Bold" Margin="0,0,0,4"/>
+        <Grid Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/><ColumnDefinition Width="60"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Angle°" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="1" x:Name="Angle" Text="0"/>
+            <TextBlock Grid.Column="3" Text="Factor" VerticalAlignment="Center"/>
+            <TextBox  Grid.Column="4" x:Name="Factor" Text="1.0"/>
+        </Grid>
+
+        <TextBlock x:Name="ErrorLabel" Text="" Foreground="#C00" Margin="0,0,0,8"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" Width="80" Height="26" Click="Cancel_Click"/>
+            <Button Content="Apply" Width="80" Height="26" Margin="8,0,0,0" IsDefault="True" Click="Apply_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

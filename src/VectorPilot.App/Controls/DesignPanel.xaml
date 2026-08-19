@@ -36,6 +36,7 @@
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <Button Content="Flip H" Width="60" Height="24" Click="FlipH_Click"/>
                 <Button Content="Flip V" Width="60" Height="24" Margin="6,0,0,0" Click="FlipV_Click"/>
+                <Button x:Name="TransformButton" Content="Transform…" Width="86" Height="24" Margin="6,0,0,0" Click="Transform_Click" ToolTip="Exact X/Y/W/H, rotate, scale"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <Button x:Name="UnionButton" Content="Union" Width="60" Height="24" Click="Union_Click" ToolTip="Weld selected shapes"/>
                 <Button x:Name="SubtractButton" Content="Subtract" Width="70" Height="24" Margin="6,0,0,0" Click="Subtract_Click" ToolTip="Cut later shapes out of the first"/>

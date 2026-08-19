@@ -19,6 +19,33 @@ public partial class DesignPanel
     private void Subtract_Click(object sender, RoutedEventArgs e) => DoBoolean(BooleanSelectionOps.Op.Subtract);
     private void Intersect_Click(object sender, RoutedEventArgs e) => DoBoolean(BooleanSelectionOps.Op.Intersect);
 
+    private void Transform_Click(object sender, RoutedEventArgs e) => DoTransform();
+
+    /// <summary>Card A3: open the numeric transform dialog, undoably.</summary>
+    internal void DoTransform()
+    {
+        var layer = ActiveLayer;
+        if (layer is null || layer.Locked || Selection.IsEmpty)
+        {
+            SetStatus("Select at least one shape first");
+            return;
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        var dlg = new TransformDialog(Selection.Selected.ToList())
+        {
+            Owner = Window.GetWindow(this)
+        };
+        dlg.ShowDialog();
+        if (!dlg.Applied) { SetStatus("Transform cancelled"); return; }
+
+        Undo.Push("Transform", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        SetStatus($"Transformed {Selection.Count} shape(s)");
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
     /// <summary>Card A2: boolean-combine the selection, undoably.</summary>
     internal void DoBoolean(BooleanSelectionOps.Op op)
     {
