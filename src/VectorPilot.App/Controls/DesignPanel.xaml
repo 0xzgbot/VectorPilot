@@ -37,6 +37,10 @@
                 <Button Content="Flip H" Width="60" Height="24" Click="FlipH_Click"/>
                 <Button Content="Flip V" Width="60" Height="24" Margin="6,0,0,0" Click="FlipV_Click"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
+                <Button x:Name="UnionButton" Content="Union" Width="60" Height="24" Click="Union_Click" ToolTip="Weld selected shapes"/>
+                <Button x:Name="SubtractButton" Content="Subtract" Width="70" Height="24" Margin="6,0,0,0" Click="Subtract_Click" ToolTip="Cut later shapes out of the first"/>
+                <Button x:Name="IntersectButton" Content="Intersect" Width="70" Height="24" Margin="6,0,0,0" Click="Intersect_Click" ToolTip="Keep only the overlap"/>
+                <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <Button Content="Fit" Width="48" Height="24" Click="Fit_Click" ToolTip="Fit sheet in view"/>
                 <TextBlock x:Name="SelectionLabel" Text="" Foreground="#555" VerticalAlignment="Center" Margin="16,0,0,0"/>
             </StackPanel>

@@ -29,8 +29,9 @@ Rules:
   Gate: `FullyQualifiedName~NodeEdit` — ≥8 tests (hit-test a node, drag updates geometry, insert splits the correct segment, delete removes, undo restores).
   **DONE + REACHABLE:** Nodes tool button in XAML; 18 call-sites across Input/Edit/Render (click shape to enter, drag handles, double-click segment to insert, Del removes, Esc exits, all undoable). 12 tests.
 
-- [~] **A2. Boolean ops in UI** — Union / Subtract / Intersect buttons on the ops bar, operating on the current multi-selection via the existing `BooleanOps` engine. Disabled with <2 selected.
+- [x] **A2. Boolean ops in UI** — Union / Subtract / Intersect buttons on the ops bar, operating on the current multi-selection via the existing `BooleanOps` engine. Disabled with <2 selected.
   Gate: `FullyQualifiedName~BooleanOpsUi` — ≥6 tests (2-rect union area, subtract leaves hole-free outline, intersect of disjoint = empty, undo restores both originals).
+  **DONE + REACHABLE:** Union/Subtract/Intersect buttons (auto-disabled under 2 closed shapes), 7 call-sites, undoable. 10 tests. NOTE: engine skips degenerate collinear-edge touches (pre-existing Greiner-Hormann limitation) — documented by a baseline test.
 
 - [ ] **A3. Transform dialog** — set exact X/Y/W/H for the selection, plus rotate-by-angle and scale-by-factor. Uses `ShapeTransformer`.
   Gate: `FullyQualifiedName~TransformOps` — ≥6 tests (set-size preserves aspect when locked, rotate 90° twice = 180°, scale about bbox center, undo).

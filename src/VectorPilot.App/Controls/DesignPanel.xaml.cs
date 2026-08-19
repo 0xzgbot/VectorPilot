@@ -65,6 +65,9 @@ public partial class DesignPanel : UserControl
         UndoButton.Content = Undo.CanUndo ? $"↶ {Undo.NextUndoLabel}" : "↶ Undo";
         RedoButton.Content = Undo.CanRedo ? $"↷ {Undo.NextRedoLabel}" : "↷ Redo";
         SelectionLabel.Text = Selection.IsEmpty ? "" : $"{Selection.Count} selected";
+
+        bool canBool = BooleanSelectionOps.CanApply(Selection.Selected);
+        UnionButton.IsEnabled = SubtractButton.IsEnabled = IntersectButton.IsEnabled = canBool;
     }
 
     internal void SetStatus(string text) => StatusLabel.Text = text;

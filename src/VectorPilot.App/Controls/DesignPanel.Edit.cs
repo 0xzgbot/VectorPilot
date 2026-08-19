@@ -15,6 +15,33 @@ public partial class DesignPanel
     private void FlipH_Click(object sender, RoutedEventArgs e) => DoFlip(horizontal: true);
     private void FlipV_Click(object sender, RoutedEventArgs e) => DoFlip(horizontal: false);
 
+    private void Union_Click(object sender, RoutedEventArgs e) => DoBoolean(BooleanSelectionOps.Op.Union);
+    private void Subtract_Click(object sender, RoutedEventArgs e) => DoBoolean(BooleanSelectionOps.Op.Subtract);
+    private void Intersect_Click(object sender, RoutedEventArgs e) => DoBoolean(BooleanSelectionOps.Op.Intersect);
+
+    /// <summary>Card A2: boolean-combine the selection, undoably.</summary>
+    internal void DoBoolean(BooleanSelectionOps.Op op)
+    {
+        var layer = ActiveLayer;
+        if (layer is null || layer.Locked) return;
+        if (!BooleanSelectionOps.CanApply(Selection.Selected))
+        {
+            SetStatus("Select 2+ closed shapes first");
+            return;
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        var made = BooleanSelectionOps.Apply(layer, Selection.Selected, op);
+        Undo.Push($"{op}", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        Selection.Clear();
+        foreach (var s in made) Selection.Select(s, additive: true);
+        SetStatus(made.Count == 0 ? $"{op}: empty result" : $"{op} → {made.Count} shape(s)");
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
     internal void DoUndo()
     {
         var label = Undo.Undo();
