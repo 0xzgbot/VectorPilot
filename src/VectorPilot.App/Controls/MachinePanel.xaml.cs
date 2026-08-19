@@ -29,6 +29,10 @@ public partial class MachinePanel : UserControl
         {
             RefreshPorts();
             UpdateStreamButtons();
+            // Wired here, not in XAML: attaching in XAML fires during init before
+            // sibling elements exist.
+            ConsoleToggle.Checked += ConsoleToggle_Changed;
+            ConsoleToggle.Unchecked += ConsoleToggle_Changed;
         };
         Unloaded += (_, _) => _pollTimer.Stop();
     }
@@ -307,6 +311,36 @@ public partial class MachinePanel : UserControl
         SendLine("\u0018"); // 0x18 soft reset
         SendLine("$X");    // unlock
         UpdateStreamButtons();
+    }
+
+    // ---- Card A5 safety chrome: always enabled, never gated on state ----
+
+    private async void EStop_Click(object sender, RoutedEventArgs e)
+    {
+        Log(">> ! (E-STOP)");
+        AppState.Streamer?.Cancel();
+        if (_transport is not null) await _transport.PauseAsync();
+        UpdateStreamButtons();
+        RailStatusChanged?.Invoke("E-STOP engaged");
+    }
+
+    private async void Reset_Click(object sender, RoutedEventArgs e)
+    {
+        Log(">> 0x18 (soft reset)");
+        AppState.Streamer?.Cancel();
+        if (_transport is not null) await _transport.WriteLineAsync("\u0018");
+        UpdateStreamButtons();
+        RailStatusChanged?.Invoke("Soft reset sent");
+    }
+
+    private void ConsoleToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        // Fires during XAML init before the sibling elements exist.
+        if (ConsoleScroller is null || ConsoleText is null) return;
+
+        bool on = ConsoleToggle.IsChecked == true;
+        ConsoleScroller.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        if (!on) ConsoleText.Text = "(console off)";
     }
 
     private static double ParseOr(string s, double fallback)

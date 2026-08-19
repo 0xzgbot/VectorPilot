@@ -21,7 +21,14 @@ public partial class App : Application
         if (e.Args.Contains("--ui-smoke"))
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(RunUiSmoke));
+            // A one-shot timer, not a dispatcher priority: panels run their own
+            // 250ms DispatcherTimers, which starve Idle/Background callbacks.
+            var kick = new DispatcherTimer(DispatcherPriority.Normal)
+            {
+                Interval = TimeSpan.FromMilliseconds(600)
+            };
+            kick.Tick += (_, _) => { kick.Stop(); RunUiSmoke(); };
+            kick.Start();
         }
     }
 

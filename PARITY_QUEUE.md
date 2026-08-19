@@ -41,8 +41,10 @@ Rules:
   Gate: `FullyQualifiedName~ToolBrowser` — ≥8 tests (3-part resolution order machine>material>derived, edit persists, revert discards, 17-entry catalog intact).
   **DONE + REACHABLE:** Tools menu → "Tool Database…" opens ToolBrowserDialog (class tree, cut-data form, material+machine pickers, stage/save/revert, JSON persist). 11 tests.
 
-- [ ] **A5. Machine control panel** — connect/disconnect, live DRO, jog pad (X/Y/Z ± with step selector), soft-home, set-work-zero, stream start/pause/resume, always-visible E-stop + Reset, raw TX/RX console toggle. Simulator-backed.
+- [x] **A5. Machine control panel** — connect/disconnect, live DRO, jog pad (X/Y/Z ± with step selector), soft-home, set-work-zero, stream start/pause/resume, always-visible E-stop + Reset, raw TX/RX console toggle. Simulator-backed.
   Gate: `FullyQualifiedName~MachinePanel` — ≥10 tests (E-stop always enabled, no auto-start, jog emits `$J=`, hold freezes the stream, disconnect mid-stream alarms).
+  **DONE + REACHABLE:** panel already had connect/jog/home/zero/stream; ADDED the missing E-STOP + Reset buttons (always enabled — the XAML claimed Reset was available but shipped no button) and a raw TX/RX console toggle. MachineSession carries the tested safety logic. 13 session tests + 6 XAML-construction tests.
+  **HARNESS BUG (open):** `--ui-smoke` hangs (exit 124) even though all 4 panels construct fine on an STA thread — 4 fixes attempted (dispatcher priority, one-shot timer, null guards, code-wired events). Superseded by XamlConstructionTests; A7 FlaUI is the real fix.
 
 - [ ] **A6. 3D component tree panel** — component list with visibility + combine-mode dropdown (Add/Subtract/Merge/Low/High/Multiply), live composite via `ComponentCompositor`, sculpt brush controls.
   Gate: `FullyQualifiedName~ComponentTreePanel` — ≥8 tests (mode change recomposites, invisible excluded, order matters, undo).
