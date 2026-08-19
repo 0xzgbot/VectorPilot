@@ -70,7 +70,17 @@ Rules:
   Gate: `FullyQualifiedName~BitmapTrace` — 12 tests.
   **DONE + REACHABLE:** engine already existed (marching squares, not Sobel+Moore — equivalent for region contours) but had NO simplification and NO UI. Added Douglas-Peucker (SimplifyClosed) and a "Trace bitmap…" button in the Design ops bar: decodes to Gray8, traces, simplifies at 1px, scales to the sheet, flips to CNC Y-up, added undoably.
 
-- [ ] **E2. Moulding + Weave toolpaths** — the two remaining unported strategies. Register in `StrategyRegistry`.
+- [x] **E2. Moulding + Weave toolpaths** — the two remaining unported strategies. Register in `StrategyRegistry`.
+  **DONE + REACHABLE.** Both registered in StrategyRegistry and BOTH ON THE CUT COMBO — registry-only
+  G-code is make-work if the strategy cannot be picked. Moulding sweeps a profile along rails
+  (SweepReliefEngine) then finishes over the swept relief; Weave builds the interlaced heightfield then
+  finishes over it, so it emits real cutting moves rather than the old volume estimate.
+  Live proof: `ui_verify.py --combo Toolpaths CmbStrategy` expands the real control and lists
+  Profile / Pocket / V-Carve / Drill / **Moulding** / **Weave**.
+  CREDIT + CORRECTION: my first test pass called entry.Title / entry.Run(...) / result.GcodeLines — an API
+  I invented. The real one is DisplayName / Compute(shapes, heightfield, paramsJson) / Gcode. verify.sh
+  caught it as CS1061 and the card was NOT marked [x]; Cursor retargeted the tests at the real API.
+  10 strategy tests + 4 existing registry tests = 14 on the gate filter.
   Gate: `FullyQualifiedName~MouldingWeave` — ≥6 tests vs Mac numbers.
 
 - [x] **E3. Post catalog breadth** — expand shipped posts from 3 toward the Mac's reference set (GRBL mm/in, FluidNC, Marlin, LinuxCNC, Mach3/4, Shapeoko, Onefinity, Avid, plus rotary variants).

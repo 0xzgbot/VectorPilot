@@ -67,6 +67,29 @@ foreach($e in $all){{
     return out.startswith(("INVOKED", "SELECTED"))
 
 
+def combo_items(pid, automation_id):
+    """Expand a ComboBox by AutomationId and list its selectable items."""
+    out = ps(pid, f"""
+foreach($e in $all){{
+  if($e.Current.AutomationId -eq "{automation_id}"){{
+    try{{
+      $x = $e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+      $x.Expand(); Start-Sleep -Milliseconds 500
+      $c = New-Object System.Windows.Automation.PropertyCondition(
+             [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+             [System.Windows.Automation.ControlType]::ListItem)
+      foreach($i in $e.FindAll([System.Windows.Automation.TreeScope]::Descendants,$c)){{
+        "ITEM: " + $i.Current.Name
+      }}
+      $x.Collapse()
+    }}catch{{ "NOEXPAND" }}
+    break
+  }}
+}}""")
+    return [l.split("ITEM: ", 1)[1].strip()
+            for l in out.splitlines() if l.strip().startswith("ITEM: ")]
+
+
 def launch():
     """Start the app, dismiss the recovery modal, maximize. Returns (proc, window)."""
     for f in os.listdir(APPDATA) if os.path.isdir(APPDATA) else []:
@@ -74,7 +97,9 @@ def launch():
             p = os.path.join(APPDATA, f)
             shutil.rmtree(p, ignore_errors=True) if os.path.isdir(p) else os.remove(p)
 
-    proc = subprocess.Popen([EXE])
+    # --automated sets App.IsAutomated, which suppresses the first-run welcome and
+    # the recovery prompt. Without it the harness inspects a modal, not the shell.
+    proc = subprocess.Popen([EXE, "--automated"])
     win = None
     for _ in range(50):
         time.sleep(0.4)
@@ -115,6 +140,20 @@ def main():
     print(f"window: '{win.title}'")
     ok = True
     try:
+        if "--combo" in sys.argv:
+            # --combo Toolpaths CmbStrategy  → navigate, then list the combo's items
+            args = [a for a in sys.argv[2:] if not a.startswith("-")]
+            if len(args) < 2:
+                print("usage: ui_verify.py --combo <Stage> <AutomationId>")
+                return 2
+            invoke(proc.pid, args[0])
+            time.sleep(1.5)
+            items = combo_items(proc.pid, args[1])
+            print(f"  {args[1]}: {len(items)} items")
+            for it in items:
+                print(f"    - {it}")
+            return 0
+
         if "--tree" in sys.argv:
             # Optional stage to navigate to first: --tree Model
             # Optional extra control to click before dumping: --tree Setup RbDouble

@@ -160,6 +160,8 @@ public partial class CutPanel : UserControl
                 "Pocket" => ToolpathStrategy.Pocket,
                 "V-Carve" => ToolpathStrategy.VCarve,
                 "Drill" => ToolpathStrategy.Drill,
+                "Moulding" => ToolpathStrategy.Moulding,
+                "Weave" => ToolpathStrategy.Weave,
                 _ => ToolpathStrategy.Profile
             };
         }

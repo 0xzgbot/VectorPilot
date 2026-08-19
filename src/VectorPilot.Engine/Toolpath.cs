@@ -15,7 +15,9 @@ public enum ToolpathStrategy
     BevelCarving,
     PhotoVCarve,
     RotaryWrap,
-    Inlay
+    Inlay,
+    Moulding,
+    Weave
 }
 
 /// <summary>A calculated toolpath (strategy + parameters + result g-code).</summary>

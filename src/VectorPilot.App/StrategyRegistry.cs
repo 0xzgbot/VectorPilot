@@ -97,6 +97,52 @@ public sealed class StrategyRegistry
         Add<InlayToolpathParams>("inlay-plug", "Inlay (Plug)", false, (s, _, p) => InlayToolpathEngine.ComputePlug(s, p));
         Add<LaserCutParams>("laser-cut", "Laser Cut", false, (s, _, p) => LaserCutEngine.Compute(s, p));
         Add<LaserFillParams>("laser-fill", "Laser Fill", false, (s, _, p) => LaserFillEngine.Compute(s, p));
+
+        // E2: the last two unported strategies.
+        Add<MouldingToolpathParams>("moulding", "Moulding", false, (s, _, p) =>
+        {
+            // Rails come from the selection: first two open paths, or the bounding
+            // edges of a single path when only one is supplied.
+            var rails = s.Where(v => v.Points.Count >= 2).Take(2).ToList();
+            if (rails.Count == 0)
+                return new SpecialtyResult { GcodeLines = new List<string>() };
+
+            p.Rail1 = rails[0].Points.ToList();
+            p.Rail2 = rails.Count > 1 ? rails[1].Points.ToList() : rails[0].Points.ToList();
+
+            var r = MouldingToolpathEngine.Compute(p);
+            return new SpecialtyResult { GcodeLines = r.GcodeLines };
+        });
+        Add<WeaveStrategyParams>("weave", "Weave", false, (s, _, p) =>
+        {
+            var bounds = s.SelectMany(v => v.Points).ToList();
+            double w = bounds.Count > 0 ? bounds.Max(pt => pt.X) - bounds.Min(pt => pt.X) : p.WidthMm;
+            double h = bounds.Count > 0 ? bounds.Max(pt => pt.Y) - bounds.Min(pt => pt.Y) : p.HeightMm;
+            if (w <= 0 || h <= 0) { w = p.WidthMm; h = p.HeightMm; }
+
+            var hf = WeaveReliefGenerator.Generate(
+                new WeaveParams
+                {
+                    Pattern = p.Pattern,
+                    WarpCount = p.WarpCount,
+                    WeftCount = p.WeftCount,
+                    ThreadSize = p.ThreadSizeMm,
+                    Overlap = p.Overlap
+                },
+                width: w, height: h,
+                cellSizeMm: p.CellSizeMm,
+                threadHeight: p.ThreadHeightMm);
+
+            // Finish over the woven relief so the strategy emits real cutting moves.
+            var finish = HeightfieldFinishEngine.Compute(hf, new HeightfieldFinishParams
+            {
+                StepOverMm = p.StepOverMm,
+                FeedRateMmPerMin = p.FeedRateMmPerMin,
+                PlungeFeedRateMmPerMin = p.PlungeFeedRateMmPerMin,
+                SafeZHeightMm = p.SafeZHeightMm
+            });
+            return StrategyAdapters.ToSpecialty(finish);
+        });
         Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty() : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
         Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty() : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
         Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty() : PhotoVCarveEngine.Compute(hf, p));

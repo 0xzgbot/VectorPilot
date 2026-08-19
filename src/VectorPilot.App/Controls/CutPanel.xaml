@@ -20,6 +20,8 @@
                 <ComboBoxItem Content="Pocket"/>
                 <ComboBoxItem Content="V-Carve"/>
                 <ComboBoxItem Content="Drill"/>
+                <ComboBoxItem Content="Moulding"/>
+                <ComboBoxItem Content="Weave"/>
             </ComboBox>
             <TextBox x:Name="TxtDepth" Text="0.25" Width="70" Margin="8,0,0,0" ToolTip="Cut depth"/>
             <TextBox x:Name="TxtFeed" Text="100" Width="60" Margin="6,0,0,0" ToolTip="Feed rate"/>
