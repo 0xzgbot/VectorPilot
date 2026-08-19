@@ -35,6 +35,6 @@ Port of macOS ShopPilot to Windows (C#/.NET 8 + WPF). Mac source of truth, read-
 
 - Pocket: FIXED — now scanline-clipped to the outline (was bounding-box raster).
 - V-carve: FIXED — depth now derives from local channel width (VCarveGeometry); the Y-position golden was regenerated.
-- Weave = volume/area estimate. No mesh, no toolpath.
+- Weave: FIXED — WeaveReliefGenerator emits a real interlaced heightfield; the estimator remains for cost/time only.
 - `MASTER_KANBAN.md` and `GAMEPLAN-ASPIRE-PARITY.md` are stale. `PARITY_QUEUE.md`
   is current.

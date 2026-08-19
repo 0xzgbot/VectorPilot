@@ -54,7 +54,7 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 | Component tree + combine modes | ⚠ engine + panel built, NOT hosted in any stage yet |
 | Sculpt engine | ✅ |
 | 2-rail sweep / extrude | ✅ |
-| Weave | ❌ **not implemented** — volume/area estimate only, no toolpath |
+| Weave | ✅ interlaced relief surface (WeaveReliefGenerator: plain/twill/satin) |
 | Modeling resolution (Standard 1M / High 4M) | ✅ |
 | 3D rough + finish engines | ✅ |
 | Toolpath simulator (material removal) | ✅ |
@@ -87,7 +87,7 @@ These are locked in by goldens and are **not** Aspire-equivalent:
 |---|---|
 
 
-| Weave | Volume/area estimate only — no mesh, no toolpath |
+
 
 A test count is not a machine you can cut with. See `docs/vectorpilot-review.html`.
 - **Done:** full Mac parity wave (SPK-0209 expressions + document variables,
