@@ -16,15 +16,17 @@ public sealed class ProfileToolpathParams
     public double PlungeFeedRateMmPerMin { get; set; } = 300;
     public double MaxDepthOfCutMm { get; set; } = 2.0;
     public double ToolDiameterMm { get; set; } = 6.0;
-    public List<double> TabWidths { get; set; } = new();
     public int FinishPasses { get; set; } = 1;
     public double LeadInDistanceMm { get; set; } = 5.0;
+
+    /// <summary>Holding tabs on the final pass: 0 disables them.</summary>
+    public int TabCount { get; set; }
+    /// <summary>Tab length along the contour (mm).</summary>
+    public double TabLengthMm { get; set; } = 6.0;
+    /// <summary>Material left under the cutter at a tab (mm).</summary>
+    public double TabHeightMm { get; set; } = 1.0;
     public double LeadOutDistanceMm { get; set; } = 5.0;
     public double SpindleRpm { get; set; } = 0;
-    public bool AddTabs { get; set; }
-    public double TabLengthMm { get; set; } = 6.0;
-    public double TabThicknessMm { get; set; } = 3.0;
-    public double TabSpacingMm { get; set; } = 25.0;
     public bool Use3DTabs { get; set; }
     public ProfileRampType RampType { get; set; } = ProfileRampType.Smooth;
     public double RampDistanceMm { get; set; } = 3.0;
@@ -55,7 +57,7 @@ public sealed class ProfileToolpathResult
     public double EstimatedTimeSeconds { get; init; }
     public int PassCount { get; init; }
     public List<string> Path { get; init; } = new();
-    public bool HasTabs => Params.TabWidths.Count > 0;
+    public bool HasTabs => Params.TabCount > 0;
 }
 
 /// <summary>Profile engine (ported from ProfileToolpathEngine.swift compute()).</summary>
@@ -122,11 +124,38 @@ public static class ProfileToolpathEngine
                     path.Add($"G1 X{start.X:0.000} Y{start.Y:0.000} F{(int)feed}");
                 }
 
+                // Holding tabs on the FINAL pass only: earlier passes have not yet
+                // freed the part, so raising the cutter there would leave stock.
+                var tabs = (pass == passCount && params_.TabCount > 0)
+                    ? HoldingTabGenerator.Distribute(offsetPoints, vector.Closed,
+                          params_.TabCount, params_.TabLengthMm, params_.TabHeightMm)
+                    : new List<HoldingTab>();
+
+                double travelled = 0;
                 for (int i = 1; i < offsetPoints.Count; i++)
                 {
+                    var a = offsetPoints[i - 1];
                     var p = offsetPoints[i];
-                    gcode.Add($"G1 X{p.X:0.000} Y{p.Y:0.000} F{(int)feed}");
-                    path.Add($"G1 X{p.X:0.000} Y{p.Y:0.000} F{(int)feed}");
+                    double segLen = a.DistanceTo(p);
+
+                    // A tab can start and end mid-segment, so split the segment at
+                    // every tab boundary it crosses. Sampling only at vertices means
+                    // tabs never fire on coarse geometry (a 4-point square).
+                    foreach (var (px, py, pz, isTab) in SplitSegment(a, p, travelled, segLen, zDepth, tabs))
+                    {
+                        if (isTab)
+                        {
+                            gcode.Add($"G1 X{px:0.000} Y{py:0.000} Z{pz:0.000} F{(int)feed} ; tab");
+                            path.Add($"G1 X{px:0.000} Y{py:0.000} Z{pz:0.000} F{(int)feed}");
+                        }
+                        else
+                        {
+                            gcode.Add($"G1 X{px:0.000} Y{py:0.000} Z{pz:0.000} F{(int)feed}");
+                            path.Add($"G1 X{px:0.000} Y{py:0.000} Z{pz:0.000} F{(int)feed}");
+                        }
+                    }
+
+                    travelled += segLen;
                 }
 
                 if (vector.Closed && offsetPoints.Count > 2)
@@ -164,6 +193,50 @@ public static class ProfileToolpathEngine
             PassCount = maxPassCount,
             Path = path
         };
+    }
+
+    /// <summary>
+    /// Walk one segment, emitting a point at every tab boundary it crosses plus the
+    /// end point. Yields (x, y, z, isTab) so a tab that starts and ends mid-segment
+    /// still produces the correct rise and fall.
+    /// </summary>
+    private static IEnumerable<(double X, double Y, double Z, bool IsTab)> SplitSegment(
+        VectorPoint a, VectorPoint b, double startDist, double segLen,
+        double zDepth, IReadOnlyList<HoldingTab> tabs)
+    {
+        if (segLen <= 1e-9 || tabs.Count == 0)
+        {
+            yield return (b.X, b.Y, HoldingTabGenerator.DepthAt(startDist + segLen, zDepth, tabs), false);
+            yield break;
+        }
+
+        var cuts = new List<double>();
+        foreach (var t in tabs)
+        {
+            foreach (double edge in new[] { t.Position, t.Position + t.Length })
+            {
+                double local = edge - startDist;
+                if (local > 1e-9 && local < segLen - 1e-9) cuts.Add(local);
+            }
+        }
+        cuts.Sort();
+
+        double prev = 0;
+        foreach (double local in cuts)
+        {
+            double t01 = local / segLen;
+            double x = a.X + (b.X - a.X) * t01;
+            double y = a.Y + (b.Y - a.Y) * t01;
+
+            double mid = startDist + (prev + local) / 2.0;
+            double z = HoldingTabGenerator.DepthAt(mid, zDepth, tabs);
+            yield return (x, y, z, Math.Abs(z - zDepth) > 1e-9);
+            prev = local;
+        }
+
+        double lastMid = startDist + (prev + segLen) / 2.0;
+        double lastZ = HoldingTabGenerator.DepthAt(lastMid, zDepth, tabs);
+        yield return (b.X, b.Y, lastZ, Math.Abs(lastZ - zDepth) > 1e-9);
     }
 
     private static double PathLength(VectorShape shape)

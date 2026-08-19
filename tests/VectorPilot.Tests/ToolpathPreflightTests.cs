@@ -48,16 +48,16 @@ public class ToolpathPreflightTests
     [Fact]
     public void R014_Flags_Through_Cut_Without_Hold_Down()
     {
-        var p = new ProfileToolpathParams { MaxDepthOfCutMm = 12, AddTabs = false };
+        var p = new ProfileToolpathParams { MaxDepthOfCutMm = 12, TabCount = 0 };
         var issue = ToolpathPreflight.ThroughCutWithoutHoldDown(p, materialThicknessMm: 10, vacuumHoldDown: false);
         Assert.NotNull(issue);
         Assert.Equal("R014", issue!.RuleId);
         Assert.Equal(ToolpathPreflightFix.FixKind.AddTabs, issue.Fix.Kind);
 
         // Tabs clear it; vacuum clears it; shallow cut clears it.
-        p.AddTabs = true;
+        p.TabCount = 4;
         Assert.Null(ToolpathPreflight.ThroughCutWithoutHoldDown(p, 10, false));
-        p.AddTabs = false;
+        p.TabCount = 0;
         Assert.Null(ToolpathPreflight.ThroughCutWithoutHoldDown(p, 10, true));
         var shallow = new ProfileToolpathParams { MaxDepthOfCutMm = 4 };
         Assert.Null(ToolpathPreflight.ThroughCutWithoutHoldDown(shallow, 10, false));

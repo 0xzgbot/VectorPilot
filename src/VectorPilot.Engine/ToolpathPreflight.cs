@@ -122,7 +122,7 @@ public static class ToolpathPreflight
         Guid? nodeId = null, string nodeName = "Profile")
     {
         if (p.MaxDepthOfCutMm < materialThicknessMm) return null;
-        if (p.AddTabs) return null;
+        if (p.TabCount > 0) return null;   // holding tabs keep the part anchored
         if (vacuumHoldDown) return null;
         return new ToolpathPreflightIssue
         {
