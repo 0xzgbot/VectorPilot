@@ -12,11 +12,17 @@ namespace VectorPilot.App.Controls;
 public partial class ModelPanel : UserControl
 {
     private int _shapeCount;
+    private int _weaveCount;
 
     public ModelPanel()
     {
         InitializeComponent();
-        Loaded += (_, _) => Refresh();
+        Loaded += (_, _) =>
+        {
+            CmbWeavePattern.ItemsSource = new[] { "Plain", "Twill", "Satin" };
+            CmbWeavePattern.SelectedIndex = 0;
+            Refresh();
+        };
     }
 
     private ComponentTreeViewModel Vm => Tree.Vm;
@@ -102,6 +108,38 @@ public partial class ModelPanel : UserControl
                 System.Globalization.CultureInfo.InvariantCulture, out var p) => p,
             _ => fallback
         };
+
+    /// <summary>Wire the weave generator to the UI (it shipped engine-only).</summary>
+    private void AddWeave_Click(object sender, RoutedEventArgs e)
+    {
+        var sheet = AppState.CurrentJob.ActiveSheet;
+        double w = Math.Max(ParseDim(sheet.Width, 200), 10);
+        double h = Math.Max(ParseDim(sheet.Height, 200), 10);
+        double thick = ParseDim(sheet.Thickness, 18);
+
+        var pattern = (CmbWeavePattern.SelectedItem as string) switch
+        {
+            "Twill" => WeavePattern.Twill,
+            "Satin" => WeavePattern.Satin,
+            _ => WeavePattern.Plain
+        };
+
+        var hf = WeaveReliefGenerator.Generate(
+            new WeaveParams
+            {
+                Pattern = pattern,
+                WarpCount = 12,
+                WeftCount = 12,
+                ThreadSize = Math.Min(w, h) / 14.0,
+                Overlap = 0.5
+            },
+            width: w, height: h,
+            cellSizeMm: Math.Max(Math.Min(w, h) / 200.0, 0.25),
+            threadHeight: Math.Max(thick * 0.25, 2));
+
+        Vm.Add(hf, $"{pattern} weave {++_weaveCount}");
+        Refresh();
+    }
 
     private void Bake_Click(object sender, RoutedEventArgs e)
     {

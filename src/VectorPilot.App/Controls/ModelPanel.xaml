@@ -21,6 +21,10 @@
                         Click="ImportRelief_Click" ToolTip="STL / OBJ / 3MF / bitmap → relief component"/>
                 <Button x:Name="BtnAddShape" Content="Add shape relief" Height="26" Padding="10,0" Margin="6,0,0,0"
                         Click="AddShape_Click" ToolTip="Dome / round / ramp primitive"/>
+                <Button x:Name="BtnAddWeave" Content="Add weave" Height="26" Padding="10,0" Margin="6,0,0,0"
+                        Click="AddWeave_Click" ToolTip="Interlaced woven surface (plain / twill / satin)"/>
+                <ComboBox x:Name="CmbWeavePattern" Width="86" Height="26" Margin="4,0,0,0"
+                          ToolTip="Weave pattern"/>
                 <Button x:Name="BtnBake" Content="Bake to job" Height="26" Padding="10,0" Margin="6,0,0,0"
                         Click="Bake_Click" ToolTip="Send the composite to the Toolpaths stage"/>
                 <TextBlock x:Name="StatusLabel" Foreground="#555" VerticalAlignment="Center" Margin="14,0,0,0"/>

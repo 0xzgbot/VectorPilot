@@ -116,6 +116,11 @@ def main():
     ok = True
     try:
         if "--tree" in sys.argv:
+            # Optional stage to navigate to first: --tree Model
+            args = [a for a in sys.argv[2:] if not a.startswith("-")]
+            if args:
+                invoke(proc.pid, args[0])
+                time.sleep(1.5)
             for r in tree(proc.pid):
                 print(f"  {r['type']:<12} id={r['id']:<18} enabled={r['enabled']}  {r['name']}")
             return 0
