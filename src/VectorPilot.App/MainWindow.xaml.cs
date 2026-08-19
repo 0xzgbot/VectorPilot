@@ -133,6 +133,16 @@ public partial class MainWindow : Window
             var dlg = new Controls.PostManagerDialog { Owner = Application.Current.MainWindow };
             dlg.ShowDialog();
         }));
+        reg.Register(new CommandRegistry.Command("tools", "Tool Database…", null, "Tools", () =>
+        {
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "VectorPilot", "tools.json");
+            var db = System.IO.File.Exists(path) ? ToolDatabase.LoadFromJson(path) : new ToolDatabase(seedDefaults: true);
+            var dlg = new Controls.ToolBrowserDialog(db, path) { Owner = Application.Current.MainWindow };
+            dlg.ShowDialog();
+        }));
+
         reg.Register(new CommandRegistry.Command("palette", "Command Palette…", "Ctrl+K", "Tools", () =>
         {
             var w = new Controls.CommandPaletteWindow(reg) { Owner = Application.Current.MainWindow };

@@ -37,8 +37,9 @@ Rules:
   Gate: `FullyQualifiedName~TransformOps` — ≥6 tests (set-size preserves aspect when locked, rotate 90° twice = 180°, scale about bbox center, undo).
   **DONE + REACHABLE:** Transform… button opens TransformDialog (X/Y/W/H, lock-aspect, angle, factor, validation); 11 call-sites, undoable. 13 tests.
 
-- [ ] **A4. Tool browser panel** — tree of the 13 tool classes from `ToolDatabase`, per-tool cut-data form (feed/plunge/rpm/depth), material + machine pickers that drive `ResolvedCutData`, save/revert.
+- [x] **A4. Tool browser panel** — tree of the 13 tool classes from `ToolDatabase`, per-tool cut-data form (feed/plunge/rpm/depth), material + machine pickers that drive `ResolvedCutData`, save/revert.
   Gate: `FullyQualifiedName~ToolBrowser` — ≥8 tests (3-part resolution order machine>material>derived, edit persists, revert discards, 17-entry catalog intact).
+  **DONE + REACHABLE:** Tools menu → "Tool Database…" opens ToolBrowserDialog (class tree, cut-data form, material+machine pickers, stage/save/revert, JSON persist). 11 tests.
 
 - [ ] **A5. Machine control panel** — connect/disconnect, live DRO, jog pad (X/Y/Z ± with step selector), soft-home, set-work-zero, stream start/pause/resume, always-visible E-stop + Reset, raw TX/RX console toggle. Simulator-backed.
   Gate: `FullyQualifiedName~MachinePanel` — ≥10 tests (E-stop always enabled, no auto-start, jog emits `$J=`, hold freezes the stream, disconnect mid-stream alarms).
