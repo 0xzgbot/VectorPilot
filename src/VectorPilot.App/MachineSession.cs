@@ -80,6 +80,41 @@ public sealed class MachineSession : IAsyncDisposable
 
     // ---- motion ----
 
+    /// <summary>Continuous jog: a real distance in the requested direction, not a 0.0 no-op.</summary>
+    public async Task<bool> JogContinuousAsync(string axis, double sign, double feed, double maxTravelMm = 1000)
+    {
+        if (!_transport.IsOpen) return false;
+        double d = sign * maxTravelMm;
+        double x = axis == "X" ? d : 0, y = axis == "Y" ? d : 0, z = axis == "Z" ? d : 0;
+        Log($">> jog continuous {axis}{(sign > 0 ? "+" : "-")} F{feed}");
+        await _transport.JogAsync(x, y, z, feed);
+        return true;
+    }
+
+    /// <summary>Cancel an in-flight jog (GRBL 0x85).</summary>
+    public async Task<bool> JogCancelAsync()
+    {
+        if (!_transport.IsOpen) return false;
+        Log(">> 0x85 (jog cancel)");
+        await _transport.WriteLineAsync("\x85");
+        return true;
+    }
+
+    /// <summary>Raw line passthrough for panel buttons ($X, M3, G10 …).</summary>
+    public async Task<bool> SendAsync(string line)
+    {
+        if (!_transport.IsOpen) return false;
+        Log($">> {line}");
+        await _transport.WriteLineAsync(line);
+        return true;
+    }
+
+    /// <summary>Status poll ('?').</summary>
+    public async Task PollAsync()
+    {
+        if (_transport.IsOpen) await _transport.WriteLineAsync("?");
+    }
+
     public async Task<bool> JogAsync(double dx, double dy, double dz, double feed)
     {
         if (!_transport.IsOpen) return false;
@@ -105,6 +140,9 @@ public sealed class MachineSession : IAsyncDisposable
     }
 
     // ---- streaming (explicit consent only) ----
+
+    /// <summary>The active streamer (null until a stream starts) — for progress binding.</summary>
+    public GCodeStreamer? Streamer => _streamer;
 
     /// <summary>
     /// Start streaming. Requires an open port and an explicit call — nothing in

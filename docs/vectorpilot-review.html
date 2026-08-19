@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VectorPilot Review</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: inherit;
+    color: var(--foreground, #e6e6e6);
+    background: transparent;
+    font-size: 13.5px; line-height: 1.5;
+  }
+  h2 {
+    font-size: 15px; font-weight: 600; margin: 22px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h2:first-child { margin-top: 0; }
+  .sub { color: var(--muted-foreground, #9a9a9a); font-size: 12px; margin: 0 0 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 6px; }
+  th, td {
+    text-align: left; padding: 6px 8px;
+    border-bottom: 1px solid var(--border, #2e2e2e);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted-foreground, #9a9a9a);
+    border-bottom: 1px solid var(--border, #3a3a3a);
+  }
+  td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: color-mix(in oklab, var(--foreground, #888) 9%, transparent);
+    padding: 1px 4px; border-radius: 3px;
+  }
+  .tag {
+    display: inline-block; font-size: 10.5px; font-weight: 600;
+    padding: 1px 6px; border-radius: 3px; white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .bad  { background: #7f1d1d; color: #fecaca; }
+  .warn { background: #78350f; color: #fde68a; }
+  .ok   { background: #14532d; color: #bbf7d0; }
+  .fixed{ background: #1e3a5f; color: #bfdbfe; }
+  ul { margin: 4px 0 0; padding-left: 18px; }
+  li { margin: 3px 0; }
+  .note {
+    border-left: 2px solid var(--border, #3a3a3a);
+    padding: 6px 0 6px 12px; margin: 10px 0 0;
+    color: var(--muted-foreground, #9a9a9a); font-size: 12.5px;
+  }
+  .metric { display: flex; gap: 20px; flex-wrap: wrap; margin: 0 0 14px; }
+  .metric div { font-variant-numeric: tabular-nums; }
+  .metric b { display: block; font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
+  .metric span { font-size: 11px; color: var(--muted-foreground, #9a9a9a); }
+</style>
+</head>
+<body>
+
+<h2>VectorPilot — external review, accepted</h2>
+<p class="sub">Verdict: the port emits G-code and prints a test count. That is not Aspire parity. Every finding below was reproduced locally before being recorded.</p>
+
+<div class="metric">
+  <div><b>14,790</b><span>engine + geometry LOC</span></div>
+  <div><b>~4,800</b><span>app LOC</span></div>
+  <div><b>671</b><span>tests</span></div>
+  <div><b>3 / 53+</b><span>shipped posts</span></div>
+</div>
+
+<h2>The A5 violation (confirmed, reverted)</h2>
+<table>
+  <tr><th>Claim</th><th>Reality</th><th></th></tr>
+  <tr>
+    <td>A5 marked <code>[x]</code></td>
+    <td><code>MachineSession</code> was imported <em>only by tests</em>. The panel drove <code>_transport</code> + <code>AppState.Streamer</code> directly.</td>
+    <td><span class="tag bad">violated own rule</span></td>
+  </tr>
+  <tr>
+    <td>13 <code>MachinePanel</code> tests</td>
+    <td>None constructed <code>MachinePanel</code>. The filter could go green with the Machine stage untouched.</td>
+    <td><span class="tag bad">scoreboard</span></td>
+  </tr>
+  <tr>
+    <td>Continuous jog</td>
+    <td><code>$J=G91X0.0F200</code> — a zero-distance no-op.</td>
+    <td><span class="tag bad">stub</span></td>
+  </tr>
+</table>
+<p class="note">Identical to A1: first commit claimed "wired through UndoStack", second admitted it was test-only. The rule in <code>PARITY_QUEUE.md</code> was written and then broken on the very next card.</p>
+
+<h2>Fixed in this pass</h2>
+<table>
+  <tr><th>Change</th><th>Evidence</th><th></th></tr>
+  <tr><td>A5 reverted to <code>[~]</code> with the violation written into the card</td><td>queue diff</td><td><span class="tag fixed">honest</span></td></tr>
+  <tr><td>Panel routes through <strong>one</strong> <code>MachineSession</code>; duplicate e-stop/jog/stream path deleted</td><td><code>_transport</code>: 0 · <code>AppState.Streamer</code>: 0 · <code>Session.</code>: 21</td><td><span class="tag fixed">wired</span></td></tr>
+  <tr><td>Continuous jog sends real travel + <code>0x85</code> cancel</td><td><code>0.0F</code> occurrences: 0</td><td><span class="tag fixed">real</span></td></tr>
+  <tr><td>Test asserts the panel holds <em>no</em> transport/streamer field</td><td>reflection guard, 16/16 focused</td><td><span class="tag fixed">anti-stub</span></td></tr>
+</table>
+
+<h2>Engine shortcuts — shipping algorithms, not TODOs</h2>
+<table>
+  <tr><th>Strategy</th><th>What it actually does</th><th></th></tr>
+  <tr>
+    <td>Pocket</td>
+    <td>Raster zigzag across the <em>bounding box</em>. A circle gets a rectangle of passes. Source comment admits "v1: raster-zigzag within shape bounds".</td>
+    <td><span class="tag bad">not contour offset</span></td>
+  </tr>
+  <tr>
+    <td>V-carve</td>
+    <td><code>z = actualZ * (0.3 + 0.7 * normalizedY)</code> — depth derived from Y position on the page, not medial-axis width. Goldens encode this.</td>
+    <td><span class="tag bad">wrong physics</span></td>
+  </tr>
+  <tr>
+    <td>Weave</td>
+    <td>Volume/area estimate. No mesh, no toolpath. README marked it ✅.</td>
+    <td><span class="tag bad">not implemented</span></td>
+  </tr>
+</table>
+<p class="note">"≥ N G-code lines" smoke assertions can never catch any of these. Goldens lock the shortcuts in as intended behaviour.</p>
+
+<h2>Docs, lying in three directions</h2>
+<table>
+  <tr><th>File</th><th>Problem</th><th></th></tr>
+  <tr><td><code>README.md</code></td><td>Claims 463/463; weave ✅; component tree ✅</td><td><span class="tag bad">stale + false</span></td></tr>
+  <tr><td><code>MASTER_KANBAN.md</code></td><td>M0–M6 mostly <code>[ ]</code> after 100+ commits</td><td><span class="tag warn">abandoned</span></td></tr>
+  <tr><td><code>GAMEPLAN-ASPIRE-PARITY.md</code></td><td>Almost everything checked</td><td><span class="tag bad">optimistic</span></td></tr>
+  <tr><td><code>ASPIRE_PARITY.md</code></td><td>3 posts vs 53+, SKP blocked — accurate</td><td><span class="tag ok">honest</span></td></tr>
+  <tr><td><code>PARITY_QUEUE.md</code></td><td>Closest to real work</td><td><span class="tag ok">current</span></td></tr>
+</table>
+
+<h2>CI is weaker than the local gate</h2>
+<table>
+  <tr><th></th><th>Config</th><th>Zero-warning</th></tr>
+  <tr><td><code>verify.sh</code></td><td class="n">Release</td><td><span class="tag ok">enforced</span></td></tr>
+  <tr><td>GitHub CI</td><td class="n">Debug</td><td><span class="tag warn">not enforced</span></td></tr>
+</table>
+<p class="note">GitHub green is a weaker signal than the local ritual — and the ritual itself became the product.</p>
+
+<h2>Next, in order</h2>
+<ul>
+  <li><strong>UI first, tests second.</strong> No new class that only tests import.</li>
+  <li>Pocket → true contour-offset / island-aware clearing; retire the bounding-box goldens.</li>
+  <li>V-carve → medial-axis width-driven depth; the current goldens are wrong and must be regenerated.</li>
+  <li>Weave → real toolpath or mark it <span class="tag bad">not implemented</span> everywhere.</li>
+  <li>Rewrite <code>README.md</code>; retire <code>MASTER_KANBAN</code> + <code>GAMEPLAN</code> in favour of <code>PARITY_QUEUE</code>.</li>
+  <li>Raise CI to Release + zero-warning so it matches <code>verify.sh</code>.</li>
+</ul>
+
+</body>
+</html>

@@ -48,6 +48,29 @@ public class XamlConstructionTests
     public void ComponentTreePanel_Constructs() => OnSta(() => _ = new ComponentTreePanel());
 
     [Fact]
+    public void MachinePanel_Drives_A_MachineSession_Not_Its_Own_Transport()
+    {
+        OnSta(() =>
+        {
+            var panel = new MachinePanel();
+
+            // The panel must not hold a transport/streamer of its own — every
+            // machine call has to route through the single MachineSession.
+            var fields = typeof(MachinePanel)
+                .GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Select(f => f.FieldType.Name)
+                .ToList();
+
+            Assert.DoesNotContain("IMachineTransport", fields);
+            Assert.DoesNotContain("GCodeStreamer", fields);
+
+            // And it must expose the session seam.
+            Assert.NotNull(typeof(MachinePanel).GetProperty("Session",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+        });
+    }
+
+    [Fact]
     public void MachinePanel_Has_Always_Enabled_Safety_Chrome()
     {
         OnSta(() =>

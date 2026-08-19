@@ -9,33 +9,41 @@ using VectorPilot.Serial;
 
 namespace VectorPilot.App.Controls;
 
+/// <summary>
+/// Machine stage. ALL machine access goes through a single <see cref="MachineSession"/>
+/// (card A5) — this panel holds no transport or streamer of its own, so the safety
+/// invariants covered by MachineSessionTests are the ones that actually run here.
+/// </summary>
 public partial class MachinePanel : UserControl
 {
     public event Action<string>? RailStatusChanged;
     public event Action<string>? DocumentTitleChanged;
 
-    private bool _connected;
-    private IMachineTransport? _transport;
+    /// <summary>The one session this panel drives. Internal so tests can inspect it.</summary>
+    internal MachineSession? Session { get; private set; }
+
     private readonly DispatcherTimer _pollTimer;
-    private string _pollState = "";
+    private int _consoleShown;
 
     public MachinePanel()
     {
         InitializeComponent();
         RefreshPorts();
         _pollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-        _pollTimer.Tick += (_, _) => PollStatus();
+        _pollTimer.Tick += async (_, _) => await PollAsync();
         Loaded += (_, _) =>
         {
             RefreshPorts();
             UpdateStreamButtons();
-            // Wired here, not in XAML: attaching in XAML fires during init before
-            // sibling elements exist.
+            // Wired here, not in XAML: XAML-attached handlers fire during init
+            // before sibling elements exist (caused a startup NRE once already).
             ConsoleToggle.Checked += ConsoleToggle_Changed;
             ConsoleToggle.Unchecked += ConsoleToggle_Changed;
         };
         Unloaded += (_, _) => _pollTimer.Stop();
     }
+
+    private bool Connected => Session?.IsConnected == true;
 
     private void RefreshPorts()
     {
@@ -46,34 +54,41 @@ public partial class MachinePanel : UserControl
         CmbPort.SelectedIndex = 0;
     }
 
-    private void Log(string line)
+    /// <summary>Mirror the session's console buffer into the view.</summary>
+    private void PumpConsole()
     {
-        ConsoleText.Text += line + "\n";
+        if (Session is null || ConsoleToggle.IsChecked != true) return;
+
+        var log = Session.ConsoleLog;
+        for (; _consoleShown < log.Count; _consoleShown++)
+            ConsoleText.Text += log[_consoleShown] + "\n";
+
         if (ConsoleText.Text.Length > 200_000) ConsoleText.Text = ConsoleText.Text[^100_000..];
         ConsoleScroller.ScrollToEnd();
     }
 
+    // ---- connection ----
+
     private async void BtnConnect_Click(object sender, RoutedEventArgs e)
     {
-        if (_connected)
-        {
-            await DisconnectAsync();
-            return;
-        }
+        if (Connected) { await DisconnectAsync(); return; }
 
         var selected = CmbPort.SelectedItem?.ToString() ?? "";
-        var profile = selected.StartsWith("SIMULATOR")
+        bool sim = selected.StartsWith("SIMULATOR");
+        var profile = sim
             ? MachineProfile.Simulator()
             : new MachineProfile { Name = selected, PortName = selected, BaudRate = 115200 };
 
-        _transport = selected.StartsWith("SIMULATOR") ? new SimulatorTransport() : new SerialTransport();
-        AppState.ReplaceTransport(_transport);
-        _transport.EventReceived += OnTransportEvent;
+        var transport = sim ? new SimulatorTransport() : (IMachineTransport)new SerialTransport();
+        AppState.ReplaceTransport(transport);
+
+        Session = new MachineSession(transport);
+        Session.Alarm += OnSessionAlarm;
+        _consoleShown = 0;
 
         try
         {
-            await _transport.OpenAsync(profile);
-            _connected = true;
+            if (!await Session.ConnectAsync(profile)) throw new IOException("port did not open");
             AppState.Profile = profile;
             ConnState.Text = $"connected · {selected}";
             ConnState.Foreground = System.Windows.Media.Brushes.LimeGreen;
@@ -87,128 +102,89 @@ public partial class MachinePanel : UserControl
             ConnState.Text = $"failed: {ex.Message}";
             ConnState.Foreground = System.Windows.Media.Brushes.Red;
         }
+        PumpConsole();
+        UpdateStreamButtons();
     }
 
     private async Task DisconnectAsync()
     {
         _pollTimer.Stop();
-        try
+        if (Session is not null)
         {
-            if (_transport is not null)
-            {
-                _transport.EventReceived -= OnTransportEvent;
-                await _transport.CloseAsync();
-            }
+            try { await Session.DisconnectAsync(); } catch { /* ignore */ }
+            Session.Alarm -= OnSessionAlarm;
         }
-        catch { /* ignore */ }
-        _connected = false;
         ConnState.Text = "disconnected";
         ConnState.Foreground = System.Windows.Media.Brushes.Orange;
         BtnConnect.Content = "Connect";
         RailStatusChanged?.Invoke("disconnected");
         DroState.Text = DroMpos.Text = DroWpos.Text = DroFs.Text = DroBuf.Text = "—";
+        PumpConsole();
+        UpdateStreamButtons();
     }
 
-    private void OnTransportEvent(TransportEvent ev)
+    private void OnSessionAlarm(string message) => Dispatcher.BeginInvoke(() =>
     {
-        Dispatcher.BeginInvoke(() =>
-        {
-            switch (ev.Type)
-            {
-                case TransportEventType.Opened:
-                    Log($"> {ev.Payload}");
-                    break;
-                case TransportEventType.Closed:
-                    Log($"> {ev.Payload}");
-                    break;
-                case TransportEventType.DataReceived:
-                    Log(ev.Payload.StartsWith("$J") || ev.Payload.StartsWith("G") || ev.Payload.StartsWith("M")
-                        ? $"TX: {ev.Payload}"
-                        : $"RX: {ev.Payload}");
-                    break;
-                case TransportEventType.Status:
-                    HandleStatus(ev.Payload);
-                    break;
-                case TransportEventType.Alarm:
-                    Log($"⚠ {ev.Payload}");
-                    DroState.Text = "ALARM";
-                    DroState.Foreground = System.Windows.Media.Brushes.Red;
-                    break;
-                case TransportEventType.Error:
-                    Log($"✖ {ev.Payload}");
-                    break;
-                case TransportEventType.Ok:
-                    break;
-                default:
-                    Log($"{ev.Type}: {ev.Payload}");
-                    break;
-            }
-        });
-    }
+        DroState.Text = "ALARM";
+        DroState.Foreground = System.Windows.Media.Brushes.Red;
+        RailStatusChanged?.Invoke(message);
+        PumpConsole();
+        UpdateStreamButtons();
+    });
 
-    private void HandleStatus(string raw)
+    private async Task PollAsync()
     {
-        var p = StatusParser.Parse(raw);
-        if (p is null) return;
-        DroState.Text = p.State;
-        DroState.Foreground = p.State switch
+        if (Session is null) return;
+        await Session.PollAsync();
+
+        var dro = Session.Dro;
+        DroState.Text = dro.State;
+        DroState.Foreground = dro.State switch
         {
             "Run" => System.Windows.Media.Brushes.LimeGreen,
             "Alarm" => System.Windows.Media.Brushes.Red,
-            "Hold" => System.Windows.Media.Brushes.Orange,
             _ => System.Windows.Media.Brushes.Orange
         };
-        DroMpos.Text = $"{p.MPosX:F3}  {p.MPosY:F3}  {p.MPosZ:F3}";
-        DroWpos.Text = $"{p.WPosX:F3}  {p.WPosY:F3}  {p.WPosZ:F3}";
-        DroFs.Text = p.FS is { } fs ? $"{fs.Feed:F0}  {fs.Spindle:F0} rpm" : "—";
-        DroBuf.Text = p.Buffer?.ToString() ?? "—";
-        _pollState = p.State;
+        DroMpos.Text = $"{dro.X}  {dro.Y}  {dro.Z}";
+        DroWpos.Text = $"{dro.X}  {dro.Y}  {dro.Z}";
+        DroFs.Text = $"{dro.Feed}  {dro.Spindle} rpm";
+        PumpConsole();
     }
 
-    private async void PollStatus()
-    {
-        if (_connected && _transport is not null)
-        {
-            try { await _transport.WriteLineAsync("?"); }
-            catch { /* ignore */ }
-        }
-    }
-
-    private async void SendLine(string line)
-    {
-        if (_transport is { IsOpen: true })
-        {
-            try { await _transport.WriteLineAsync(line); }
-            catch (Exception ex) { Log($"✖ send failed: {ex.Message}"); }
-        }
-    }
+    // ---- jog ----
 
     private double StepSize
     {
         get
         {
-            var item = CmbStep.SelectedItem as ComboBoxItem;
-            var label = item?.Content as string;
+            var label = (CmbStep.SelectedItem as ComboBoxItem)?.Content as string;
             return label switch
             {
                 "1.0" => 1.0,
                 "0.1" => 0.1,
                 "0.01" => 0.01,
                 "0.001" => 0.001,
-                _ => double.NaN // continuous
+                _ => double.NaN   // continuous
             };
         }
     }
 
-    private void Jog(string axis, double sign)
+    private async void Jog(string axis, double sign)
     {
-        if (!_connected) return;
-        var step = StepSize;
-        var feed = ParseOr(TxtJogFeed.Text, 200);
-        var cmd = double.IsNaN(step)
-            ? $"$J=G91{axis}0.0F{feed.ToString("F0", CultureInfo.InvariantCulture)}" // continuous jog stub (single tick)
-            : $"$J=G91{axis}{sign * step:F3}F{feed.ToString("F0", CultureInfo.InvariantCulture)}";
-        SendLine(cmd);
+        if (Session is null) return;
+        double feed = ParseOr(TxtJogFeed.Text, 200);
+        double step = StepSize;
+
+        if (double.IsNaN(step))
+            await Session.JogContinuousAsync(axis, sign, feed);   // real travel, not $J=…0.0
+        else
+            await Session.JogAsync(
+                axis == "X" ? sign * step : 0,
+                axis == "Y" ? sign * step : 0,
+                axis == "Z" ? sign * step : 0,
+                feed);
+
+        PumpConsole();
     }
 
     private void JogXPlus(object s, RoutedEventArgs e) => Jog("X", 1);
@@ -217,18 +193,24 @@ public partial class MachinePanel : UserControl
     private void JogYMinus(object s, RoutedEventArgs e) => Jog("Y", -1);
     private void JogZMinus(object s, RoutedEventArgs e) => Jog("Z", -1);
 
-    private void BtnHome(object s, RoutedEventArgs e) => SendLine("$H");
-    private void BtnZeroXY(object s, RoutedEventArgs e) => SendLine("G10 L20 P1 X0 Y0");
-    private void BtnZeroZ(object s, RoutedEventArgs e) => SendLine("G10 L20 P1 Z0");
-    private void BtnUnlock(object s, RoutedEventArgs e) => SendLine("$X");
-    private void BtnSpindleOn(object s, RoutedEventArgs e) => SendLine("M3 S12000");
-    private void BtnSpindleOff(object s, RoutedEventArgs e) => SendLine("M5");
+    private async void BtnHome(object s, RoutedEventArgs e) { if (Session is not null) { await Session.SoftHomeAsync(); PumpConsole(); } }
+    private async void BtnZeroXY(object s, RoutedEventArgs e) => await Send("G10 L20 P1 X0 Y0");
+    private async void BtnZeroZ(object s, RoutedEventArgs e) => await Send("G10 L20 P1 Z0");
+    private async void BtnUnlock(object s, RoutedEventArgs e) => await Send("$X");
+    private async void BtnSpindleOn(object s, RoutedEventArgs e) => await Send("M3 S12000");
+    private async void BtnSpindleOff(object s, RoutedEventArgs e) => await Send("M5");
 
-    // ---- Stream ----
+    private async Task Send(string line)
+    {
+        if (Session is null) return;
+        await Session.SendAsync(line);
+        PumpConsole();
+    }
+
+    // ---- stream ----
 
     private void BtnLoad_Click(object sender, RoutedEventArgs e)
     {
-        // If the Cut stage handed over G-code, offer to use it first.
         if (AppState.LoadedGCode.Count > 0)
         {
             var r = MessageBox.Show("Use the G-code calculated in the Toolpaths stage?", "VectorPilot",
@@ -258,88 +240,100 @@ public partial class MachinePanel : UserControl
     private void UpdateStreamButtons()
     {
         bool hasGcode = AppState.LoadedGCode.Count > 0;
-        BtnStart.IsEnabled = hasGcode && _connected;
-        BtnPause.IsEnabled = _connected && AppState.Streamer?.Phase == StreamPhase.Streaming;
-        BtnResume.IsEnabled = _connected && AppState.Streamer?.Phase == StreamPhase.Paused;
-        BtnStop.IsEnabled = _connected && AppState.Streamer?.Phase is StreamPhase.Streaming or StreamPhase.Paused;
+        bool streaming = Session?.IsStreaming == true;
+
+        BtnStart.IsEnabled = hasGcode && Connected && !streaming;
+        BtnPause.IsEnabled = Connected && streaming;
+        BtnResume.IsEnabled = Connected && !streaming;
+        BtnStop.IsEnabled = Connected && streaming;
+        // E-STOP and Reset are deliberately NOT touched here — always enabled.
     }
 
     private async void StreamStart_Click(object sender, RoutedEventArgs e)
     {
-        if (AppState.LoadedGCode.Count == 0) return;
-        var streamer = AppState.EnsureStreamer();
-        streamer.ProgressChanged += sp => Dispatcher.BeginInvoke(() =>
+        if (Session is null || AppState.LoadedGCode.Count == 0) return;
+
+        var progress = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        progress.Tick += (_, _) =>
         {
-            StreamProgress.Value = sp.TotalLines == 0 ? 0 : sp.CurrentLine * 100.0 / sp.TotalLines;
-            StreamInfo.Text = $"{sp.CurrentLine} / {sp.TotalLines} lines · {sp.Phase}";
+            int total = Session.TotalLines, cur = Session.StreamedLines;
+            StreamProgress.Value = total == 0 ? 0 : cur * 100.0 / total;
+            StreamInfo.Text = $"{cur} / {total} lines";
+            if (Session.IsStreaming) return;
+            progress.Stop();
             UpdateStreamButtons();
-        });
+        };
+        progress.Start();
 
         try
         {
-            await streamer.StartAsync(AppState.LoadedGCode);
+            await Session.StartStreamAsync(AppState.LoadedGCode);
             StreamInfo.Text = "complete ✓";
         }
         catch (Exception ex)
         {
             StreamInfo.Text = $"halted: {ex.Message}";
-            Log($"✖ stream: {ex.Message}");
         }
         finally
         {
+            progress.Stop();
+            PumpConsole();
             UpdateStreamButtons();
         }
     }
 
-    private void StreamPause_Click(object sender, RoutedEventArgs e)
+    private async void StreamPause_Click(object sender, RoutedEventArgs e)
     {
-        AppState.Streamer?.Pause();
-        SendLine("!"); // real-time feed hold
+        if (Session is null) return;
+        await Session.PauseStreamAsync();
+        PumpConsole();
         UpdateStreamButtons();
     }
 
-    private void StreamResume_Click(object sender, RoutedEventArgs e)
+    private async void StreamResume_Click(object sender, RoutedEventArgs e)
     {
-        AppState.Streamer?.Resume();
-        SendLine("~");
+        if (Session is null) return;
+        await Session.ResumeAsync();
+        PumpConsole();
         UpdateStreamButtons();
     }
 
-    private void StreamStop_Click(object sender, RoutedEventArgs e)
+    private async void StreamStop_Click(object sender, RoutedEventArgs e)
     {
-        AppState.Streamer?.Cancel();
-        SendLine("\u0018"); // 0x18 soft reset
-        SendLine("$X");    // unlock
+        if (Session is null) return;
+        await Session.ResetAsync();
+        await Session.SendAsync("$X");
+        PumpConsole();
         UpdateStreamButtons();
     }
 
-    // ---- Card A5 safety chrome: always enabled, never gated on state ----
+    // ---- safety chrome: always enabled, never gated on state ----
 
     private async void EStop_Click(object sender, RoutedEventArgs e)
     {
-        Log(">> ! (E-STOP)");
-        AppState.Streamer?.Cancel();
-        if (_transport is not null) await _transport.PauseAsync();
+        if (Session is null) { RailStatusChanged?.Invoke("E-STOP: not connected"); return; }
+        await Session.EmergencyStopAsync();
+        PumpConsole();
         UpdateStreamButtons();
         RailStatusChanged?.Invoke("E-STOP engaged");
     }
 
     private async void Reset_Click(object sender, RoutedEventArgs e)
     {
-        Log(">> 0x18 (soft reset)");
-        AppState.Streamer?.Cancel();
-        if (_transport is not null) await _transport.WriteLineAsync("\u0018");
+        if (Session is null) { RailStatusChanged?.Invoke("Reset: not connected"); return; }
+        await Session.ResetAsync();
+        PumpConsole();
         UpdateStreamButtons();
         RailStatusChanged?.Invoke("Soft reset sent");
     }
 
     private void ConsoleToggle_Changed(object sender, RoutedEventArgs e)
     {
-        // Fires during XAML init before the sibling elements exist.
         if (ConsoleScroller is null || ConsoleText is null) return;
 
         bool on = ConsoleToggle.IsChecked == true;
         ConsoleScroller.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        if (Session is not null) Session.ConsoleEnabled = on;
         if (!on) ConsoleText.Text = "(console off)";
     }
 

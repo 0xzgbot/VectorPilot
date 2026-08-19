@@ -51,9 +51,10 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 |---|---|
 | Heightfield core + rasterizer | ✅ |
 | STL/OBJ/3MF → heightfield | ✅ |
-| Component tree + combine modes | ✅ |
+| Component tree + combine modes | ⚠ engine + panel built, NOT hosted in any stage yet |
 | Sculpt engine | ✅ |
-| 2-rail sweep / weave / extrude | ✅ |
+| 2-rail sweep / extrude | ✅ |
+| Weave | ❌ **not implemented** — volume/area estimate only, no toolpath |
 | Modeling resolution (Standard 1M / High 4M) | ✅ |
 | 3D rough + finish engines | ✅ |
 | Toolpath simulator (material removal) | ✅ |
@@ -73,9 +74,22 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 
 ## Status
 
-- **463/463 tests green** (xUnit); CI (build + test on windows-latest) green;
-  release workflow (self-contained publish → tests → Inno Setup installer)
+- **671/671 tests green** (xUnit). Local gate is `./verify.sh` (Release + zero-warning);
+  GitHub CI is weaker (Debug, no warning gate) — trust `verify.sh`.
+  Release workflow (self-contained publish → tests → Inno Setup installer)
   green — the `vectorpilot-setup` exe is built per tag.
+
+### Known engine shortcuts (shipping, not TODO)
+
+These are locked in by goldens and are **not** Aspire-equivalent:
+
+| Strategy | Actual behaviour |
+|---|---|
+| Pocket | Raster zigzag across the **bounding box**, not contour offset — a circle gets a rectangle of passes |
+| V-carve | Depth from Y position (`z = actualZ * (0.3 + 0.7 * normalizedY)`), not medial-axis width |
+| Weave | Volume/area estimate only — no mesh, no toolpath |
+
+A test count is not a machine you can cut with. See `docs/vectorpilot-review.html`.
 - **Done:** full Mac parity wave (SPK-0209 expressions + document variables,
   0216 unified import router, 0315 dirty-region resim, 0316 ghost diff,
   1134 post template engine v2 + rotary Y2A wrap, 1135 HTML job sheet → PDF,
