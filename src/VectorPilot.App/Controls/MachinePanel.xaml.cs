@@ -211,7 +211,7 @@ public partial class MachinePanel : UserControl
 
     private void BtnLoad_Click(object sender, RoutedEventArgs e)
     {
-        if (AppState.LoadedGCode.Count > 0)
+        if (AppState.LoadedGCode.Count > 0 && !App.IsAutomated)
         {
             var r = MessageBox.Show("Use the G-code calculated in the Toolpaths stage?", "VectorPilot",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);

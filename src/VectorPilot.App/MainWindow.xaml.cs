@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using VectorPilot.App.Controls;
 using VectorPilot.Engine;
 
@@ -38,13 +39,16 @@ public partial class MainWindow : Window
 
     private System.Windows.Threading.DispatcherTimer? _autosaveTimer;
 
-    private static string AutosaveDir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorPilot", "autosave.shoppilot");
+    /// <summary>Per-user state root. Local (not Roaming): this is machine-specific.</summary>
+    private static string StateDir() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VectorPilot");
+
+    private static string AutosaveDir() => Path.Combine(StateDir(), "autosave.shoppilot");
 
     private void StartAutosaveTimer()
     {
         var prefs = new PreferencesStore(
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorPilot", "preferences.json"));
+            Path.Combine(StateDir(), "preferences.json"));
         _autosaveTimer = new System.Windows.Threading.DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(Math.Max(30, prefs.Value.AutosaveIntervalSeconds))
@@ -68,6 +72,15 @@ public partial class MainWindow : Window
     }
 
     private void CheckForRecoverableWork()
+    {
+        // Deferred: a modal in the ctor blocks before the window renders, which
+        // gates startup (and hung --ui-smoke). Ask once the shell is up, and skip
+        // entirely in automation.
+        if (App.IsAutomated) return;
+        Dispatcher.BeginInvoke(new Action(PromptForRecovery), DispatcherPriority.Loaded);
+    }
+
+    private void PromptForRecovery()
     {
         try
         {

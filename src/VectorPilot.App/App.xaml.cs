@@ -7,12 +7,18 @@ namespace VectorPilot.App;
 
 public partial class App : Application
 {
+    /// <summary>True under --ui-smoke or --automated: suppress every startup modal.</summary>
+    public static bool IsAutomated { get; private set; }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        IsAutomated = e.Args.Contains("--ui-smoke") || e.Args.Contains("--automated");
+
         DispatcherUnhandledException += (_, args) =>
         {
-            MessageBox.Show($"VectorPilot error:\n{args.Exception.Message}", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Error);
+            if (!IsAutomated)
+                MessageBox.Show($"VectorPilot error:\n{args.Exception.Message}", "VectorPilot", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
 
