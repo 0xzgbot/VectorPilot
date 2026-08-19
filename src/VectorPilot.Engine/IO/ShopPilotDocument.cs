@@ -21,7 +21,12 @@ public sealed class ShopPilotManifest
     public string Version { get; set; } = "0.2";
     public int SheetCount { get; set; } = 1;
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Dictionary<string, string>? DocumentVariables { get; set; }
+    /// <summary>
+    /// Document variables. The Mac writes an ARRAY of {name,value} objects; declaring
+    /// this as a Dictionary made every Mac document fail to load with
+    /// "The JSON value could not be converted to Dictionary&lt;string,string&gt;".
+    /// </summary>
+    public List<DtoDocumentVariable>? DocumentVariables { get; set; }
 
     /// <summary>Keep-out zones (SPK-0308 persist). Null = document predates
     /// zones — legacy-safe decode.</summary>
@@ -59,6 +64,30 @@ public sealed class PersistedToolpath
 }
 
 /// <summary>Sheet DTO with the Mac's width/depth/height key naming.</summary>
+/// <summary>
+/// Material as the Mac writes it — a nested object, not a bare name string. Writing
+/// a plain string (or null, which the ignore-null policy dropped entirely) means the
+/// Mac cannot read the material back out of our documents.
+/// </summary>
+/// <summary>A document variable as the Mac writes it: {"name": …, "value": …}.</summary>
+public sealed class DtoDocumentVariable
+{
+    public string Name { get; set; } = "";
+    public string Value { get; set; } = "";
+}
+
+public sealed class DtoMaterial
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Name { get; set; } = "Generic";
+    public string Category { get; set; } = "Wood";
+    public double Density { get; set; }
+    public int HardnessRating { get; set; }
+    public double MaxDepthOfCutMm { get; set; }
+    public double MaxFeedRateMmPerMin { get; set; }
+    public string CoolantType { get; set; } = "None";
+}
+
 public sealed class DtoSheet
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -67,31 +96,63 @@ public sealed class DtoSheet
     public double Depth { get; set; }
     public double Height { get; set; }
     public string Units { get; set; } = "inches";
-    public string? Material { get; set; }
+    public DtoMaterial? Material { get; set; }
+    public bool IsDoubleSided { get; set; }
     public List<DtoLayer> Layers { get; set; } = new();
 }
-
 public sealed class DtoLayer
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Name { get; set; } = "Layer 1";
+
+    // The Mac writes isVisible / isLocked / vectors. We were writing visible /
+    // locked / shapes, so neither app could read the other's layers.
+    [JsonPropertyName("isVisible")]
     public bool Visible { get; set; } = true;
+
+    [JsonPropertyName("isLocked")]
     public bool Locked { get; set; }
+
     public string Color { get; set; } = "#2060C0";
+
+    [JsonPropertyName("vectors")]
     public List<DtoShape> Shapes { get; set; } = new();
+
+    /// <summary>Mac schema key; carried so a round-trip does not drop it.</summary>
+    public List<string> ToolpathIds { get; set; } = new();
+}
+
+/// <summary>A point as the Mac writes it: {"x": …, "y": …}.</summary>
+public sealed class DtoPoint
+{
+    public double X { get; set; }
+    public double Y { get; set; }
 }
 
 public sealed class DtoShape
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Type { get; set; } = "polyline";
-    public List<List<double>> Points { get; set; } = new();
+
+    [JsonPropertyName("points")]
+    public List<DtoPoint> Points { get; set; } = new();
+
     public double Radius { get; set; }
     public double StartAngleDeg { get; set; }
     public double EndAngleDeg { get; set; }
+
+    [JsonPropertyName("isClosed")]
     public bool Closed { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Text { get; set; }
+
+    /// <summary>Mac schema keys.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? Name { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string? LayerId { get; set; }
 }
 
 public static class DocumentJson
@@ -113,7 +174,9 @@ public static class DocumentJson
             Name = job.Name,
             CreatedAt = DateTime.UtcNow.ToString("o"),
             SheetCount = job.Sheets.Count,
-            DocumentVariables = null,
+            // Emit an empty array, not null: the Mac's schema always carries this key
+            // and our ignore-null policy would drop it entirely.
+            DocumentVariables = new List<DtoDocumentVariable>(),
             KeepOutZones = job.KeepOutZones.Count > 0 ? job.KeepOutZones.Select(ToZone).ToList() : null
         };
         return manifest;
@@ -163,8 +226,16 @@ public static class DocumentJson
         Depth = sheet.Height,
         Height = sheet.Thickness,
         Units = sheet.Units == UnitSystem.Inches ? "inches" : "mm",
-        Material = sheet.Material?.Name,
+        Material = ToMaterial(sheet.Material),
         Layers = sheet.Layers.Select(ToLayer).ToList()
+    };
+
+    /// <summary>Always emit a material object — the Mac's schema requires the key.</summary>
+    public static DtoMaterial ToMaterial(Material? m) => new()
+    {
+        Name = m?.Name ?? "Generic",
+        MaxDepthOfCutMm = m?.MaxDepthOfCutMm ?? 0,
+        MaxFeedRateMmPerMin = m?.MaxFeedRateMmPerMin ?? 0
     };
 
     public static DtoLayer ToLayer(Layer layer) => new()
@@ -181,7 +252,7 @@ public static class DocumentJson
     {
         Id = shape.Id.ToString(),
         Type = ShapeTypeName(shape.Type),
-        Points = shape.Points.Select(p => new List<double> { p.X, p.Y }).ToList(),
+        Points = shape.Points.Select(p => new DtoPoint { X = p.X, Y = p.Y }).ToList(),
         Radius = shape.Radius,
         StartAngleDeg = shape.StartAngleDeg,
         EndAngleDeg = shape.EndAngleDeg,
@@ -212,7 +283,15 @@ public static class DocumentJson
             Thickness = dto.Height,
             Units = dto.Units.Equals("mm", StringComparison.OrdinalIgnoreCase) ? UnitSystem.Millimeters : UnitSystem.Inches
         };
-        if (!string.IsNullOrEmpty(dto.Material)) sheet.Material = new Material { Name = dto.Material };
+        if (dto.Material is { } m && !string.IsNullOrEmpty(m.Name))
+        {
+            sheet.Material = new Material
+            {
+                Name = m.Name,
+                MaxDepthOfCutMm = m.MaxDepthOfCutMm > 0 ? m.MaxDepthOfCutMm : 6.0,
+                MaxFeedRateMmPerMin = m.MaxFeedRateMmPerMin > 0 ? m.MaxFeedRateMmPerMin : 1500
+            };
+        }
         sheet.Layers.Clear();
         foreach (var dtoLayer in dto.Layers) sheet.Layers.Add(FromLayer(dtoLayer));
         sheet.ActiveLayer = sheet.Layers.FirstOrDefault() ?? new Layer();
@@ -238,7 +317,7 @@ public static class DocumentJson
 
     public static VectorShape? FromShape(DtoShape dto)
     {
-        var pts = dto.Points.Where(p => p.Count >= 2).Select(p => new VectorPoint(p[0], p[1])).ToList();
+        var pts = dto.Points.Select(p => new VectorPoint(p.X, p.Y)).ToList();
         if (pts.Count == 0 && dto.Type != "circle") return null;
         var shape = dto.Type switch
         {
