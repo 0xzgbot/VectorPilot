@@ -66,8 +66,9 @@ Rules:
 - [ ] **E3. Post catalog breadth** — expand shipped posts from 3 toward the Mac's reference set (GRBL mm/in, FluidNC, Marlin, LinuxCNC, Mach3/4, Shapeoko, Onefinity, Avid, plus rotary variants).
   Gate: `FullyQualifiedName~PostCatalog` — ≥10 tests (each post's header/footer/move formatting round-trips).
 
-- [ ] **E4. Full-job time estimate** — aggregate across toolpaths with cutting/travel split and tool-change overhead.
-  Gate: `FullyQualifiedName~JobTimeEstimate` — ≥5 tests.
+- [x] **E4. Full-job time estimate** — aggregate across toolpaths with cutting/travel split and tool-change overhead.
+  Gate: `FullyQualifiedName~JobTimeEstimate` — 11 tests.
+  **DONE + REACHABLE:** JobTimeEstimator walks each toolpath GCode, splitting G0 travel (rapid rate) from G1 cutting (feed rate), plus a per-tool-change allowance; falls back to EstimatedTimeSeconds when uncalculated. Shown live in the Output panel header (TxtTimeEstimate).
 
 ## Tier 3 — Product polish
 

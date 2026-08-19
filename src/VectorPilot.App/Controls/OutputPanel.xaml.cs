@@ -20,6 +20,14 @@ public partial class OutputPanel : UserControl
         CmbPost.ItemsSource = PostTemplate.Shipped;
         CmbPost.DisplayMemberPath = "Name";
         CmbPost.SelectedIndex = 0;
+
+        // Card E4: whole-job estimate with cut/travel split and tool changes.
+        var est = JobTimeEstimator.Estimate(toolpaths);
+        TxtTimeEstimate.Text = est.TotalSeconds <= 0
+            ? ""
+            : $"Est. {est.Formatted}  (cut {TimeSpan.FromSeconds(est.CuttingSeconds):mm\\:ss} · " +
+              $"travel {TimeSpan.FromSeconds(est.RapidSeconds):mm\\:ss}" +
+              (est.ToolChanges > 0 ? $" · {est.ToolChanges} tool change(s)" : "") + ")";
         TxtExportInfo.Text = $"{toolpaths.Count} toolpath(s) ready";
     }
 

@@ -16,6 +16,7 @@
             <TextBlock Text="Post template:" VerticalAlignment="Center" Margin="0,0,8,0"/>
             <ComboBox x:Name="CmbPost" Width="240" VerticalAlignment="Center"/>
             <TextBlock x:Name="TxtExportInfo" Foreground="#888" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <TextBlock x:Name="TxtTimeEstimate" Foreground="#0A6" FontWeight="Bold" VerticalAlignment="Center" Margin="16,0,0,0"/>
         </StackPanel>
 
         <ListBox x:Name="ListToolpaths" Grid.Row="2" Margin="0,0,0,12"/>
