@@ -86,7 +86,7 @@ These are locked in by goldens and are **not** Aspire-equivalent:
 | Strategy | Actual behaviour |
 |---|---|
 
-| V-carve | Depth from Y position (`z = actualZ * (0.3 + 0.7 * normalizedY)`), not medial-axis width |
+
 | Weave | Volume/area estimate only — no mesh, no toolpath |
 
 A test count is not a machine you can cut with. See `docs/vectorpilot-review.html`.

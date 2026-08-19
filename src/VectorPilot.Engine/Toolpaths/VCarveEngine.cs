@@ -125,16 +125,12 @@ public static class VCarveEngine
                 for (int i = 1; i < vector.Points.Count; i++)
                 {
                     var p = vector.Points[i];
-                    double z;
-                    if (yRange > 1e-9)
-                    {
-                        double normalizedY = 1.0 - (p.Y - vecMinY) / yRange;
-                        z = actualZ * (0.3 + 0.7 * normalizedY);
-                    }
-                    else
-                    {
-                        z = actualZ;
-                    }
+                    // Depth from the LOCAL CHANNEL WIDTH (medial-axis distance), not
+                    // from Y position on the page. A V-bit can only sink as deep as
+                    // the available width allows: z = -(halfWidth / tan(halfAngle)).
+                    double halfWidth = VCarveGeometry.DistanceToNearestOtherEdge(vector, i, vectors);
+                    double z = VCarveGeometry.DepthForHalfWidth(halfWidth, params_.VBitAngleDegrees, maxDepth);
+                    z = Math.Max(z, actualZ);   // never exceed this pass's depth
                     g.Add($"G1 X{F3(p.X)} Y{F3(p.Y)} Z{F3(z)} F{(int)feed}");
                 }
 

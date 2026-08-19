@@ -34,8 +34,7 @@ Port of macOS ShopPilot to Windows (C#/.NET 8 + WPF). Mac source of truth, read-
 ## Known lies to fix, not repeat
 
 - Pocket: FIXED — now scanline-clipped to the outline (was bounding-box raster).
-- V-carve depth = `actualZ * (0.3 + 0.7 * normalizedY)` — from Y position, not
-  medial-axis width. Goldens encode this; regenerate them when fixing.
+- V-carve: FIXED — depth now derives from local channel width (VCarveGeometry); the Y-position golden was regenerated.
 - Weave = volume/area estimate. No mesh, no toolpath.
 - `MASTER_KANBAN.md` and `GAMEPLAN-ASPIRE-PARITY.md` are stale. `PARITY_QUEUE.md`
   is current.
