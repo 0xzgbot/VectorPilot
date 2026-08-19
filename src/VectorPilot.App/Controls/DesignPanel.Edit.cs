@@ -114,6 +114,25 @@ public partial class DesignPanel
         UpdateEditChrome();
     }
 
+    /// <summary>Card A1: delete the grabbed node, undoably.</summary>
+    internal void DeleteSelectedNodeWithUndo()
+    {
+        var layer = ActiveLayer;
+        if (layer is null || layer.Locked || !NodeEdit.IsActive) return;
+
+        var before = UndoStack.Snapshot(layer);
+        if (!NodeEdit.DeleteSelectedNode())
+        {
+            SetStatus("Cannot delete — shape is at its minimum point count");
+            return;
+        }
+        Undo.Push("Delete node", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        SetStatus("Node deleted");
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
     private void DesignPanel_KeyDown(object sender, KeyEventArgs e)
     {
         bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
@@ -125,11 +144,23 @@ public partial class DesignPanel
             case Key.Y when ctrl: DoRedo(); e.Handled = true; break;
             case Key.D when ctrl: DoDuplicate(); e.Handled = true; break;
             case Key.A when ctrl: DoSelectAll(); e.Handled = true; break;
-            case Key.Delete or Key.Back: DoDelete(); e.Handled = true; break;
+            case Key.Delete or Key.Back:
+                if (NodeEdit.IsActive && NodeEdit.HasSelectedNode) DeleteSelectedNodeWithUndo();
+                else DoDelete();
+                e.Handled = true;
+                break;
             case Key.Escape:
-                _polylinePoints.Clear();
-                Selection.Clear();
-                SetStatus("Cleared selection");
+                if (NodeEdit.IsActive)
+                {
+                    NodeEdit.Exit();
+                    SetStatus("Exited node mode");
+                }
+                else
+                {
+                    _polylinePoints.Clear();
+                    Selection.Clear();
+                    SetStatus("Cleared selection");
+                }
                 RedrawShapes(); UpdateEditChrome();
                 e.Handled = true;
                 break;

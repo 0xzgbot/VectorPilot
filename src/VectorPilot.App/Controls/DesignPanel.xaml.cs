@@ -10,7 +10,7 @@ namespace VectorPilot.App.Controls;
 
 public partial class DesignPanel : UserControl
 {
-    internal enum Tool { Select, Rectangle, Line, Circle, Polyline }
+    internal enum Tool { Select, Rectangle, Line, Circle, Polyline, Node }
 
     private VectorPoint? _dragStart;
     private Shape? _preview;
@@ -23,6 +23,8 @@ public partial class DesignPanel : UserControl
     private bool _movingSelection;
     private VectorPoint _moveLast;
     private List<VectorShape>? _pendingBefore;
+    private bool _draggingNode;
+    private List<VectorShape>? _nodeDragBefore;
 
     public DesignPanel()
     {
@@ -38,7 +40,10 @@ public partial class DesignPanel : UserControl
         ToolRect.IsChecked == true ? Tool.Rectangle :
         ToolLine.IsChecked == true ? Tool.Line :
         ToolCircle.IsChecked == true ? Tool.Circle :
-        ToolPolyline.IsChecked == true ? Tool.Polyline : Tool.Select;
+        ToolPolyline.IsChecked == true ? Tool.Polyline :
+        ToolNode.IsChecked == true ? Tool.Node : Tool.Select;
+
+    internal readonly NodeEditSession NodeEdit = new();
 
     internal Layer? ActiveLayer => AppState.CurrentJob?.ActiveSheet.ActiveLayer;
 

@@ -42,6 +42,31 @@ public partial class DesignPanel
         }
 
         DrawSelectionBounds();
+        DrawNodeHandles();
+    }
+
+    /// <summary>Card A1: draw draggable point handles while node-editing.</summary>
+    private void DrawNodeHandles()
+    {
+        if (!NodeEdit.IsActive) return;
+        double r = Math.Max(WorldTolerance(4), 0.15);
+
+        var handles = NodeEdit.Handles;
+        for (int i = 0; i < handles.Count; i++)
+        {
+            bool isSelected = i == NodeEdit.SelectedNode;
+            var dot = new Ellipse
+            {
+                Width = r * 2, Height = r * 2,
+                Fill = isSelected ? Brushes.OrangeRed : Brushes.White,
+                Stroke = Brushes.DodgerBlue,
+                StrokeThickness = Math.Max(WorldTolerance(1), 0.04),
+                IsHitTestVisible = false,
+                RenderTransform = new TranslateTransform(handles[i].X - r, handles[i].Y - r)
+            };
+            DrawCanvas.Children.Add(dot);
+            _shapeElements.Add(dot);
+        }
     }
 
     private void DrawSelectionBounds()

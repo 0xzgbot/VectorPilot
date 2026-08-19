@@ -16,6 +16,53 @@ public partial class DesignPanel
         var layer = ActiveLayer;
         if (layer is null) return;
 
+        if (CurrentTool == Tool.Node)
+        {
+            // Double-click a segment inserts a node; single click grabs one.
+            if (e.ClickCount >= 2 && NodeEdit.IsActive)
+            {
+                var beforeIns = UndoStack.Snapshot(layer);
+                if (NodeEdit.InsertNodeAt(world))
+                {
+                    Undo.Push("Insert node", layer, beforeIns);
+                    if (AppState.CurrentJob is { } ji) ji.IsDirty = true;
+                    SetStatus("Node inserted");
+                }
+                RedrawShapes();
+                UpdateEditChrome();
+                return;
+            }
+
+            if (!NodeEdit.IsActive)
+            {
+                var target = SelectionModel.HitTest(layer, world, WorldTolerance(6));
+                if (target is null) { SetStatus("Click a shape to edit its nodes"); return; }
+                NodeEdit.Enter(target);
+                Selection.Select(target);
+                SetStatus($"Node mode: {target.Points.Count} point(s) — drag handles, double-click a segment to insert, Del to remove, Esc to exit");
+                RedrawShapes();
+                return;
+            }
+
+            if (NodeEdit.GrabNode(world, WorldTolerance(7)))
+            {
+                _nodeDragBefore = UndoStack.Snapshot(layer);
+                _draggingNode = true;
+                DrawCanvas.CaptureMouse();
+                SetStatus($"Dragging node {NodeEdit.SelectedNode}");
+                RedrawShapes();
+            }
+            else
+            {
+                // Clicked empty space in node mode — retarget or exit.
+                var next = SelectionModel.HitTest(layer, world, WorldTolerance(6));
+                if (next is not null) { NodeEdit.Enter(next); Selection.Select(next); SetStatus("Node mode: new shape"); }
+                else { NodeEdit.Exit(); SetStatus("Exited node mode"); }
+                RedrawShapes();
+            }
+            return;
+        }
+
         if (CurrentTool == Tool.Polyline)
         {
             _polylinePoints.Add(world);
@@ -58,6 +105,14 @@ public partial class DesignPanel
     private void Canvas_MouseMove(object sender, MouseEventArgs e)
     {
         var world = ScreenToWorld(e.GetPosition(DrawCanvas));
+
+        if (_draggingNode)
+        {
+            NodeEdit.DragTo(world);
+            SetStatus($"Node {NodeEdit.SelectedNode} → X {world.X:F2}  Y {world.Y:F2}");
+            RedrawShapes();
+            return;
+        }
 
         if (_movingSelection)
         {
@@ -132,6 +187,20 @@ public partial class DesignPanel
         DrawCanvas.ReleaseMouseCapture();
         var world = ScreenToWorld(e.GetPosition(DrawCanvas));
         var layer = ActiveLayer;
+
+        if (_draggingNode)
+        {
+            _draggingNode = false;
+            if (layer is not null && _nodeDragBefore is not null)
+            {
+                Undo.Push("Move node", layer, _nodeDragBefore);
+                _nodeDragBefore = null;
+                if (AppState.CurrentJob is { } jn) jn.IsDirty = true;
+            }
+            SetStatus("Node moved");
+            UpdateEditChrome();
+            return;
+        }
 
         if (_movingSelection)
         {

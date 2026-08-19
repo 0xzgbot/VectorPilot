@@ -18,6 +18,8 @@
                 <RadioButton x:Name="ToolLine" Content="Line" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <RadioButton x:Name="ToolCircle" Content="Circle" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <RadioButton x:Name="ToolPolyline" Content="Polyline" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <RadioButton x:Name="ToolNode" Content="Nodes" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"
+                             ToolTip="Click a shape to edit its points. Double-click a segment to insert. Del removes."/>
                 <TextBlock x:Name="LayerLabel" Text="" Foreground="#666" VerticalAlignment="Center" Margin="24,0,0,0"/>
             </StackPanel>
         </Border>

@@ -13,10 +13,13 @@ Autonomous work queue. **One card per tick.** No summaries, no check-ins.
 7. Take the next card. **Do not stop between cards. Do not write a status report.**
 
 Rules:
-- If a card is already implemented, flip to `[x]` with a one-line note and move on.
+- **A Tier-1 card is NOT `[x]` until a UI element actually invokes it.** Grep the panel `.xaml`/`.xaml.cs` for a real call-site. Tests-only delivery is `[ ]` with a note — a green test filter on an unreachable class is make-work, not progress.
+- Wire first, test second. The engine math is largely already ported; the gap is reachability.
+- If a card is already implemented AND reachable, flip to `[x]` with a one-line note and move on.
 - If blocked 3× on the same approach, change strategy (write the note in the card).
 - Never leave `[~]` overnight — either finish or revert to `[ ]` with a note.
 - `./verify.sh` is the only gate. Never hand-roll a verification script.
+- **Do not delegate.** 7/7 subagents on this key died to HTTP 429 without writing a file. Do the work directly.
 
 ---
 
@@ -24,8 +27,9 @@ Rules:
 
 - [x] **A1. Node editing** — click a shape in Select mode to enter node mode: draggable point handles, insert point on segment double-click, delete selected node (Del), Esc exits. Wire through `UndoStack`.
   Gate: `FullyQualifiedName~NodeEdit` — ≥8 tests (hit-test a node, drag updates geometry, insert splits the correct segment, delete removes, undo restores).
+  **DONE + REACHABLE:** Nodes tool button in XAML; 18 call-sites across Input/Edit/Render (click shape to enter, drag handles, double-click segment to insert, Del removes, Esc exits, all undoable). 12 tests.
 
-- [ ] **A2. Boolean ops in UI** — Union / Subtract / Intersect buttons on the ops bar, operating on the current multi-selection via the existing `BooleanOps` engine. Disabled with <2 selected.
+- [~] **A2. Boolean ops in UI** — Union / Subtract / Intersect buttons on the ops bar, operating on the current multi-selection via the existing `BooleanOps` engine. Disabled with <2 selected.
   Gate: `FullyQualifiedName~BooleanOpsUi` — ≥6 tests (2-rect union area, subtract leaves hole-free outline, intersect of disjoint = empty, undo restores both originals).
 
 - [ ] **A3. Transform dialog** — set exact X/Y/W/H for the selection, plus rotate-by-angle and scale-by-factor. Uses `ShapeTransformer`.
