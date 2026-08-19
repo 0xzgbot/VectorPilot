@@ -90,6 +90,31 @@ foreach($e in $all){{
             for l in out.splitlines() if l.strip().startswith("ITEM: ")]
 
 
+def select_combo_item(pid, automation_id, item_name):
+    """Expand a ComboBox and select the item whose name matches."""
+    out = ps(pid, f"""
+foreach($e in $all){{
+  if($e.Current.AutomationId -eq "{automation_id}"){{
+    try{{
+      $x = $e.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+      $x.Expand(); Start-Sleep -Milliseconds 400
+      $c = New-Object System.Windows.Automation.PropertyCondition(
+             [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+             [System.Windows.Automation.ControlType]::ListItem)
+      foreach($i in $e.FindAll([System.Windows.Automation.TreeScope]::Descendants,$c)){{
+        if($i.Current.Name -eq "{item_name}"){{
+          $i.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+          "SELECTED"; break
+        }}
+      }}
+      $x.Collapse()
+    }}catch{{ "NOSELECT" }}
+    break
+  }}
+}}""").strip()
+    return "SELECTED" in out
+
+
 def launch():
     """Start the app, dismiss the recovery modal, maximize. Returns (proc, window)."""
     for f in os.listdir(APPDATA) if os.path.isdir(APPDATA) else []:
@@ -140,6 +165,65 @@ def main():
     print(f"window: '{win.title}'")
     ok = True
     try:
+        if "--params" in sys.argv:
+            # --params <StrategyDisplayName>  → Design: draw a rect, Toolpaths: select
+            # that strategy, add a toolpath, then dump the params rows.
+            args = [a for a in sys.argv[2:] if not a.startswith("-")]
+            want = args[0] if args else "Weave"
+
+            invoke(proc.pid, "Design")
+            time.sleep(1.2)
+            invoke(proc.pid, "Rect")
+            time.sleep(0.6)
+            # Drag a rectangle onto the canvas so a toolpath has source geometry.
+            try:
+                import pyautogui
+                x0 = win.left + int(win.width * 0.45)
+                y0 = win.top + int(win.height * 0.45)
+                pyautogui.moveTo(x0, y0, duration=0.2)
+                pyautogui.dragTo(x0 + 160, y0 + 110, duration=0.5, button="left")
+                time.sleep(0.6)
+            except Exception as exc:              # pragma: no cover - environment dependent
+                print(f"  (drag skipped: {exc})")
+
+            invoke(proc.pid, "Toolpaths")
+            time.sleep(1.2)
+            if not select_combo_item(proc.pid, "CmbStrategy", want):
+                print(f"  could not select '{want}'")
+            time.sleep(0.5)
+            invoke(proc.pid, "+ Add Toolpath")
+            time.sleep(1.0)
+
+            rows = ps(proc.pid, """
+foreach($e in $all){
+  if($e.Current.AutomationId -eq "ParamsGrid"){
+    $c = New-Object System.Windows.Automation.PropertyCondition(
+           [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+           [System.Windows.Automation.ControlType]::Edit)
+    foreach($i in $e.FindAll([System.Windows.Automation.TreeScope]::Descendants,$c)){
+      "EDIT: " + $i.Current.Name + "=" + $i.Current.AutomationId
+    }
+    $c2 = New-Object System.Windows.Automation.PropertyCondition(
+           [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+           [System.Windows.Automation.ControlType]::ComboBox)
+    foreach($i in $e.FindAll([System.Windows.Automation.TreeScope]::Descendants,$c2)){
+      "DROPDOWN: " + $i.Current.Name
+    }
+    $t = New-Object System.Windows.Automation.PropertyCondition(
+           [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+           [System.Windows.Automation.ControlType]::Text)
+    foreach($i in $e.FindAll([System.Windows.Automation.TreeScope]::Descendants,$t)){
+      "LABEL: " + $i.Current.Name
+    }
+    break
+  }
+}""")
+            labels = [l.strip() for l in rows.splitlines() if l.strip()]
+            print(f"  {want} params form: {len(labels)} controls")
+            for l in labels:
+                print(f"    {l}")
+            return 0
+
         if "--combo" in sys.argv:
             # --combo Toolpaths CmbStrategy  → navigate, then list the combo's items
             args = [a for a in sys.argv[2:] if not a.startswith("-")]

@@ -72,12 +72,22 @@ public sealed class StrategyRegistry
 
     public List<Entry> Entries { get; } = new();
 
+    private readonly Dictionary<string, Type> _paramTypes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// CLR params type behind a strategy key. Lets the Cut panel build an editable
+    /// form (including enum choices) without hardcoding a form per strategy.
+    /// </summary>
+    public Type? ParamsTypeFor(string key)
+        => _paramTypes.TryGetValue(key, out var t) ? t : null;
+
     public StrategyRegistry()
     {
         void Add<T>(string key, string name, bool hf, Func<IReadOnlyList<VectorShape>, HeightfieldData?, T, SpecialtyResult> compute) where T : class, new()
         {
             var defaults = new T();
             string json = JsonSerializer.Serialize(defaults, Json);
+            _paramTypes[key] = typeof(T);
             Entries.Add(new Entry(key, name, hf, json, (shapes, heightfield, paramsJson) =>
             {
                 var p = JsonSerializer.Deserialize<T>(paramsJson, Json) ?? new T();

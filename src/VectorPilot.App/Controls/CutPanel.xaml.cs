@@ -71,10 +71,16 @@ public partial class CutPanel : UserControl
         AppState.RaiseFollowedSourceChanged();
     }
 
-    private sealed class ParamRow
+    internal sealed class ParamRow
     {
         public string Key { get; set; } = "";
         public string Text { get; set; } = "";
+
+        /// <summary>Enum option names; empty for free-text/numeric params.</summary>
+        public List<string> Choices { get; set; } = new();
+
+        public bool HasChoices => Choices.Count > 0;
+        public bool IsFreeText => Choices.Count == 0;
     }
 
     /// <summary>Build the params form from the selected toolpath's ParamsJson
@@ -87,12 +93,31 @@ public partial class CutPanel : UserControl
         {
             var obj = System.Text.Json.Nodes.JsonNode.Parse(tp.ParamsJson)?.AsObject();
             if (obj is null) return;
+
+            var enums = EnumChoicesFor(tp);
             var rows = new List<ParamRow>();
             foreach (var kv in obj)
             {
-                if (kv.Value is not null && kv.Value.GetValueKind() == System.Text.Json.JsonValueKind.Number)
+                if (kv.Value is null) continue;
+                var kind = kv.Value.GetValueKind();
+
+                // Numbers, bools and enum-backed ints are all editable. Previously only
+                // Number rows rendered, so weave's pattern and moulding's profile — the
+                // fields that decide what gets cut — were invisible and unreachable.
+                if (kind is System.Text.Json.JsonValueKind.Number
+                         or System.Text.Json.JsonValueKind.True
+                         or System.Text.Json.JsonValueKind.False)
                 {
-                    rows.Add(new ParamRow { Key = kv.Key, Text = kv.Value.ToString() });
+                    var row = new ParamRow { Key = kv.Key, Text = kv.Value.ToString() };
+                    if (enums.TryGetValue(kv.Key, out var names))
+                    {
+                        row.Choices = names;
+                        // Enums serialize as ints; show the NAME so the dropdown has a
+                        // matching selection instead of appearing blank.
+                        if (int.TryParse(row.Text, out int idx) && idx >= 0 && idx < names.Count)
+                            row.Text = names[idx];
+                    }
+                    rows.Add(row);
                 }
             }
             ParamsGrid.ItemsSource = rows;
@@ -103,29 +128,72 @@ public partial class CutPanel : UserControl
         }
     }
 
-    /// <summary>Resolve every params-row expression and write the result back
-    /// into tp.ParamsJson (plain numbers pass through; "2440/2" and "$width/2"
-    /// evaluate; unresolved expressions fall back to a numeric parse).</summary>
-    private static void CommitParamsForm(Toolpath tp)
+    /// <summary>
+    /// Enum-valued params for a strategy, as name lists indexed by JSON property.
+    /// Discovered by reflection over the params type so no strategy needs a bespoke form.
+    /// </summary>
+    private Dictionary<string, List<string>> EnumChoicesFor(Toolpath tp)
+    {
+        var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var entry = EntryFor(tp);
+        if (entry is null) return map;
+
+        var type = Registry.ParamsTypeFor(entry.Key);
+        if (type is null) return map;
+
+        foreach (var prop in type.GetProperties())
+        {
+            var t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (!t.IsEnum) continue;
+            // JSON uses camelCase property names.
+            string json = char.ToLowerInvariant(prop.Name[0]) + prop.Name[1..];
+            map[json] = Enum.GetNames(t).ToList();
+        }
+        return map;
+    }
+
+    /// <summary>
+    /// Merge the params form's edited rows into tp.ParamsJson, resolving expressions
+    /// ("2440/2", "$width/2"), booleans and enum names.
+    ///
+    /// This used to re-parse ParamsJson and write it straight back without ever reading
+    /// ParamsGrid — so every value the user typed was discarded and Calculate always ran
+    /// the strategy defaults.
+    /// </summary>
+    private void CommitParamsForm(Toolpath tp)
     {
         try
         {
             var obj = System.Text.Json.Nodes.JsonNode.Parse(tp.ParamsJson)?.AsObject();
             if (obj is null) return;
+
+            var edits = (ParamsGrid.ItemsSource as IEnumerable<ParamRow>)?
+                .ToDictionary(r => r.Key, r => r.Text, StringComparer.OrdinalIgnoreCase);
+
             var variables = LoadDocumentVariables();
-            foreach (var kv in obj)
+            foreach (var key in obj.Select(k => k.Key).ToList())
             {
-                var raw = kv.Value?.ToString();
+                // Prefer what the user typed; fall back to the stored value.
+                string? raw = edits is not null && edits.TryGetValue(key, out var typed)
+                    ? typed
+                    : obj[key]?.ToString();
                 if (raw is null) continue;
+                raw = raw.Trim();
+
+                if (bool.TryParse(raw, out bool b)) { obj[key] = b; continue; }
+
                 var resolved = ExpressionCalculator.Evaluate(raw, variables);
-                if (resolved is { } r)
+                if (resolved is { } r) { obj[key] = r; continue; }
+
+                if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
                 {
-                    obj[kv.Key] = r;
+                    obj[key] = d;
+                    continue;
                 }
-                else if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
-                {
-                    obj[kv.Key] = d;
-                }
+
+                // Enum typed by name ("Twill") — store the underlying int the
+                // strategy's params type expects.
+                if (EnumValueFor(tp, key, raw) is { } enumValue) obj[key] = enumValue;
             }
             tp.ParamsJson = obj.ToJsonString();
         }
@@ -166,6 +234,27 @@ public partial class CutPanel : UserControl
         => (tp.StrategyKey is { Length: > 0 } k ? Registry.Find(k) : null)
            ?? Registry.Find(StrategyKeyMap.ToKey(tp.Strategy));
 
+    /// <summary>Underlying int for an enum param typed by name, or null.</summary>
+    private int? EnumValueFor(Toolpath tp, string jsonKey, string text)
+    {
+        var entry = EntryFor(tp);
+        if (entry is null) return null;
+        var type = Registry.ParamsTypeFor(entry.Key);
+        if (type is null) return null;
+
+        var prop = type.GetProperties().FirstOrDefault(p =>
+            string.Equals(char.ToLowerInvariant(p.Name[0]) + p.Name[1..], jsonKey,
+                          StringComparison.OrdinalIgnoreCase));
+        if (prop is null) return null;
+
+        var t = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+        if (!t.IsEnum) return null;
+
+        return Enum.TryParse(t, text, ignoreCase: true, out var parsed)
+            ? Convert.ToInt32(parsed)
+            : null;
+    }
+
     /// <summary>Fill the combo from the registry so every strategy is selectable.</summary>
     private void PopulateStrategies()
     {
@@ -196,6 +285,9 @@ public partial class CutPanel : UserControl
         else tp.ParamsJson = "{}";
         foreach (var s in layer.Shapes) tp.SelectedShapeIds.Add(s.Id);
         RefreshList();
+        // Select the new toolpath so its params form is immediately editable.
+        // Without this the user adds a strategy and the Params row stays blank.
+        ToolpathList.SelectedIndex = AppState.Toolpaths.Toolpaths.Count - 1;
     }
 
     private void BtnCalc_Click(object sender, RoutedEventArgs e)
