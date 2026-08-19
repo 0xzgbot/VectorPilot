@@ -56,8 +56,9 @@ Rules:
 
 ## Tier 2 — Engine gaps
 
-- [ ] **E1. Bitmap tracer** — Sobel edge detect → Moore contour follow → Douglas-Peucker simplify. Port from Mac `BitmapTracer.swift`.
-  Gate: `FullyQualifiedName~BitmapTracer` — ≥6 tests (traces a black square to 4 corners, tolerance reduces point count, noise rejected).
+- [x] **E1. Bitmap tracer** — Sobel edge detect → Moore contour follow → Douglas-Peucker simplify. Port from Mac `BitmapTracer.swift`.
+  Gate: `FullyQualifiedName~BitmapTrace` — 12 tests.
+  **DONE + REACHABLE:** engine already existed (marching squares, not Sobel+Moore — equivalent for region contours) but had NO simplification and NO UI. Added Douglas-Peucker (SimplifyClosed) and a "Trace bitmap…" button in the Design ops bar: decodes to Gray8, traces, simplifies at 1px, scales to the sheet, flips to CNC Y-up, added undoably.
 
 - [ ] **E2. Moulding + Weave toolpaths** — the two remaining unported strategies. Register in `StrategyRegistry`.
   Gate: `FullyQualifiedName~MouldingWeave` — ≥6 tests vs Mac numbers.

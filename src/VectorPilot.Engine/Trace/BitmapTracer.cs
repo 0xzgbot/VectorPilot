@@ -16,6 +16,15 @@ public static class BitmapTracer
     /// Returns closed polylines in pixel coordinates (0..width, 0..height).
     /// </summary>
     public static List<VectorShape> Trace(byte[] pixels, int width, int height, byte threshold = 128)
+        => Trace(pixels, width, height, threshold, simplifyTolerance: 0);
+
+    /// <summary>
+    /// Trace contours, then simplify each with Douglas-Peucker.
+    /// <paramref name="simplifyTolerance"/> is in pixels; 0 disables simplification.
+    /// Marching squares emits a vertex per cell edge, which is far more points than
+    /// a toolpath needs — a tolerance of ~0.5-1.5px removes the staircase noise.
+    /// </summary>
+    public static List<VectorShape> Trace(byte[] pixels, int width, int height, byte threshold, double simplifyTolerance)
     {
         var contours = new List<VectorShape>();
         if (pixels.Length < width * height || width < 2 || height < 2) return contours;
@@ -89,7 +98,7 @@ public static class BitmapTracer
             }
         }
 
-        ChainSegments(segments, contours);
+        ChainSegments(segments, contours, simplifyTolerance);
         return contours;
 
         void Seg((double X, double Y) a, (double X, double Y) b)
@@ -112,7 +121,7 @@ public static class BitmapTracer
         => c00 + c10 + c11 + c01 >= 2;
 
     /// <summary>Chain raw segments into closed polylines by shared endpoints.</summary>
-    private static void ChainSegments(List<(double X1, double Y1, double X2, double Y2)> segments, List<VectorShape> contours)
+    private static void ChainSegments(List<(double X1, double Y1, double X2, double Y2)> segments, List<VectorShape> contours, double simplifyTolerance)
     {
         if (segments.Count == 0) return;
         var remaining = new HashSet<int>(Enumerable.Range(0, segments.Count));
@@ -158,7 +167,9 @@ public static class BitmapTracer
             if (pts.Count >= 3 && pts[0].DistanceTo(pts[^1]) > 1e-6) pts.Add(pts[0]);
             if (pts.Count >= 4)
             {
-                contours.Add(VectorShape.Polyline(pts, closed: true));
+                contours.Add(VectorShape.Polyline(
+                    simplifyTolerance > 0 ? SimplifyClosed(pts, simplifyTolerance) : pts,
+                    closed: true));
             }
         }
 
@@ -167,6 +178,62 @@ public static class BitmapTracer
             if (!byPoint.TryGetValue(key, out var list)) byPoint[key] = list = new List<int>();
             list.Add(idx);
         }
+    }
+
+    /// <summary>
+    /// Douglas-Peucker simplification for a closed ring. The first/last point is
+    /// shared, so the ring is simplified as an open run between them and re-closed.
+    /// </summary>
+    private static List<VectorPoint> SimplifyClosed(List<VectorPoint> ring, double tolerance)
+    {
+        if (ring.Count < 5) return ring;
+
+        bool wasClosed = ring[0].DistanceTo(ring[^1]) < 1e-9;
+        var open = wasClosed ? ring.GetRange(0, ring.Count - 1) : ring;
+        if (open.Count < 4) return ring;
+
+        var keep = new bool[open.Count];
+        keep[0] = keep[^1] = true;
+        Recurse(open, 0, open.Count - 1, tolerance, keep);
+
+        var result = new List<VectorPoint>();
+        for (int i = 0; i < open.Count; i++)
+            if (keep[i]) result.Add(open[i]);
+
+        // A ring must keep at least a triangle.
+        if (result.Count < 3) return ring;
+        if (wasClosed) result.Add(result[0]);
+        return result;
+    }
+
+    private static void Recurse(List<VectorPoint> pts, int first, int last, double tolerance, bool[] keep)
+    {
+        if (last <= first + 1) return;
+
+        double worst = -1;
+        int worstIdx = -1;
+        for (int i = first + 1; i < last; i++)
+        {
+            double d = PerpendicularDistance(pts[i], pts[first], pts[last]);
+            if (d > worst) { worst = d; worstIdx = i; }
+        }
+
+        if (worst > tolerance && worstIdx > 0)
+        {
+            keep[worstIdx] = true;
+            Recurse(pts, first, worstIdx, tolerance, keep);
+            Recurse(pts, worstIdx, last, tolerance, keep);
+        }
+    }
+
+    private static double PerpendicularDistance(VectorPoint p, VectorPoint a, VectorPoint b)
+    {
+        double dx = b.X - a.X, dy = b.Y - a.Y;
+        double lenSq = dx * dx + dy * dy;
+        if (lenSq < 1e-18) return p.DistanceTo(a);
+
+        double cross = Math.Abs(dx * (p.Y - a.Y) - dy * (p.X - a.X));
+        return cross / Math.Sqrt(lenSq);
     }
 
     private static int FindNext(Dictionary<(long, long), List<int>> byPoint, (long, long) key, int fromIdx, HashSet<int> used)

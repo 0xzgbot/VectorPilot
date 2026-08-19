@@ -21,6 +21,78 @@ public partial class DesignPanel
 
     private void Transform_Click(object sender, RoutedEventArgs e) => DoTransform();
 
+    /// <summary>Card E1: import a bitmap, trace its outlines, add them as vectors.</summary>
+    private void Trace_Click(object sender, RoutedEventArgs e)
+    {
+        var layer = ActiveLayer;
+        if (layer is null || layer.Locked) { SetStatus("No editable layer"); return; }
+
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Trace bitmap",
+            Filter = "Images (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        try
+        {
+            var (pixels, w, h) = LoadGrayscale(dlg.FileName);
+            var traced = BitmapTracer.Trace(pixels, w, h, threshold: 128, simplifyTolerance: 1.0);
+            if (traced.Count == 0) { SetStatus("Nothing traced — try a higher-contrast image"); return; }
+
+            // Scale the trace to fit the sheet, preserving aspect.
+            var sheet = AppState.CurrentJob.ActiveSheet;
+            double sw = ParseDim(sheet.Width, 200), sh = ParseDim(sheet.Height, 200);
+            double scale = Math.Min(sw / Math.Max(w, 1), sh / Math.Max(h, 1)) * 0.9;
+
+            var before = UndoStack.Snapshot(layer);
+            foreach (var shape in traced)
+            {
+                for (int i = 0; i < shape.Points.Count; i++)
+                {
+                    var p = shape.Points[i];
+                    shape.Points[i] = new VectorPoint(p.X * scale, (h - p.Y) * scale);  // flip to CNC Y-up
+                }
+                layer.AddShape(shape);
+            }
+            Undo.Push("Trace bitmap", layer, before);
+            if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+            SetStatus($"Traced {traced.Count} outline(s) from {System.IO.Path.GetFileName(dlg.FileName)}");
+            RedrawShapes();
+            UpdateEditChrome();
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Trace failed: {ex.Message}");
+        }
+    }
+
+    private static double ParseDim(object? value, double fallback) => value switch
+    {
+        double d => d,
+        string s when double.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var p) => p,
+        _ => fallback
+    };
+
+    /// <summary>Decode an image to row-major 8-bit grayscale.</summary>
+    private static (byte[] Pixels, int Width, int Height) LoadGrayscale(string path)
+    {
+        var frame = System.Windows.Media.Imaging.BitmapFrame.Create(
+            new Uri(path), System.Windows.Media.Imaging.BitmapCreateOptions.None,
+            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+
+        var gray = new System.Windows.Media.Imaging.FormatConvertedBitmap(
+            frame, System.Windows.Media.PixelFormats.Gray8, null, 0);
+
+        int w = gray.PixelWidth, h = gray.PixelHeight;
+        int stride = w;
+        var pixels = new byte[w * h];
+        gray.CopyPixels(pixels, stride, 0);
+        return (pixels, w, h);
+    }
+
     /// <summary>Card A3: open the numeric transform dialog, undoably.</summary>
     internal void DoTransform()
     {
