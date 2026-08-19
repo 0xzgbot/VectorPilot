@@ -57,8 +57,21 @@ public partial class OutputPanel : UserControl
             MessageBox.Show("Nothing to export — calculate toolpaths in the Cut stage first.", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        var path = TapExporter.Export(Path.Combine(OutputDir(), Sanitize(AppState.CurrentJob.Name) + ".tap"), toolpaths);
-        TxtExportInfo.Text = $"Wrote {path}";
+
+        // Honour the post picker. This used to call the plain exporter and ignore
+        // CmbPost entirely, so the selected controller had no effect on the .tap —
+        // and it overwrote the same filename the template export writes.
+        string target = Path.Combine(OutputDir(), Sanitize(AppState.CurrentJob.Name) + ".tap");
+
+        if (CmbPost.SelectedItem is PostTemplate template)
+        {
+            var written = TapExporter.ExportWithTemplate(target, toolpaths, template);
+            TxtExportInfo.Text = $"Wrote {written} (post: {template.Name})";
+            return;
+        }
+
+        var path = TapExporter.Export(target, toolpaths);
+        TxtExportInfo.Text = $"Wrote {path} (no post selected — generic GRBL)";
     }
 
     private void ExportTemplate_Click(object sender, RoutedEventArgs e)

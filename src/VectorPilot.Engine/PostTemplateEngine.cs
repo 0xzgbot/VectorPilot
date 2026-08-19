@@ -20,6 +20,13 @@ public sealed class PostTemplate
     public bool RotaryWrap { get; init; }
     public double WrapDiameterMm { get; init; } = 50.0;
 
+    /// <summary>
+    /// What the user (and UIAutomation) sees. Without this the post picker reports
+    /// "VectorPilot.Engine.PostTemplate" for all 20 entries, so they are
+    /// indistinguishable to a screen reader or any automation.
+    /// </summary>
+    public override string ToString() => Name;
+
     public static PostTemplate Grbl(GCodeUnits units) => new()
     {
         Id = units == GCodeUnits.Millimeter ? "grbl-mm" : "grbl-in",
