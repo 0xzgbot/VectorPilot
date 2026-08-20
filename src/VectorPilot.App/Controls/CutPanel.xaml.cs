@@ -561,24 +561,11 @@ public partial class CutPanel : UserControl
     /// <summary>
     /// Why an area strategy cannot run on this selection, or null if it can.
     ///
-    /// Profile/Pocket/V-Carve are area operations: an OPEN outline has no inside, so
-    /// cutting one produces junk. VectorValidator existed but nothing called it, so this
-    /// Internal so tests exercise the same decision the UI makes.
+    /// Delegates to JobGate so Machine's Start refuses with the SAME message: the two used
+    /// to disagree, and Start had no validation at all.
     /// </summary>
     public static string? AreaStrategyBlocker(string strategyKey, string displayName, IReadOnlyList<VectorShape> shapes)
-    {
-        if (strategyKey is not ("profile" or "pocket" or "vcarve")) return null;
-        if (shapes.Count == 0) return null;
-
-        static bool IsOpen(VectorShape s)
-            => !s.Closed && s.Type != ShapeType.Circle && s.Type != ShapeType.Rectangle;
-
-        int open = shapes.Count(IsOpen);
-        if (open < shapes.Count) return null;   // at least one closed shape to cut
-
-        return $"{displayName} needs a closed outline — {open} selected shape(s) are open paths. " +
-               "Close them, or use Extend in Design to make the ends meet.";
-    }
+        => JobGate.AreaStrategyBlocker(strategyKey, displayName, shapes);
 
     /// <summary>
     /// UI-thread half of a recalculation: commit the params form, resolve the strategy and

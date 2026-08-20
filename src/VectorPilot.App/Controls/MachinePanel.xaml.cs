@@ -253,6 +253,20 @@ public partial class MachinePanel : UserControl
     {
         if (Session is null || AppState.LoadedGCode.Count == 0) return;
 
+        // Same gate Cut's Calculate uses. Start previously streamed AppState.LoadedGCode
+        // with NO validation, so a comment-only program — which looks runnable and which the
+        // controller happily accepts — put the operator in front of a job that never cuts.
+        if (JobGate.StreamBlocker(AppState.LoadedGCode) is { } blocker)
+        {
+            if (!App.IsAutomated)
+            {
+                MessageBox.Show(blocker, "Cannot start", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            // This panel has no AppendConsole helper; it writes ConsoleText directly.
+            if (ConsoleText is not null) ConsoleText.Text += $"[blocked] {blocker}\n";
+            return;
+        }
+
         var progress = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         progress.Tick += (_, _) =>
         {
