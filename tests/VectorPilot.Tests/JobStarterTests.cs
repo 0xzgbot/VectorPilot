@@ -307,6 +307,28 @@ public class JobStarterTests
     }
 
     [Fact]
+    public void A_Beginner_Starter_Does_Not_Silently_Promote_To_Advanced()
+    {
+        // Sign -> vcarve is a Beginner operation, so choosing it must LEAVE the user in
+        // Beginner. Only a hidden strategy (Photo -> photo-vcarve) may promote.
+        OnSta(() =>
+        {
+            AppState.UiMode = UiMode.Beginner;
+            var panel = new CutPanel();
+
+            Assert.True(panel.SelectStrategy(JobStarterOverlay.ApplyStarter(JobStarterKind.Sign)));
+            Assert.Equal(UiMode.Beginner, AppState.UiMode);
+        });
+    }
+
+    [Fact]
+    public void The_Beginner_Ceiling_Tracks_The_Key_List()
+    {
+        // Derived, not a hand-kept constant that can drift from BeginnerKeys.
+        Assert.Equal(UiModeCatalog.BeginnerKeys.Length, UiModeCatalog.BeginnerMaxOperations);
+    }
+
+    [Fact]
     public void The_Main_Window_Hosts_The_Mode_Combo_And_Starter_Button()
     {
         OnSta(() =>

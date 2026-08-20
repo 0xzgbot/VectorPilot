@@ -22,15 +22,10 @@ public partial class JobStarterOverlay : UserControl
     }
 
     /// <summary>
-    /// Apply a starter: set the mode and return the strategy key the Cut panel should select.
-    /// Pure state work, no UI, so tests drive the same path the clicks do.
+    /// The strategy key this starter begins on. Pure lookup — the mode is decided downstream
+    /// by CutPanel.SelectStrategy, so there is one owner of that rule instead of two.
     /// </summary>
-    public static string ApplyStarter(JobStarterKind kind)
-    {
-        var (mode, strategyKey) = UiModeCatalog.StarterSetup(kind);
-        AppState.UiMode = mode;
-        return strategyKey;
-    }
+    public static string ApplyStarter(JobStarterKind kind) => UiModeCatalog.StarterStrategy(kind);
 
     private void Choose(JobStarterKind kind)
     {

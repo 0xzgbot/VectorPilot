@@ -46,8 +46,8 @@ public static class UiModeCatalog
         "laser-cut"
     };
 
-    /// <summary>Hard ceiling for Beginner mode — the card's acceptance criterion.</summary>
-    public const int BeginnerMaxOperations = 8;
+    /// <summary>Hard ceiling for Beginner mode — derived, so it cannot drift from the list.</summary>
+    public static int BeginnerMaxOperations => BeginnerKeys.Length;
 
     /// <summary>True when this registry key is offered in the given mode.</summary>
     public static bool IsVisible(UiMode mode, string? strategyKey)
@@ -63,26 +63,23 @@ public static class UiModeCatalog
         if (mode == UiMode.Advanced) return entries.ToList();
 
         var byKey = entries.ToDictionary(keyOf, e => e, StringComparer.Ordinal);
-        var result = new List<T>();
-
-        foreach (var key in BeginnerKeys)
-            if (byKey.TryGetValue(key, out var entry))
-                result.Add(entry);
-
-        return result;
+        return BeginnerKeys
+            .Where(byKey.ContainsKey)
+            .Select(k => byKey[k])
+            .ToList();
     }
 
     /// <summary>
-    /// The strategy a job starter should pre-select, and the mode it implies. Sign and Photo
-    /// are Beginner journeys; 3D needs the relief strategies, which are also in the Beginner
-    /// list, so it stays Beginner too — Advanced is something the user opts into.
+    /// The strategy a job starter pre-selects. The mode follows from the strategy —
+    /// CutPanel.SelectStrategy promotes to Advanced when the key is not a Beginner
+    /// operation — so this deliberately does not return one.
     /// </summary>
-    public static (UiMode Mode, string StrategyKey) StarterSetup(JobStarterKind kind) => kind switch
+    public static string StarterStrategy(JobStarterKind kind) => kind switch
     {
-        JobStarterKind.Sign => (UiMode.Beginner, "vcarve"),
-        JobStarterKind.Photo => (UiMode.Beginner, "photo-vcarve"),
-        JobStarterKind.ThreeD => (UiMode.Beginner, "rough3d"),
-        _ => (UiMode.Beginner, "profile")
+        JobStarterKind.Sign => "vcarve",
+        JobStarterKind.Photo => "photo-vcarve",
+        JobStarterKind.ThreeD => "rough3d",
+        _ => "profile"
     };
 
     /// <summary>Human label for a starter button.</summary>
