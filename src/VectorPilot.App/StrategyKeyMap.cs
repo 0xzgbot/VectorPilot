@@ -39,6 +39,7 @@ public static class StrategyKeyMap
         ["moulding"] = ToolpathStrategy.Moulding,
         ["weave"] = ToolpathStrategy.Weave,
         ["threadmill"] = ToolpathStrategy.ThreadMill,
+        ["rounding"] = ToolpathStrategy.Rounding,
         ["rough3d"] = ToolpathStrategy.Rough3D,
         ["finish3d"] = ToolpathStrategy.Finish3D,
         ["photo-vcarve"] = ToolpathStrategy.PhotoVCarve,

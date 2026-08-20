@@ -11,7 +11,7 @@ Generated 2026-08-10. Status key: ✅ parity, 🟡 partial, ❌ absent, ⛔ bloc
 | 17 toolpath strategies | 20 in the strategy registry (Profile, Pocket, V-Carve, Drill, Drill Bank, Quick Engrave, Photo V-Carve, Sketch Carve, Rough 3D, Finish 3D, Texture, Drag Knife, Prism, Fluting, Chamfer, Bevel, Sweep, Moulding, Weave, Wrapped Fluting, Laser, Rotary Wrap) | ✅ superset |
 | 7 tool types (End Mill, V-Bit, Ball Nose, Drill, Diamond Drag, Laser, Thread Mill) | 10 in ToolType (adds RadiusedEndMill, Engraving, RadiusedEngraving) | ✅ superset |
 | 53+ post processors, 5 categories | **20 shipped templates** (GRBL/FluidNC/Marlin/LinuxCNC/Mach3/Haas/… mm+inch, rotary-Y2A) + template engine ([W\|M\|O\|F] grammar, arbitrary user templates); picker changes the exported `.tap` | 🟡 catalog 20/53 |
-| Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907); no Lua/HTML gadget host | 🟡 |
+| Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907) + **Corner Rounding gadget** (real tangent arcs); no Lua/HTML gadget host | 🟡 |
 | Cabinetry import (CSV PartListMapping, 5 transformation types) | CabinetryImport.cs (Mozaik/KCD/CabinetSense/CabinetPartsPro/Polyboard/SmartWOP) | 🟡 needs fixture validation |
 | 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport | 🟡 no camera animation |
 | SketchUp .skp import | honest stub — needs SketchUpAPI.dll | ⛔ SDK-blocked |

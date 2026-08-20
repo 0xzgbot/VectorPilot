@@ -18,7 +18,8 @@ public enum ToolpathStrategy
     Inlay,
     Moulding,
     Weave,
-    ThreadMill
+    ThreadMill,
+    Rounding
 }
 
 /// <summary>A calculated toolpath (strategy + parameters + result g-code).</summary>

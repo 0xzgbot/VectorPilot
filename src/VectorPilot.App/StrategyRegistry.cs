@@ -186,6 +186,19 @@ public sealed class StrategyRegistry
                 Error = r.Error
             };
         });
+        // Corner rounding gadget. The Mac's generateRounding is a placeholder returning
+        // one segment at (0,0); this is a real tangent-arc implementation.
+        Add<RoundingGadget.Params>("rounding", "Corner Rounding", false, (s, _, p) =>
+        {
+            var r = RoundingGadget.Compute(s, p);
+            return new SpecialtyResult
+            {
+                GcodeLines = r.GcodeLines,
+                FeatureCount = r.CornersRounded,
+                Error = r.Error
+            };
+        });
+
         Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty("3D Rough needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
         Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty("3D Finish needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
         Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty("Photo V-Carve needs a 3D model or image — load one in the Model stage first.") : PhotoVCarveEngine.Compute(hf, p));
