@@ -18,16 +18,21 @@ Supersedes `MASTER_KANBAN.md` (stale M0–M6) and `PARITY_QUEUE.md` (single-agen
 4. Worker must `git pull` then create branch `hermes/{card-id}` from `origin/main`. **Never commit to `main`.**
 5. When a worker returns: run **Critic** on that branch (diff vs main). If fail, send the worker back. If pass, **you** merge to main (or open PR). Then flip the card `[x]` here in one commit on main.
 6. If a worker hits HTTP 429 / empty diff: do not respawn 7 clones. Shrink the brief, retry **once**, then do that card yourself.
-7. Max **3 workers** at once on this PC (dotnet lock + OneDrive). Prefer **2**.
+7. **Default concurrency is 1.** `dotnet build` is machine-wide (MSB3021). On 2026-08-20, 2 of 3 workers died at ~6–7 API calls with **empty diffs**. One finishing worker is faster wall-clock than three that write nothing. Fan-out only when a card is new-files-only, the brief is pre-verified, and you are not about to `verify.sh`.
 8. **Never leave main dirty when spawning.** A worker's `git checkout -b` carries
    uncommitted orchestrator files onto its branch; deleting that branch then destroys
    them. Commit the board *before* dispatch. (Cost one recovery via `git reflog` +
    `cherry-pick` on 2026-08-20.)
-9. **429 reality on this key (2026-08-20):** a 2-worker fan-out died at 7 and 6 API
-   calls with zero files written — same failure as the 7/7 wipeout in `AGENTS.md`
-   rule 6. Both branches had **empty diffs**. Retry once with a shrunk brief, then
-   do the card directly. Always `git diff --stat main hermes/{id}` before believing
-   a worker.
+9. **Critic must be briefed with the CURRENT main SHA.** I gave a critic `main@e50bda9`
+   after main had advanced past it; it then flagged another card's merged files as
+   forbidden on the branch under review. Two of three FAIL items were false positives.
+10. **Do not `git checkout` while a worker holds the repo.** Workers share this one
+   working tree, so an orchestrator commit can land on the worker's branch instead of
+   main (happened with c5f1796). Verify `git branch --show-current` before committing,
+   and `git rev-parse origin/main` after.
+11. **429 reality on this key (2026-08-20):** Always `git diff --stat origin/main...HEAD` on `hermes/{id}` before believing a worker.
+10. **OWN is a real path, not a class name.** Orchestrator greps before writing the brief. `HeightfieldFinishEngine` lives in `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` (same file as `HeightfieldFinishParams` and `HeightfieldRoughEngine`). A worker told to edit `HeightfieldFinishEngine.cs` will hunt or duplicate — and 429 kills exploration. Put **file + type + field + line** in the brief. Pattern that survives this key: **orchestrator recon, worker execute**.
+11. If a listed OWN path is missing: worker **STOPS** and returns. Do not create a parallel file.
 
 ### Claim syntax in this file
 
@@ -46,8 +51,8 @@ Worker flips only its own line. Orchestrator owns wave headers and locks.
 | **DESIGN** | `src/VectorPilot.App/Controls/DesignPanel*` | One worker |
 | **MODEL** | `src/VectorPilot.App/Controls/ModelPanel.*`, `ComponentTree*` , `ThreeDPreview.*` | One worker |
 | **MACHINE** | `src/VectorPilot.App/Controls/MachinePanel.*`, `MachineSession.cs`, `src/VectorPilot.Serial/**` | One worker |
-| **ENGINE-3D** | `src/VectorPilot.Engine` heightfield / rough / finish / sculpt / compositor / sweep | One worker |
-| **ENGINE-PHOTO** | `PhotoVCarveEngine`, `SketchCarveEngine`, grayscale / lithophane new files | One worker |
+| **ENGINE-3D** | `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` (Finish **and** Rough engines), `SculptEngine.cs`, `SweepReliefEngine.cs`, compositor files | One worker — Finish vs Rough **same file** |
+| **ENGINE-PHOTO** | `src/VectorPilot.Engine/Photo/LithophaneEngine.cs`, `src/VectorPilot.Engine/Toolpaths/PhotoVCarveEngine.cs`, `SketchCarveEngine.cs` | One worker |
 | **ENGINE-GEO** | `src/VectorPilot.Geometry/**` | One worker |
 | **TESTS** | `tests/VectorPilot.Tests/{CardFilter}*.cs` | Parallel OK if **new files only** |
 | **DOCS** | `docs/ASPIRE_PARITY.md`, this kanban | Orchestrator only |
@@ -81,17 +86,18 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 - [ ] **H-102** READY (H-101 merged) Cuts/Layers list (LightBurn-style operations list)  
   Locks: **CUT**  
   Depends: H-101 merged  
-  Parallel-OK: H-201, H-202, H-203  
-  OWN: `CutPanel.*`, maybe new `CutsListControl.xaml`  
-  FORBIDDEN: MainWindow chrome except hosting the control if already a slot  
+  Parallel-OK: **none while H-202 is in flight** (MSB3021 + 429). After H-202 merge: new-file engine cards only.  
+  OWN: `src/VectorPilot.App/Controls/CutPanel.xaml`, `CutPanel.xaml.cs`; optional **new** `src/VectorPilot.App/Controls/CutsListControl.xaml(.cs)`  
+  FORBIDDEN: `MainWindow.*` except a one-line host if a named slot already exists; Engine  
   Gate: `FullyQualifiedName~CutsList`  
-  AC: Each toolpath is a row (name, strategy, time); double-click opens **named fields** not a JSON blob; Calculate uses row ParamsJson.
+  AC: Each toolpath is a row (name, strategy, time); double-click opens **named fields** not a JSON blob; Calculate uses row ParamsJson.  
+  Recon for brief: `CutPanel.xaml.cs` already has toolpath list + `CommitParamsForm` / `ParamsJson` — extend that list; do not invent a second registry.
 
 - [ ] **H-103** App-lifetime machine dock (gSender/LightBurn)  
   Locks: **APP-SHELL**, **MACHINE**  
   Depends: none if H-101 not touching MachinePanel — **conflict with H-101**. Do **after** H-101.  
   Parallel-OK: H-201–H-203  
-  OWN: new `MachineDock.xaml(.cs)`, `MainWindow` host strip, move E-stop/Hold/Connect onto dock; `MachineSession` lives on `App` not panel Unloaded  
+  OWN: **new** `src/VectorPilot.App/Controls/MachineDock.xaml(.cs)`; `src/VectorPilot.App/MainWindow.xaml(.cs)` host strip; `src/VectorPilot.App/MachineSession.cs`; `src/VectorPilot.App/App.xaml.cs` if session must outlive the stage. Existing chrome: `Controls/MachinePanel.xaml(.cs)` — **move** E-stop/Hold/Connect, do not duplicate.  
   FORBIDDEN: CutPanel strategy math, Model 3D  
   Gate: `FullyQualifiedName~MachineDock`  
   AC: Leave Machine stage; Hold/E-stop still enabled. No auto-start.
@@ -100,7 +106,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Locks: **DESIGN**, **MACHINE**  
   Depends: H-103  
   Parallel-OK: H-201–H-204  
-  OWN: `DesignPanel` click-to-world, `MachineSession` Frame (G0 rectangle of selection or sheet)  
+  OWN: `src/VectorPilot.App/Controls/DesignPanel.Input.cs` (click-to-world), `DesignPanel.xaml(.cs)` if a Frame button is needed; `src/VectorPilot.App/MachineSession.cs` (Frame rapids). There is no `DesignPanel.cs` — partials are Edit/Input/Render.  
   FORBIDDEN: StrategyRegistry  
   Gate: `FullyQualifiedName~FrameJog`  
   AC: Frame emits rapids on simulator; click canvas jogs when connected (disabled if disconnected).
@@ -115,18 +121,18 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~Lithophane`  
   AC: Light pixels → thicker (or documented invert); closed preview heightfield; no G-code required yet.
 
-- [~] **H-202** `hermes/H-202` Scallop-height 3D finish param  
+- [x] **H-202** Scallop-height 3D finish param  
   Locks: **ENGINE-3D**  
   Parallel-OK: H-201, H-101–H-103 (**not** H-204 if same finish files)  
-  OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` (holds BOTH `HeightfieldFinishParams` and `HeightfieldFinishEngine` — there is no `HeightfieldFinishEngine.cs`) — stepover from scallop + tool diameter  
+  OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` only (types `HeightfieldFinishParams`, `HeightfieldFinishEngine`, **and** `HeightfieldRoughEngine` — no `HeightfieldFinishEngine.cs`). `HeightfieldData` ctor is `src/VectorPilot.Engine/Heightfield.cs`. StepOverMm is on Finish params; `Math.Max(0.1, …)` already floors stepover on rough.  
   FORBIDDEN: App  
   Gate: `FullyQualifiedName~ScallopFinish`  
   AC: Smaller scallop → denser G1; test two scallops not equal.
 
-- [ ] **H-203** Rest-rough leftover stock  
+- [ ] **H-203** READY (H-202 merged; same file, so it was serial) Rest-rough leftover stock  
   Locks: **ENGINE-3D** — **conflicts H-202**. Queue **after** H-202.  
   Parallel-OK: H-201, App wave  
-  OWN: `HeightfieldRoughEngine` rest pass (also in `Toolpaths/HeightfieldToolpath.cs` — same file as H-202, hence the conflict)  
+  OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` — type `HeightfieldRoughEngine` in that **same** file as H-202. Do not add `HeightfieldRoughEngine.cs`.  
   FORBIDDEN: App  
   Gate: `FullyQualifiedName~RestRough`  
   AC: Second tool only machines leftover vs first tool’s swept volume (or heightfield mask).
@@ -138,7 +144,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 - [ ] **H-210** Photo workspace UI  
   Locks: **CUT** or new `PhotoPanel.xaml` hosted from MainWindow (**APP-SHELL** if new stage)  
   Depends: H-201, H-101  
-  OWN: new panel: import image, contrast/invert, three buttons Engrave / Lithophane / 3D-from-photo  
+  OWN: **new** `src/VectorPilot.App/Controls/PhotoPanel.xaml(.cs)` OR a region in `CutPanel` if no new stage; `src/VectorPilot.Engine/Photo/LithophaneEngine.cs` (read); `src/VectorPilot.Engine/Toolpaths/PhotoVCarveEngine.cs` (read). Prefer new PhotoPanel so CUT lock is only the host one-liner in `MainWindow.xaml`.  
   FORBIDDEN: Machine dock, Geometry kernel  
   Gate: `FullyQualifiedName~PhotoWorkspace` + grep XAML click handlers  
   AC: Preview updates before Calculate; empty image uses honest Empty() not fake `%`.
@@ -157,7 +163,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 - [ ] **H-301** STL-to-stock wizard (MeshCAM-style)  
   Locks: **MODEL**  
   Parallel-OK: H-201 if not merged conflict; H-202 done  
-  OWN: `ModelPanel` import dialog: rotate, scale to thickness, bake component  
+  OWN: `src/VectorPilot.App/Controls/ModelPanel.xaml(.cs)`; STL import already in Engine — grep `StlImporter` (`src/VectorPilot.Engine/Import/` or similar). No `StlWizard.cs` unless you add **new** `Controls/StlImportDialog.xaml(.cs)`.  
   FORBIDDEN: CutPanel  
   Gate: `FullyQualifiedName~StlWizard`  
   AC: One STL → component on sheet bounds; cancel leaves job unchanged.
@@ -166,7 +172,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Locks: **MODEL**  
   Depends: H-301 not required  
   Parallel-OK: H-201, H-103 if locks disjoint — **MODEL vs MACHINE OK**  
-  OWN: `ThreeDPreview` mouse sculpt → `SculptEngine`  
+  OWN: `src/VectorPilot.App/Controls/ThreeDPreview.xaml(.cs)`; `src/VectorPilot.Engine/SculptEngine.cs`. Component list: `Controls/ComponentTreePanel.xaml(.cs)`, `ComponentTreeViewModel.cs`.  
   FORBIDDEN: Serial  
   Gate: `FullyQualifiedName~SculptView`  
   AC: Drag on mesh changes heightfield; undo.
@@ -190,7 +196,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 - [ ] **H-401** Touch-plate probe wizard  
   Locks: **MACHINE**  
   Parallel-OK: H-201, H-202, H-301  
-  OWN: MachineDock + Serial probe sequence on simulator (emulate contact)  
+  OWN: `src/VectorPilot.App/Controls/MachineDock.xaml(.cs)` (after H-103) or `src/VectorPilot.App/Controls/MachinePanel.xaml(.cs)` if dock not merged; `src/VectorPilot.App/MachineSession.cs`; `src/VectorPilot.Serial/SimulatorTransport.cs` (emulate contact).  
   Gate: `FullyQualifiedName~ProbeWizard`  
   AC: Simulator can complete a probe; no motion if disconnected.
 
@@ -242,8 +248,11 @@ CARD: {H-xxx title}
 REPO: C:\Users\tmoph\OneDrive\Documents\cncresearch\VectorPilot
 BRANCH: hermes/{H-xxx} from origin/main (pull first). Never push main. Never git add -A.
 
-OWN files only:
+OWN files only (real paths from orchestrator recon — if a path 404s, STOP):
 {paths}
+
+Types/fields/lines from recon (do not glob-hunt):
+{class + file + line + field}
 
 FORBIDDEN (do not open to edit):
 {paths}
@@ -272,8 +281,8 @@ Pass: short list of residual risks only.
 |-----------|--------|
 | A | H-201 + H-101 (App vs new Photo engine file) |
 | B | H-201 + H-202 — **NO** (both engine 3D/photo can collide on csproj — H-202 is Finish, H-201 is new folder: **YES** if H-201 only adds files and csproj is edited by **one** worker; orchestrator edits csproj **or** H-201 includes csproj and H-202 waits) |
-| Safe default | **2 workers:** one APP lock + one **new-file-only** ENGINE card |
-| Never | Two of {CUT, APP-SHELL, MACHINE} |
+| Safe default | **1 worker.** Fan-out only after recon + empty-diff check. |
+| Never | Two of {CUT, APP-SHELL, MACHINE}; two cards on `HeightfieldToolpath.cs` |
 
 **csproj rule:** only the worker whose OWN list includes `VectorPilot.Engine.csproj` / `VectorPilot.App.csproj` may add files. If the other needs a new `.cs`, they put it in a folder already in the glob, or wait.
 
@@ -286,3 +295,5 @@ Pass: short list of residual risks only.
 - `H-000` — e946298 (clean main, AGENTS.md points here, README units claim corrected + 11 pinning tests)
 - `H-201` — a7c3426 (LithophaneEngine + 11 tests; dark→thicker, Invert flag; new files only, no csproj change)
 - `H-101` — 43e95c9 (Beginner/Advanced rail combo + Sign/Photo/3D starters; live combo 8 items, no Thread Mill; 26 tests)
+- `H-101` critic fix — c5f1796 (rail combo no longer shows Beginner while state is Advanced; 3 tests drive the real click through the real window)
+- `H-202` — 2b8e207 (ScallopHeightMm drives finish stepover, opt-in default 0; 13 tests)
