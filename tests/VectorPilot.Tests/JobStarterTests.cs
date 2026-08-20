@@ -328,6 +328,71 @@ public class JobStarterTests
         Assert.Equal(UiModeCatalog.BeginnerKeys.Length, UiModeCatalog.BeginnerMaxOperations);
     }
 
+    // ---- the rail combo must never lie about the mode in effect ----
+
+    [Fact]
+    public void The_Photo_Starter_Leaves_The_Rail_Combo_Showing_Advanced()
+    {
+        // The desync the critic caught: ShowJobStarter used to set CmbUiMode BEFORE
+        // SelectStrategy, so the Photo starter (photo-vcarve, not a Beginner operation)
+        // promoted the mode afterwards and the rail still read "Beginner". The combo is what
+        // the user believes, so it must match AppState.UiMode.
+        OnSta(() =>
+        {
+            AppState.UiMode = UiMode.Beginner;
+
+            var w = new MainWindow();
+            var combo = (ComboBox)w.FindName("CmbUiMode")!;
+            combo.SelectedIndex = 0;
+
+            var overlay = w.ShowJobStarter();
+            var photo = (Button)overlay.FindName("BtnStarterPhoto")!;
+            photo.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+            Assert.Equal(UiMode.Advanced, AppState.UiMode);
+            Assert.Equal(1, combo.SelectedIndex);   // 1 == Advanced
+        });
+    }
+
+    [Fact]
+    public void The_Sign_Starter_Leaves_The_Rail_Combo_Showing_Beginner()
+    {
+        OnSta(() =>
+        {
+            AppState.UiMode = UiMode.Beginner;
+
+            var w = new MainWindow();
+            var combo = (ComboBox)w.FindName("CmbUiMode")!;
+            combo.SelectedIndex = 0;
+
+            var overlay = w.ShowJobStarter();
+            var sign = (Button)overlay.FindName("BtnStarterSign")!;
+            sign.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+            Assert.Equal(UiMode.Beginner, AppState.UiMode);
+            Assert.Equal(0, combo.SelectedIndex);
+        });
+    }
+
+    [Fact]
+    public void Choosing_A_Starter_Dismisses_The_Overlay()
+    {
+        OnSta(() =>
+        {
+            var w = new MainWindow();
+            var host = (ContentControl)w.FindName("StarterHost")!;
+
+            var overlay = w.ShowJobStarter();
+            Assert.Equal(Visibility.Visible, host.Visibility);
+
+            var sign = (Button)overlay.FindName("BtnStarterSign")!;
+            sign.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+
+            Assert.Equal(Visibility.Collapsed, host.Visibility);
+            Assert.Null(host.Content);
+        });
+    }
+
     [Fact]
     public void The_Main_Window_Hosts_The_Mode_Combo_And_Starter_Button()
     {

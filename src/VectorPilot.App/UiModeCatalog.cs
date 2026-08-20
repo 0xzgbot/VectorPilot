@@ -73,6 +73,11 @@ public static class UiModeCatalog
     /// The strategy a job starter pre-selects. The mode follows from the strategy —
     /// CutPanel.SelectStrategy promotes to Advanced when the key is not a Beginner
     /// operation — so this deliberately does not return one.
+    ///
+    /// Note that Photo maps to "photo-vcarve", which is NOT in <see cref="BeginnerKeys"/>,
+    /// so choosing Photo intentionally promotes the user to Advanced. That is the honest
+    /// outcome: the operation they asked for is not on the beginner list, and silently
+    /// selecting something else would be worse than widening the tool set.
     /// </summary>
     public static string StarterStrategy(JobStarterKind kind) => kind switch
     {

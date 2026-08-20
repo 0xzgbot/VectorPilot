@@ -40,9 +40,12 @@ public partial class MainWindow : Window
 
     // ---- H-101: Beginner/Advanced mode + job starters ----
 
+    /// <summary>Guard so mirroring the combo does not re-enter UiMode_Changed.</summary>
+    private bool _syncingModeCombo;
+
     private void UiMode_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (CmbUiMode is null) return;
+        if (CmbUiMode is null || _syncingModeCombo) return;
 
         AppState.UiMode = CmbUiMode.SelectedIndex == 1 ? UiMode.Advanced : UiMode.Beginner;
 
@@ -51,13 +54,31 @@ public partial class MainWindow : Window
         _cut.RefreshForMode();
     }
 
+    /// <summary>
+    /// Make the rail combo show the mode that is actually in effect. Called after anything
+    /// that can change the mode behind the UI's back (a job starter promoting to Advanced).
+    /// </summary>
+    private void SyncModeCombo()
+    {
+        if (CmbUiMode is null) return;
+
+        int want = AppState.UiMode == UiMode.Advanced ? 1 : 0;
+        if (CmbUiMode.SelectedIndex == want) return;
+
+        // Assigning SelectedIndex raises SelectionChanged, which would write AppState.UiMode
+        // back from the combo — harmless here but circular, so suppress it.
+        _syncingModeCombo = true;
+        try { CmbUiMode.SelectedIndex = want; }
+        finally { _syncingModeCombo = false; }
+    }
+
     private void JobStarter_Click(object sender, RoutedEventArgs e) => ShowJobStarter();
 
     /// <summary>
     /// Show the three job starters. Returns the overlay so tests can drive the same instance
-    /// the button creates.
+    /// the button creates. Public because the test project has no InternalsVisibleTo.
     /// </summary>
-    internal Controls.JobStarterOverlay ShowJobStarter()
+    public Controls.JobStarterOverlay ShowJobStarter()
     {
         var overlay = new Controls.JobStarterOverlay();
         overlay.Started += (kind, strategyKey) =>
@@ -65,15 +86,18 @@ public partial class MainWindow : Window
             StarterHost.Content = null;
             StarterHost.Visibility = Visibility.Collapsed;
 
-            // Reflect whatever the starter chose back into the rail combo.
-            CmbUiMode.SelectedIndex = AppState.UiMode == UiMode.Advanced ? 1 : 0;
-            _cut.RefreshForMode();
-
+            // Select FIRST: SelectStrategy may promote to Advanced (photo-vcarve is not a
+            // Beginner operation). Setting the rail combo before this left it reading
+            // "Beginner" while AppState.UiMode was Advanced — the label and the state
+            // disagreed, and the combo is what the user believes.
             if (strategyKey is not null)
             {
                 _cut.SelectStrategy(strategyKey);
                 StageHost.Content = _cut;      // land the user on the operation itself
             }
+
+            // Now mirror whatever the mode actually ended up as.
+            SyncModeCombo();
         };
 
         StarterHost.Content = overlay;
