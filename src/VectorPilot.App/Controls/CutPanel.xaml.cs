@@ -17,25 +17,62 @@ public partial class CutPanel : UserControl
         RefreshTemplates();
     }
 
+    /// <summary>H-102: rebuild the Cuts list. Public so tests can prove a refresh keeps
+    /// the selection and still yields real Toolpath items.</summary>
+    public void RefreshCutsList() => RefreshList();
+
     private void RefreshList()
     {
+        // H-102: add the Toolpath OBJECTS, not formatted strings. Six call-sites
+        // (ArrayCopy_Click, the array/merge result selection, SaveTemplate_Click,
+        // ApplyTemplate_Click) already do `SelectedItem is not Toolpath` — with strings
+        // in the list those guards always failed and the buttons only ever refused.
+        var keepId = (ToolpathList.SelectedItem as Toolpath)?.Id ?? _selectedToolpath?.Id;
+
         ToolpathList.Items.Clear();
-        for (int i = 0; i < AppState.Toolpaths.Toolpaths.Count; i++)
+        foreach (var tp in AppState.Toolpaths.Toolpaths)
+            ToolpathList.Items.Add(tp);
+
+        // A refresh used to drop the selection, blanking the params form mid-edit.
+        if (keepId is { } id)
         {
-            var tp = AppState.Toolpaths.Toolpaths[i];
-            var flag = tp.IsDirty ? " ⚠ dirty" : "";
-            ToolpathList.Items.Add($"{tp.Name} [{tp.Strategy}]{flag} — {tp.GCode.Count} lines");
+            foreach (var item in ToolpathList.Items)
+                if (item is Toolpath tp && tp.Id == id)
+                {
+                    ToolpathList.SelectedItem = tp;
+                    break;
+                }
         }
     }
+
+    /// <summary>Strategy column: the exact registry key when we have one, else the enum.</summary>
+    public static string StrategyLabel(Toolpath tp) =>
+        string.IsNullOrWhiteSpace(tp.StrategyKey) ? tp.Strategy.ToString() : tp.StrategyKey!;
+
+    /// <summary>Time column: m:ss, or an em dash when nothing has been estimated yet.</summary>
+    public static string TimeLabel(double seconds)
+    {
+        if (seconds <= 0 || double.IsNaN(seconds) || double.IsInfinity(seconds)) return "—";
+        var total = (int)Math.Round(seconds);
+        return string.Create(CultureInfo.InvariantCulture, $"{total / 60}:{total % 60:00}");
+    }
+
+    /// <summary>Dirty column: a warning marker for a toolpath whose G-code is stale.</summary>
+    public static string DirtyLabel(bool isDirty) => isDirty ? "⚠" : "";
 
     private Toolpath? _selectedToolpath;
 
     private void ToolpathList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var index = ToolpathList.SelectedIndex;
-        _selectedToolpath = index >= 0 && index < AppState.Toolpaths.Toolpaths.Count
-            ? AppState.Toolpaths.Toolpaths[index]
-            : null;
+        // Prefer the bound object; fall back to the old index lookup so nothing regresses.
+        if (ToolpathList.SelectedItem is Toolpath selected) _selectedToolpath = selected;
+        else
+        {
+            var index = ToolpathList.SelectedIndex;
+            _selectedToolpath = index >= 0 && index < AppState.Toolpaths.Toolpaths.Count
+                ? AppState.Toolpaths.Toolpaths[index]
+                : null;
+        }
         RefreshParamsForm(_selectedToolpath);
         RefreshTemplates();
         PublishSourceLink(_selectedToolpath);
@@ -796,4 +833,34 @@ public partial class CutPanel : UserControl
 
     private static double ParseOr(string s, double fallback)
         => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : fallback;
+}
+
+/// <summary>H-102: Strategy column — registry key when set, else the coarser enum.</summary>
+public sealed class ToolpathStrategyConverter : System.Windows.Data.IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Toolpath tp ? CutPanel.StrategyLabel(tp) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+/// <summary>H-102: Time column — EstimatedTimeSeconds as m:ss, or a placeholder at zero.</summary>
+public sealed class ToolpathTimeConverter : System.Windows.Data.IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Toolpath tp ? CutPanel.TimeLabel(tp.EstimatedTimeSeconds) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+/// <summary>H-102: Dirty column — a marker only when the G-code is stale.</summary>
+public sealed class ToolpathDirtyConverter : System.Windows.Data.IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Toolpath tp ? CutPanel.DirtyLabel(tp.IsDirty) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }

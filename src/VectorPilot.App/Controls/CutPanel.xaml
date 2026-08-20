@@ -1,8 +1,14 @@
 <UserControl x:Class="VectorPilot.App.Controls.CutPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:VectorPilot.App.Controls">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- H-102: the toolpath list holds real Toolpath objects; these render the
+             derived columns (strategy label, m:ss time, dirty marker). -->
+        <local:ToolpathStrategyConverter x:Key="StrategyConv"/>
+        <local:ToolpathTimeConverter x:Key="TimeConv"/>
+        <local:ToolpathDirtyConverter x:Key="DirtyConv"/>
     </UserControl.Resources>
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -68,7 +74,27 @@
                     ToolTip="Combine every calculated toolpath into ONE program, ordered by tool (originals kept)"/>
         </StackPanel>
 
-        <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>
+        <!-- H-102: LightBurn-style Cuts list. Items are real Toolpath objects (they used to be
+             formatted strings, which made every `SelectedItem is not Toolpath` guard in
+             ArrayCopy_Click / SaveTemplate_Click / ApplyTemplate_Click fail, so those three
+             buttons were dead). Name kept so the existing handlers keep working. -->
+        <ListView x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0"
+                  SelectionChanged="ToolpathList_SelectionChanged">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Name" Width="220"
+                                    DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="Strategy" Width="130"
+                                    DisplayMemberBinding="{Binding Converter={StaticResource StrategyConv}}"/>
+                    <GridViewColumn Header="Time" Width="70"
+                                    DisplayMemberBinding="{Binding Converter={StaticResource TimeConv}}"/>
+                    <GridViewColumn Header="Dirty" Width="50"
+                                    DisplayMemberBinding="{Binding Converter={StaticResource DirtyConv}}"/>
+                    <GridViewColumn Header="Lines" Width="70"
+                                    DisplayMemberBinding="{Binding GCode.Count}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
         <TextBlock x:Name="CalcNote" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center"
                    Margin="0,0,4,0" FontSize="11" Foreground="#B22" TextWrapping="Wrap" MaxWidth="320"
                    Visibility="Collapsed"/>
