@@ -298,7 +298,7 @@ public partial class CutPanel : UserControl
         ToolpathList.SelectedIndex = AppState.Toolpaths.Toolpaths.Count - 1;
     }
 
-    private void BtnCalc_Click(object sender, RoutedEventArgs e)
+    private async void BtnCalc_Click(object sender, RoutedEventArgs e)
     {
         if (AppState.Toolpaths.Toolpaths.Count == 0)
         {
@@ -306,7 +306,43 @@ public partial class CutPanel : UserControl
             return;
         }
         SetCalcNote("");
-        foreach (var tp in AppState.Toolpaths.Toolpaths) RecalculateToolpath(tp);
+
+        // A 4M-cell heightfield finish takes seconds of pure CPU. Running it inline froze
+        // the whole window — no repaint, no E-stop, "not responding". Compute off the UI
+        // thread and report progress instead.
+        var toolpaths = AppState.Toolpaths.Toolpaths.ToList();
+
+        BtnCalc.IsEnabled = false;
+        try
+        {
+            for (int i = 0; i < toolpaths.Count; i++)
+            {
+                var tp = toolpaths[i];
+                SetCalcNote($"Calculating {i + 1}/{toolpaths.Count}: {tp.Name}…");
+
+                // Params form and status text are UI-thread only, so commit and validate
+                // HERE, then hand only the pure computation to the worker.
+                var prepared = PrepareForCompute(tp);
+                if (prepared is null) continue;
+
+                var (entry, shapes, heightfield) = prepared.Value;
+
+                // Yield so the note actually paints before the CPU work starts.
+                // Dispatcher.Yield is STATIC — an instance reference does not compile.
+                await System.Windows.Threading.Dispatcher.Yield(
+                    System.Windows.Threading.DispatcherPriority.Background);
+
+                var result = await Task.Run(() => entry.Compute(shapes, heightfield, tp.ParamsJson));
+
+                ApplyComputeResult(tp, entry, result);
+            }
+            SetCalcNote("");
+        }
+        finally
+        {
+            BtnCalc.IsEnabled = true;
+        }
+
         RefreshList();
         GCodePreview.Text = string.Join("\n", AppState.Toolpaths.Toolpaths.SelectMany(t => t.GCode).Take(60));
     }
@@ -469,17 +505,22 @@ public partial class CutPanel : UserControl
                "Close them, or use Extend in Design to make the ends meet.";
     }
 
-    private void RecalculateToolpath(Toolpath tp)
+    /// <summary>
+    /// UI-thread half of a recalculation: commit the params form, resolve the strategy and
+    /// selection, and reject the cases that need a message. Returns null when nothing
+    /// should be computed (the reason is already on screen).
+    /// </summary>
+    private (StrategyRegistry.Entry Entry, List<VectorShape> Shapes, HeightfieldData? Heightfield)? PrepareForCompute(Toolpath tp)
     {
         // Commit the params form (expression resolution) before dispatch.
         CommitParamsForm(tp);
         var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
-        if (layer is null) return;
+        if (layer is null) return null;
         var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();
         if (shapes.Count == 0)
         {
             SetCalcNote($"{tp.Name}: no source shapes — select geometry in Design.");
-            return;
+            return null;
         }
 
         var entry = EntryFor(tp);
@@ -491,7 +532,7 @@ public partial class CutPanel : UserControl
             tp.GCode.Add($"(VectorPilot: no strategy registered for '{tp.StrategyKey ?? tp.Strategy.ToString()}')");
             tp.IsDirty = true;
             SetCalcNote($"{tp.Name}: strategy '{tp.StrategyKey ?? tp.Strategy.ToString()}' is not registered — nothing calculated.");
-            return;
+            return null;
         }
 
         if (entry.UsesHeightfield && AppState.Heightfield is null)
@@ -500,7 +541,7 @@ public partial class CutPanel : UserControl
             tp.GCode.Add($"({entry.DisplayName}: needs a 3D relief — bake one in the Model stage)");
             tp.IsDirty = true;
             SetCalcNote($"{entry.DisplayName} needs a relief. Build one in the Model stage, then Calculate.");
-            return;
+            return null;
         }
 
         // Profile and Pocket are area operations: an OPEN outline has no inside, so
@@ -512,10 +553,15 @@ public partial class CutPanel : UserControl
             tp.GCode.Add($"({entry.DisplayName}: {blocker})");
             tp.IsDirty = true;
             SetCalcNote(blocker);
-            return;
+            return null;
         }
 
-        var result = entry.Compute(shapes, AppState.Heightfield, tp.ParamsJson);
+        return (entry, shapes, AppState.Heightfield);
+    }
+
+    /// <summary>UI-thread half: store the computed program, or explain why there is none.</summary>
+    private void ApplyComputeResult(Toolpath tp, StrategyRegistry.Entry entry, StrategyResult result)
+    {
         if (result.Gcode.Count == 0)
         {
             // Prefer the strategy's own reason ("needs a 3D model…") over a generic
@@ -546,6 +592,17 @@ public partial class CutPanel : UserControl
         {
             SetCalcNote(issue.Message);
         }
+    }
+
+    /// <summary>
+    /// Synchronous recalculation, for the single-toolpath paths (selection change, Recalc
+    /// Dirty). BtnCalc_Click uses the async split so a 4M-cell relief cannot freeze the UI.
+    /// </summary>
+    private void RecalculateToolpath(Toolpath tp)
+    {
+        if (PrepareForCompute(tp) is not { } prepared) return;
+        var (entry, shapes, heightfield) = prepared;
+        ApplyComputeResult(tp, entry, entry.Compute(shapes, heightfield, tp.ParamsJson));
     }
 
     /// <summary>Surface why Calculate produced nothing, instead of failing silently.</summary>
