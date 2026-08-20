@@ -92,7 +92,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~JobStarter` — Advanced shows full registry; Beginner shows ≤8 operations; Photo/3D starters exist as clickable UI  
   AC: User can start without seeing Thread Mill.
 
-- [ ] **H-102** READY (H-101 merged) Cuts/Layers list (LightBurn-style operations list)  
+- [x] **H-102** Cuts/Layers list (LightBurn-style operations list)  
   Locks: **CUT**  
   Depends: H-101 merged  
   Parallel-OK: **none while H-202 is in flight** (MSB3021 + 429). After H-202 merge: new-file engine cards only.  
@@ -138,7 +138,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~ScallopFinish`  
   AC: Smaller scallop → denser G1; test two scallops not equal.
 
-- [ ] **H-203** READY (H-202 merged; same file, so it was serial) Rest-rough leftover stock  
+- [ ] **H-203** READY — **tests-only**: the rest algorithm ALREADY EXISTS (`PreviousToolDiameterMm` line 27, `IsRestRough` line 29, run-width skip lines 116-117 of `Toolpaths/HeightfieldToolpath.cs`). Verified `rough3d` defaults already serialize `previousToolDiameterMm:0` and the params grid renders every numeric key, so **NO App change is needed**. Do NOT write a new rest engine. Rest-rough leftover stock  
   Locks: **ENGINE-3D** — **conflicts H-202**. Queue **after** H-202.  
   Parallel-OK: H-201, App wave  
   OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` — type `HeightfieldRoughEngine` in that **same** file as H-202. Do not add `HeightfieldRoughEngine.cs`.  
@@ -306,3 +306,5 @@ Pass: short list of residual risks only.
 - `H-101` — 43e95c9 (Beginner/Advanced rail combo + Sign/Photo/3D starters; live combo 8 items, no Thread Mill; 26 tests)
 - `H-101` critic fix — c5f1796 (rail combo no longer shows Beginner while state is Advanced; 3 tests drive the real click through the real window)
 - `H-202` — 2b8e207 (ScallopHeightMm drives finish stepover, opt-in default 0; 13 tests)
+- gate — 1ae10e3 (verify.sh rejects partial runs via a self-maintaining high-water floor)
+- `H-102` — b1bbcad (Cuts list is a ListView of real Toolpath items: Name/Strategy/Time/Dirty/Lines; selection survives refresh; **revived Array copy + Save/Apply template, which were dead because SelectedItem was always a string**; 11 tests)
