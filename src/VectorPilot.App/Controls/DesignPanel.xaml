@@ -47,6 +47,10 @@
                 <Button x:Name="UngroupButton" Content="Ungroup" Width="66" Height="24" Margin="6,0,0,0" Click="Ungroup_Click" ToolTip="Dissolve the selection's group (Ctrl+Shift+G)"/>
                 <Button x:Name="GadgetButton" Content="Gadget…" Width="70" Height="24" Margin="6,0,0,0" Click="Gadget_Click" ToolTip="Generate geometry with a sandboxed Lua script"/>
                 <Button x:Name="NestButton" Content="Nest" Width="52" Height="24" Margin="6,0,0,0" Click="Nest_Click" ToolTip="Pack the selected closed shapes onto the sheet (undoable)"/>
+                <TextBox x:Name="TxtFilletRadius" Width="34" Height="24" Margin="6,0,0,0" Text="5"
+                         ToolTip="Fillet radius / extend distance (mm)"/>
+                <Button x:Name="FilletButton" Content="Fillet" Width="50" Height="24" Margin="4,0,0,0" Click="Fillet_Click" ToolTip="Round the selected shapes' corners by the radius (undoable)"/>
+                <Button x:Name="ExtendButton" Content="Extend" Width="56" Height="24" Margin="4,0,0,0" Click="Extend_Click" ToolTip="Extend open paths at both ends so they meet (undoable)"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <ComboBox x:Name="CmbViewPreset" Width="132" Height="24" ToolTip="View presets"
                           SelectionChanged="ViewPreset_Changed"/>

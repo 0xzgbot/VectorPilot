@@ -93,6 +93,96 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void Fillet_Click(object sender, RoutedEventArgs e) => DoFillet();
+
+    private void Extend_Click(object sender, RoutedEventArgs e) => DoExtend();
+
+    /// <summary>
+    /// Round the selected shapes' corners. ShapeFilletEngine lived in Geometry with no
+    /// app call-site, so a user could not fillet anything.
+    /// </summary>
+    internal void DoFillet(double? radiusOverride = null)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return; }
+        if (Selection.IsEmpty) { SetStatus("Select shapes to fillet"); return; }
+
+        double radius = radiusOverride
+            ?? (double.TryParse(TxtFilletRadius.Text, out var r) ? r : 5);
+        if (radius <= 0) { SetStatus("Fillet radius must be greater than zero"); return; }
+
+        var before = UndoStack.Snapshot(layer);
+        int changed = 0;
+
+        foreach (var shape in Selection.Selected.ToList())
+        {
+            if (shape.Points.Count < 3) continue;
+            int pointsBefore = shape.Points.Count;
+
+            var filleted = ShapeFilletEngine.Fillet(shape, radius);
+            if (filleted.Points.Count == pointsBefore) continue;
+
+            shape.Points.Clear();
+            shape.Points.AddRange(filleted.Points);
+            changed++;
+        }
+
+        if (changed == 0)
+        {
+            SetStatus($"No corner accepted a {radius:0.##}mm fillet — try a smaller radius");
+            return;
+        }
+
+        Undo.Push("Fillet", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        SetStatus($"Filleted {changed} shape(s) at {radius:0.##}mm");
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
+    /// <summary>
+    /// Extend open paths at both ends by the distance, so two paths that miss can be made
+    /// to meet. ShapeExtendEngine had no app call-site either.
+    /// </summary>
+    internal void DoExtend(double? distanceOverride = null)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return; }
+        if (Selection.IsEmpty) { SetStatus("Select open paths to extend"); return; }
+
+        double distance = distanceOverride
+            ?? (double.TryParse(TxtFilletRadius.Text, out var d) ? d : 5);
+        if (distance <= 0) { SetStatus("Extend distance must be greater than zero"); return; }
+
+        var before = UndoStack.Snapshot(layer);
+        int changed = 0;
+
+        foreach (var shape in Selection.Selected.ToList())
+        {
+            // A closed outline has no free ends to extend.
+            if (shape.Closed || shape.Points.Count < 2) continue;
+
+            var extended = ShapeExtendEngine.Extend(shape, distance);
+            if (extended.Points.Count == 0) continue;
+
+            shape.Points.Clear();
+            shape.Points.AddRange(extended.Points);
+            changed++;
+        }
+
+        if (changed == 0)
+        {
+            SetStatus("Nothing to extend — select an OPEN path (a closed outline has no ends)");
+            return;
+        }
+
+        Undo.Push("Extend", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        SetStatus($"Extended {changed} path(s) by {distance:0.##}mm at each end");
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
     private void Nest_Click(object sender, RoutedEventArgs e) => DoNest();
 
     /// <summary>
