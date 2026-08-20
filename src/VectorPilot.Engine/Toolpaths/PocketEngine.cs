@@ -53,12 +53,26 @@ public static class PocketEngine
             depth += slice;
             foreach (var shape in shapes)
             {
-                // Contour loops first: they finish the wall along the true outline.
                 if (contourFirst && shape.Points.Count >= 3)
                 {
+                    // Contour loops finish the wall along the true outline, and
+                    // ContourPocketEngine walks every offset from the wall inward until
+                    // the loops collapse — so for a convex pocket they clear it alone.
                     g.AddRange(ContourPocketEngine.GenerateSlice(
                         shape.Points, -depth, toolDiameter, step, feedRate, plungeRate, safeZ));
+
+                    // The raster then covers whatever the offsets could NOT reach (a
+                    // concave outline the inset stops short of). It is clipped to the
+                    // outline, so it never leaves the pocket; on a convex shape it is
+                    // redundant coverage rather than a correctness problem.
+                    //
+                    // Suppressing it by predicting "the loops already got everything"
+                    // was tried and reverted: the prediction silently skipped the raster
+                    // on a small rectangle whose loops do NOT cover it, leaving the
+                    // pocket floor uncut. Redundant passes are safe; a missed region is
+                    // not.
                 }
+
                 GenerateSlice(shape, -depth, step, toolDiameter / 2, feedRate, plungeRate, safeZ, g);
             }
         }
@@ -141,11 +155,20 @@ public static class PocketEngine
         var pts = shape.Points;
         if (pts.Count < 3) return spans;
 
+        // Clip against the INSET boundary, not the outline with a horizontal fudge.
+        //
+        // Insetting only in X (xs[i] + inset) is wrong on a curved wall: near the top of
+        // a circle the wall recedes in Y as well, so a horizontally-inset span still ends
+        // outside the circle by nearly the tool radius. Offsetting the polygon first makes
+        // the crossings themselves correct in both axes.
+        var boundary = ContourPocketEngine.OffsetInward(pts, inset);
+        if (boundary.Count < 3) return spans;
+
         var xs = new List<double>();
-        for (int i = 0; i < pts.Count; i++)
+        for (int i = 0; i < boundary.Count; i++)
         {
-            var a = pts[i];
-            var b = pts[(i + 1) % pts.Count];
+            var a = boundary[i];
+            var b = boundary[(i + 1) % boundary.Count];
             if (Math.Abs(a.Y - b.Y) < 1e-12) continue;             // horizontal edge
             if ((y >= a.Y && y < b.Y) || (y >= b.Y && y < a.Y))    // half-open: no double count at vertices
                 xs.Add(a.X + (y - a.Y) / (b.Y - a.Y) * (b.X - a.X));
@@ -155,7 +178,7 @@ public static class PocketEngine
         xs.Sort();
         for (int i = 0; i + 1 < xs.Count; i += 2)
         {
-            double s = xs[i] + inset, e = xs[i + 1] - inset;
+            double s = xs[i], e = xs[i + 1];
             if (e - s > 1e-6) spans.Add((s, e));
         }
         return spans;
