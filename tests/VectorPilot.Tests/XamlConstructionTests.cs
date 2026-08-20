@@ -67,6 +67,16 @@ public class XamlConstructionTests
     });
 
     [Fact]
+    public void GadgetDialog_Constructs_With_Examples() => OnSta(() =>
+    {
+        var dlg = new GadgetDialog();
+        Assert.NotNull(dlg.FindName("TxtScript"));
+        Assert.NotNull(dlg.FindName("BtnRun"));
+        // "Add to sheet" must start disabled: nothing has been run yet.
+        Assert.False(((System.Windows.Controls.Button)dlg.FindName("BtnAdd")!).IsEnabled);
+    });
+
+    [Fact]
     public void ShortcutDialog_Constructs() => OnSta(() =>
     {
         var dlg = new ShortcutDialog(new VectorPilot.App.ShortcutStore());

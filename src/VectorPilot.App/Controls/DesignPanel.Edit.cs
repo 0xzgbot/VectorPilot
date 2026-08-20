@@ -93,6 +93,14 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    /// <summary>Run a sandboxed Lua gadget and add whatever it draws to this layer.</summary>
+    private void Gadget_Click(object sender, RoutedEventArgs e)
+    {
+        if (App.IsAutomated) return;   // no modals under automation
+        var dlg = new GadgetDialog { Owner = Window.GetWindow(this) };
+        if (dlg.ShowDialog() == true) Refresh();
+    }
+
     /// <summary>Shape grouping for this document (Mac UX-polish parity).</summary>
     internal readonly ShapeGroupModel Groups = new();
 

@@ -10,4 +10,7 @@
     <ProjectReference Include="..\VectorPilot.Geometry\VectorPilot.Geometry.csproj" />
     <ProjectReference Include="..\VectorPilot.Serial\VectorPilot.Serial.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+  </ItemGroup>
 </Project>

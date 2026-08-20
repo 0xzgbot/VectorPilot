@@ -11,7 +11,7 @@ Generated 2026-08-10. Status key: ✅ parity, 🟡 partial, ❌ absent, ⛔ bloc
 | 17 toolpath strategies | 20 in the strategy registry (Profile, Pocket, V-Carve, Drill, Drill Bank, Quick Engrave, Photo V-Carve, Sketch Carve, Rough 3D, Finish 3D, Texture, Drag Knife, Prism, Fluting, Chamfer, Bevel, Sweep, Moulding, Weave, Wrapped Fluting, Laser, Rotary Wrap) | ✅ superset |
 | 7 tool types (End Mill, V-Bit, Ball Nose, Drill, Diamond Drag, Laser, Thread Mill) | 10 in ToolType (adds RadiusedEndMill, Engraving, RadiusedEngraving) | ✅ superset |
 | 53+ post processors, 5 categories | **54 shipped templates** in 4 groups: industrial (Haas/Fanuc/SINUMERIK/Heidenhain/Okuma/Centroid), routers (GRBL/FluidNC/Mach3-4/WinCNC/Masso/UCCNC/PlanetCNC/ShopBot/X-Carve/LongMill/Shapeoko/Onefinity/Avid), firmware (Marlin/Smoothieware/Duet/LinuxCNC), laser+plasma; each mm+inch, plus rotary-Y2A. Template engine ([W\|M\|O\|F] grammar) still accepts arbitrary user posts; picker changes the exported `.tap` | ✅ 54/53+ |
-| Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907) + **Corner Rounding gadget** (real tangent arcs); no Lua/HTML gadget host | 🟡 |
+| Gadget system (Lua + HTML) | **Lua gadget host** (MoonSharp, hard sandbox + timeout) with a script editor, 4 shipped examples and an add-to-sheet path, plus the Keyhole and Corner Rounding gadgets | ✅ Lua; HTML dialogs not implemented |
 | Cabinetry import (CSV PartListMapping, 5 transformation types) | CabinetryImport.cs (Mozaik/KCD/CabinetSense/CabinetPartsPro/Polyboard/SmartWOP), **all six validated against real vendor fixture files** under tests/fixtures/cabinetry | ✅ |
 | 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport, **animated camera** (continuous orbit + eased Iso/Top/Front/Right viewpoints, distance-preserving) | ✅ |
 | SketchUp .skp import | honest stub — needs SketchUpAPI.dll | ⛔ SDK-blocked |
@@ -55,7 +55,9 @@ R013/R014/R017/keep-out + V-Carve open-path gate + checklist (spindle/work-zero)
 
 1. ~~Post-processor catalog~~ — CLOSED: 54 shipped vs Aspire's 53+, verified live in
    the picker. Selection genuinely changes the exported `.tap`.
-2. Gadget host (Lua) — only the keyhole gadget engine exists.
+2. ~~Gadget host (Lua)~~ — CLOSED: MoonSharp host, sandbox verified (io/os/require all
+   blocked, infinite loop killed). Aspire also allows HTML gadget dialogs; VectorPilot
+   exposes a script editor instead.
 3. ~~Cabinetry import lacks fixture-based validation~~ — CLOSED: six vendor fixtures
    (comma + tab), 39 tests covering each vendor's own header vocabulary.
 4. ~~3D preview lacks camera animation~~ — CLOSED: continuous orbit + eased named
