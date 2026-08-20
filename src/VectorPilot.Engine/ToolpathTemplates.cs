@@ -23,6 +23,16 @@ public sealed class ToolpathTemplate
     public Guid Id { get; init; } = Guid.NewGuid();
     public string Name { get; set; } = "";
     public ToolpathTemplateType ToolpathType { get; init; }
+
+    /// <summary>
+    /// Registry key this template belongs to ("profile", "photo-vcarve", "threadmill", …).
+    ///
+    /// ToolpathTemplateType only covers 5 of the 24 registered strategies, so keying off
+    /// it alone would make templates unusable for most of them. Empty on documents saved
+    /// before this field existed; those fall back to ToolpathType.
+    /// </summary>
+    public string StrategyKey { get; init; } = "";
+
     public string ParamsJson { get; init; } = "";
     public DateTime CreatedAt { get; init; } = DateTime.Now;
 }
@@ -47,12 +57,28 @@ public sealed class ToolpathTemplateManager
     }
 
     public ToolpathTemplate SaveTemplate(string name, ToolpathTemplateType type, string paramsJson)
+        => SaveTemplate(name, type, paramsJson, strategyKey: "");
+
+    /// <summary>Save a template tagged with its registry key, so any of the 24 strategies can use one.</summary>
+    public ToolpathTemplate SaveTemplate(string name, ToolpathTemplateType type, string paramsJson, string strategyKey)
     {
-        var template = new ToolpathTemplate { Name = name, ToolpathType = type, ParamsJson = paramsJson };
+        var template = new ToolpathTemplate
+        {
+            Name = name,
+            ToolpathType = type,
+            ParamsJson = paramsJson,
+            StrategyKey = strategyKey
+        };
         Templates.Add(template);
         SaveTemplates();
         return template;
     }
+
+    /// <summary>Templates applicable to a registry key (falls back to legacy type-only entries).</summary>
+    public List<ToolpathTemplate> ForStrategy(string strategyKey)
+        => Templates.Where(t => string.Equals(t.StrategyKey, strategyKey, StringComparison.OrdinalIgnoreCase)
+                             || t.StrategyKey.Length == 0)
+                    .ToList();
 
     public List<ToolpathTemplate> LoadTemplates()
     {

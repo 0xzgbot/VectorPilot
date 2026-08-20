@@ -1,0 +1,19 @@
+<Window x:Class="VectorPilot.App.Controls.TemplateNameDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Save toolpath template" Height="150" Width="380"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Template name:" Margin="0,0,0,6"/>
+        <TextBox x:Name="TxtName" Grid.Row="1" Height="24" VerticalContentAlignment="Center"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button x:Name="BtnOk" Content="Save" Width="80" Height="26" Click="Ok_Click" IsDefault="True"/>
+            <Button Content="Cancel" Width="80" Height="26" Margin="8,0,0,0" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

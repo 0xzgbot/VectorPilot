@@ -14,6 +14,7 @@ public partial class CutPanel : UserControl
         InitializeComponent();
         PopulateStrategies();
         RefreshList();
+        RefreshTemplates();
     }
 
     private void RefreshList()
@@ -36,6 +37,7 @@ public partial class CutPanel : UserControl
             ? AppState.Toolpaths.Toolpaths[index]
             : null;
         RefreshParamsForm(_selectedToolpath);
+        RefreshTemplates();
         PublishSourceLink(_selectedToolpath);
     }
 
@@ -367,6 +369,82 @@ public partial class CutPanel : UserControl
         RefreshList();
         ToolpathList.SelectedItem = tp;
         SetCalcNote($"Added \"{tp.Name}\" — {result.TotalCount} instances, original kept.");
+    }
+
+    // ---- toolpath templates (ToolpathTemplateManager had zero app call-sites) ----
+
+    private static ToolpathTemplateManager? _templates;
+
+    private static ToolpathTemplateManager Templates => _templates ??= new ToolpathTemplateManager(
+        System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "VectorPilot", "toolpath-templates.json"));
+
+    /// <summary>Repopulate the template combo for whichever strategy is in play.</summary>
+    private void RefreshTemplates()
+    {
+        string key = (ToolpathList.SelectedItem as Toolpath)?.StrategyKey
+                     ?? SelectedEntry?.Key
+                     ?? "profile";
+
+        CmbTemplate.ItemsSource = Templates.ForStrategy(key);
+        if (CmbTemplate.Items.Count > 0) CmbTemplate.SelectedIndex = 0;
+    }
+
+    private void SaveTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        if (ToolpathList.SelectedItem is not Toolpath tp)
+        {
+            SetCalcNote("Select a toolpath whose parameters you want to save.");
+            return;
+        }
+
+        // Commit any pending edits in the params form first, so the template captures
+        // what the user actually typed.
+        CommitParamsForm(tp);
+
+        var dlg = new TemplateNameDialog { Owner = Window.GetWindow(this) };
+        if (dlg.ShowDialog() != true || string.IsNullOrWhiteSpace(dlg.TemplateName)) return;
+
+        string key = string.IsNullOrEmpty(tp.StrategyKey)
+            ? StrategyKeyMap.ToKey(tp.Strategy)
+            : tp.StrategyKey;
+
+        var type = key switch
+        {
+            "pocket" => ToolpathTemplateType.Pocket,
+            "drill" or "drill-bank" => ToolpathTemplateType.Drill,
+            "vcarve" => ToolpathTemplateType.VCarve,
+            "quick-engrave" => ToolpathTemplateType.QuickEngrave,
+            _ => ToolpathTemplateType.Profile
+        };
+
+        var saved = Templates.SaveTemplate(dlg.TemplateName.Trim(), type, tp.ParamsJson, key);
+        RefreshTemplates();
+        CmbTemplate.SelectedItem = Templates.Templates.FirstOrDefault(t => t.Id == saved.Id);
+        SetCalcNote($"Saved template \"{saved.Name}\" for {key}.");
+    }
+
+    private void ApplyTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        if (CmbTemplate.SelectedItem is not ToolpathTemplate template)
+        {
+            SetCalcNote("No template selected — use \"Save as…\" to create one.");
+            return;
+        }
+        if (ToolpathList.SelectedItem is not Toolpath tp)
+        {
+            SetCalcNote("Select the toolpath to apply the template to.");
+            return;
+        }
+
+        // Applying changes ParamsJson BEFORE Calculate, so the next Calculate uses it.
+        tp.ParamsJson = template.ParamsJson;
+        tp.IsDirty = true;
+
+        RefreshParamsForm(tp);
+        RefreshList();
+        SetCalcNote($"Applied \"{template.Name}\" to {tp.Name} — Calculate to regenerate.");
     }
 
     /// <summary>

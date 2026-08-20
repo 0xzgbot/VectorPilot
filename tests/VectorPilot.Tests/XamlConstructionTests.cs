@@ -67,6 +67,14 @@ public class XamlConstructionTests
     });
 
     [Fact]
+    public void TemplateNameDialog_Constructs() => OnSta(() =>
+    {
+        var dlg = new TemplateNameDialog();
+        Assert.NotNull(dlg.FindName("TxtName"));
+        Assert.Equal("", dlg.TemplateName);   // nothing captured until the user confirms
+    });
+
+    [Fact]
     public void GadgetDialog_Constructs_With_Examples() => OnSta(() =>
     {
         var dlg = new GadgetDialog();

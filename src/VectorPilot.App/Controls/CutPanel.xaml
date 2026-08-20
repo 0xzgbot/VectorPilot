@@ -50,6 +50,16 @@
             <Button x:Name="BtnArray" Content="Array copy" Margin="6,0,0,0" Padding="10,6"
                     Click="ArrayCopy_Click"
                     ToolTip="Add a NEW toolpath repeating the selected one (original kept)"/>
+            <Separator Margin="10,0" Width="1" Background="#CCC"/>
+            <!-- Toolpath templates: ToolpathTemplateManager had zero app call-sites. -->
+            <ComboBox x:Name="CmbTemplate" Width="130" Height="24" DisplayMemberPath="Name"
+                      ToolTip="Saved parameter templates for this strategy"/>
+            <Button x:Name="BtnApplyTemplate" Content="Apply" Margin="4,0,0,0" Padding="8,6"
+                    Click="ApplyTemplate_Click"
+                    ToolTip="Overwrite the selected toolpath's params with this template"/>
+            <Button x:Name="BtnSaveTemplate" Content="Save as…" Margin="4,0,0,0" Padding="8,6"
+                    Click="SaveTemplate_Click"
+                    ToolTip="Save the selected toolpath's current params as a named template"/>
         </StackPanel>
 
         <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>
