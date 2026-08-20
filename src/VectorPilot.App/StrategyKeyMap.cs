@@ -38,6 +38,7 @@ public static class StrategyKeyMap
         ["laser-fill"] = ToolpathStrategy.Pocket,
         ["moulding"] = ToolpathStrategy.Moulding,
         ["weave"] = ToolpathStrategy.Weave,
+        ["threadmill"] = ToolpathStrategy.ThreadMill,
         ["rough3d"] = ToolpathStrategy.Rough3D,
         ["finish3d"] = ToolpathStrategy.Finish3D,
         ["photo-vcarve"] = ToolpathStrategy.PhotoVCarve,

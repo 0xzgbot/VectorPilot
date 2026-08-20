@@ -17,7 +17,8 @@ public enum ToolpathStrategy
     RotaryWrap,
     Inlay,
     Moulding,
-    Weave
+    Weave,
+    ThreadMill
 }
 
 /// <summary>A calculated toolpath (strategy + parameters + result g-code).</summary>

@@ -171,6 +171,21 @@ public sealed class StrategyRegistry
             });
             return StrategyAdapters.ToSpecialty(finish);
         });
+
+        // Thread milling: Aspire ships Thread Mill as BOTH a tool type and a toolpath.
+        // VectorPilot (and the Mac) had only the tool type, so picking a thread mill cut
+        // whatever other strategy was selected.
+        Add<ThreadMillParams>("threadmill", "Thread Mill", false, (s, _, p) =>
+        {
+            var r = ThreadMillEngine.Compute(s, p);
+            return new SpecialtyResult
+            {
+                GcodeLines = r.GcodeLines,
+                EstimatedTimeSeconds = r.EstimatedTimeSeconds,
+                FeatureCount = r.RevolutionCount,
+                Error = r.Error
+            };
+        });
         Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty("3D Rough needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
         Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty("3D Finish needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
         Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty("Photo V-Carve needs a 3D model or image — load one in the Model stage first.") : PhotoVCarveEngine.Compute(hf, p));

@@ -10,7 +10,7 @@ Generated 2026-08-10. Status key: ✅ parity, 🟡 partial, ❌ absent, ⛔ bloc
 |---|---|---|
 | 17 toolpath strategies | 20 in the strategy registry (Profile, Pocket, V-Carve, Drill, Drill Bank, Quick Engrave, Photo V-Carve, Sketch Carve, Rough 3D, Finish 3D, Texture, Drag Knife, Prism, Fluting, Chamfer, Bevel, Sweep, Moulding, Weave, Wrapped Fluting, Laser, Rotary Wrap) | ✅ superset |
 | 7 tool types (End Mill, V-Bit, Ball Nose, Drill, Diamond Drag, Laser, Thread Mill) | 10 in ToolType (adds RadiusedEndMill, Engraving, RadiusedEngraving) | ✅ superset |
-| 53+ post processors, 5 categories | 3 shipped GRBL templates (mm/in/rotary-Y2A) + template engine ([W\|M\|O\|F] grammar, arbitrary user templates) | 🟡 catalog small, engine capable |
+| 53+ post processors, 5 categories | **20 shipped templates** (GRBL/FluidNC/Marlin/LinuxCNC/Mach3/Haas/… mm+inch, rotary-Y2A) + template engine ([W\|M\|O\|F] grammar, arbitrary user templates); picker changes the exported `.tap` | 🟡 catalog 20/53 |
 | Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907); no Lua/HTML gadget host | 🟡 |
 | Cabinetry import (CSV PartListMapping, 5 transformation types) | CabinetryImport.cs (Mozaik/KCD/CabinetSense/CabinetPartsPro/Polyboard/SmartWOP) | 🟡 needs fixture validation |
 | 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport | 🟡 no camera animation |
@@ -53,10 +53,23 @@ R013/R014/R017/keep-out + V-Carve open-path gate + checklist (spindle/work-zero)
 
 ## Known honest gaps
 
-1. Post-processor catalog: 3 shipped vs Aspire's 53+ (template engine supports
-   arbitrary posts — catalog population is data work).
+1. Post-processor catalog: **20 shipped** vs Aspire's 53+ (template engine supports
+   arbitrary posts — catalog population is data work). Selection now genuinely
+   changes the exported `.tap`.
 2. Gadget host (Lua) — only the keyhole gadget engine exists.
 3. Cabinetry import lacks fixture-based validation.
 4. 3D preview lacks camera animation (static orbit).
 5. SketchUp/V3M/3DM importers — vendor-blocked stubs.
 6. Real-hardware machine control unverified (simulator is the max coverage here).
+7. Thread milling is not a registered strategy (no `threadmill` key in
+   `StrategyRegistry`).
+8. Pocket clearing is contour-offset loops + clipped raster, not Aspire's full
+   offset pocket. Curved walls are followed; the interior remainder is still
+   rastered.
+9. V-carve depth comes from nearest-opposing-edge distance, not a true medial-axis
+   skeleton. Width drives depth correctly, but it is not a Vectric-equivalent
+   V-carve.
+10. A7 "real UI automation" is UIAutomation via PowerShell + pyautogui
+    (`tools/ui_verify.py`), **not** FlaUI as the card specified. It does drive the
+    live app and read real control state, but the card's stated dependency was never
+    added.

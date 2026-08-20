@@ -60,7 +60,15 @@ Rules:
   Gate: `FullyQualifiedName~ComponentTreePanel` — ≥8 tests (mode change recomposites, invisible excluded, order matters, undo).
   **DONE + REACHABLE (proven by driving the app):** new Model stage in the rail hosts ComponentTreePanel beside a live composite ThreeDPreview, with import-heightfield / add-shape-relief / bake-to-job. ui_verify.py reports Model [ComponentList] -> A6 reachable: yes. Previously (correctly) reverted because: ComponentTreePanel had ZERO references in MainWindow.xaml/.xaml.cs — the panel exists and constructs but no stage hosts it, so a user cannot reach it. Remaining: host it in the Model stage. Prior note: ComponentTreePanel — component list with visibility checkboxes, 7-mode combine dropdown, reorder up/down, remove, live recomposite, sculpt brush controls (tool/shape/falloff/radius/strength). 13 VM tests + construction test.
 
-- [x] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
+- [~] **A7. Real UI automation** — add FlaUI (`FlaUI.Core` + `FlaUI.UIA3`) to the test project; drive the running app: draw a rect, marquee-select, Ctrl+Z, assert. Replaces `--ui-smoke` claims with real click evidence.
+  - DELIVERED, but NOT as specified: `tools/ui_verify.py` drives the live app through
+    UIAutomation via PowerShell + pyautogui. It launches with `--automated`, reads real
+    control state (enabled/disabled), expands combos, clicks radios, drags a rectangle
+    onto the canvas, and exits non-zero on failure. That is real click evidence.
+  - FlaUI was never added. The card named a specific dependency in the test project and
+    I substituted a different mechanism, then marked it `[x]`. Reopened as `[~]` until
+    either FlaUI lands in `VectorPilot.Tests` or the card is rewritten to specify the
+    harness that actually exists.
   Gate: `python tools/ui_verify.py` — drives the REAL app.
   **DONE (no NuGet needed):** Windows UIAutomation via PowerShell + pyautogui clicks + screenshots + vision_analyze. tools/ui_verify.py (single harness; --tree dumps the live control tree). PROVEN BY DRIVING THE APP: (1) launch is gated by a "Recover unsaved work" MODAL — the real cause of every --ui-smoke hang, which no test could see; (2) A5 E-STOP enabled=True while disconnected, invoked for real, app survived; BtnStart enabled=False with no G-code (no auto-start); (3) A6 component tree absent from ALL FIVE stages — Design=LayersList, Toolpaths=ToolpathList/ParamsGrid, Output=ListToolpaths. Grep-based reachability is now backed by live-tree inspection.
 

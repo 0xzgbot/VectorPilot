@@ -17,6 +17,12 @@ public static class PocketEngine
     /// Run contour-parallel offset loops before the raster pass. Scanline rastering
     /// alone leaves a stair-stepped wall on curved boundaries; the loops follow the
     /// real outline so a circular pocket finishes as a circle.
+    ///
+    /// Defaults to TRUE. It previously defaulted to false while PocketParams defaulted
+    /// to true, so every caller that skipped the argument — goldens, smoke tests, any
+    /// direct engine use — silently got the stair-stepped raster while the UI got
+    /// contours. One engine, two behaviours, decided by which overload you happened to
+    /// call.
     /// </param>
     public static List<string> Generate(
         ICollection<VectorShape> shapes,
@@ -28,7 +34,7 @@ public static class PocketEngine
         double spindleSpeed,
         double safeZ,
         double toolDiameter = 0.25,
-        bool contourFirst = false)
+        bool contourFirst = true)
     {
         var g = new List<string>
         {
