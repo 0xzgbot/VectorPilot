@@ -93,6 +93,64 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void Keyhole_Click(object sender, RoutedEventArgs e) => DoKeyhole();
+
+    /// <summary>
+    /// Add a keyhole hanging slot from the C# gadget. KeyholeGadget had no app call-site:
+    /// the only way in was the blank Lua buffer, which is not a one-click keyhole.
+    /// </summary>
+    internal VectorShape? DoKeyhole(
+        double screwHeadDiameterMm = 12,
+        double shaftDiameterMm = 4,
+        double clearanceMm = 0.5)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return null; }
+
+        var shape = KeyholeGadget.KeyholeShape(
+            centerX: 0,
+            screwHeadDiameterMm: screwHeadDiameterMm,
+            shaftDiameterMm: shaftDiameterMm,
+            clearanceMm: clearanceMm);
+
+        if (shape is null)
+        {
+            SetStatus($"A {shaftDiameterMm:0.##}mm shaft does not fit a " +
+                      $"{screwHeadDiameterMm:0.##}mm head — widen the head or narrow the shaft");
+            return null;
+        }
+
+        // Drop it at the centre of the selection if there is one, else the sheet origin.
+        if (!Selection.IsEmpty)
+        {
+            var pts = Selection.Selected.SelectMany(s => s.Points).ToList();
+            if (pts.Count > 0)
+            {
+                double cx = (pts.Min(p => p.X) + pts.Max(p => p.X)) / 2;
+                double cy = (pts.Min(p => p.Y) + pts.Max(p => p.Y)) / 2;
+
+                // ShapeTransformer.Move TRANSLATES by (dx,dy) — it does not centre — so
+                // subtract the slot's own midpoint or it lands at centre+midpoint.
+                double ownX = (shape.Points.Min(p => p.X) + shape.Points.Max(p => p.X)) / 2;
+                double ownY = (shape.Points.Min(p => p.Y) + shape.Points.Max(p => p.Y)) / 2;
+
+                var moved = ShapeTransformer.Move(new[] { shape }, cx - ownX, cy - ownY);
+                shape = moved.Count > 0 ? moved[0] : shape;
+            }
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        layer.AddShape(shape);
+
+        Undo.Push("Keyhole", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        SetStatus($"Keyhole added — {screwHeadDiameterMm:0.##}mm head, {shaftDiameterMm:0.##}mm shaft");
+        RedrawShapes();
+        UpdateEditChrome();
+        return shape;
+    }
+
     private void TextureFill_Click(object sender, RoutedEventArgs e) => DoTextureFill();
 
     /// <summary>

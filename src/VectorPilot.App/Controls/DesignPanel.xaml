@@ -46,6 +46,9 @@
                 <Button x:Name="GroupButton" Content="Group" Width="58" Height="24" Margin="6,0,0,0" Click="Group_Click" ToolTip="Group the selection (Ctrl+G) — selecting one member selects all"/>
                 <Button x:Name="UngroupButton" Content="Ungroup" Width="66" Height="24" Margin="6,0,0,0" Click="Ungroup_Click" ToolTip="Dissolve the selection's group (Ctrl+Shift+G)"/>
                 <Button x:Name="GadgetButton" Content="Gadget…" Width="70" Height="24" Margin="6,0,0,0" Click="Gadget_Click" ToolTip="Generate geometry with a sandboxed Lua script"/>
+                <Button x:Name="KeyholeButton" Content="Keyhole" Width="62" Height="24" Margin="4,0,0,0"
+                        Click="Keyhole_Click"
+                        ToolTip="Add a keyhole hanging slot from the C# gadget (undoable)"/>
                 <Button x:Name="NestButton" Content="Nest" Width="52" Height="24" Margin="6,0,0,0" Click="Nest_Click" ToolTip="Pack the selected closed shapes onto the sheet (undoable)"/>
                 <TextBox x:Name="TxtFilletRadius" Width="34" Height="24" Margin="6,0,0,0" Text="5"
                          ToolTip="Fillet radius / extend distance (mm)"/>
