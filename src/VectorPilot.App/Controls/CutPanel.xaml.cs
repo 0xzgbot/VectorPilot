@@ -407,6 +407,81 @@ public partial class CutPanel : UserControl
         SetCalcNote($"Added \"{tp.Name}\" — {result.TotalCount} instances, original kept.");
     }
 
+    private void Merge_Click(object sender, RoutedEventArgs e) => DoMerge();
+
+    /// <summary>
+    /// Combine every calculated toolpath into one program. MergedToolpathEngine had no app
+    /// call-site, so a multi-tool job had to be exported and streamed one file at a time.
+    /// </summary>
+    internal Toolpath? DoMerge()
+    {
+        var sources = AppState.Toolpaths.Toolpaths
+            .Where(t => t.GCode.Count > 0 && t.GCode.Any(l =>
+            {
+                var s = l.TrimStart();
+                return s.StartsWith("G0") || s.StartsWith("G1") || s.StartsWith("G2") || s.StartsWith("G3");
+            }))
+            .ToList();
+
+        if (sources.Count == 0)
+        {
+            SetCalcNote("Nothing to merge — calculate at least one toolpath first.");
+            return null;
+        }
+        if (sources.Count == 1)
+        {
+            SetCalcNote("Only one calculated toolpath — merging needs two or more.");
+            return null;
+        }
+
+        // Toolpath carries ToolId (a Guid), not a tool NUMBER, while MergeSourceGcode wants
+        // an int — so assign stable 1-based numbers per distinct tool. Sorting by that
+        // number groups tool changes instead of interleaving them, which is the whole point
+        // of a merged program. (MergeOrderStrategy has no ToolNumber member; the ordering is
+        // done here.)
+        var toolNumbers = sources
+            .Select(t => t.ToolId)
+            .Distinct()
+            .Select((id, i) => (id, number: i + 1))
+            .ToDictionary(x => x.id, x => x.number);
+
+        var ordered = sources
+            .OrderBy(t => toolNumbers[t.ToolId])
+            .ToList();
+
+        var result = MergedToolpathEngine.Compute(
+            ordered.Select(t => new MergeSourceGcode
+            {
+                Name = t.Name,
+                Id = t.Id,
+                ToolNumber = toolNumbers[t.ToolId],
+                GcodeLines = t.GCode
+            }).ToList(),
+            MergeOrderStrategy.SelectionOrder,   // already tool-ordered above
+            MergeMode.Union,
+            keepOriginals: true);
+
+        if (!result.Success || result.GcodeLines.Count == 0)
+        {
+            SetCalcNote(result.ErrorMessage ?? "The merge produced no moves.");
+            return null;
+        }
+
+        // A NEW toolpath, so the originals survive and "undo" is deleting this one.
+        var merged = AppState.Toolpaths.Add(sources[0].Strategy);
+        merged.Name = $"Merged ({sources.Count} toolpaths)";
+        merged.StrategyKey = sources[0].StrategyKey;
+        merged.GCode.Clear();
+        merged.GCode.AddRange(result.GcodeLines);
+        merged.IsDirty = false;
+
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        RefreshList();
+        ToolpathList.SelectedItem = merged;
+        SetCalcNote($"Merged {sources.Count} toolpaths — {result.TotalSegments} segments, originals kept.");
+        return merged;
+    }
+
     // ---- toolpath templates (ToolpathTemplateManager had zero app call-sites) ----
 
     private static ToolpathTemplateManager? _templates;

@@ -60,6 +60,9 @@
             <Button x:Name="BtnSaveTemplate" Content="Save as…" Margin="4,0,0,0" Padding="8,6"
                     Click="SaveTemplate_Click"
                     ToolTip="Save the selected toolpath's current params as a named template"/>
+            <Button x:Name="BtnMerge" Content="Merge all" Margin="6,0,0,0" Padding="8,6"
+                    Click="Merge_Click"
+                    ToolTip="Combine every calculated toolpath into ONE program, ordered by tool (originals kept)"/>
         </StackPanel>
 
         <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>
