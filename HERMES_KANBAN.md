@@ -57,6 +57,15 @@ Worker flips only its own line. Orchestrator owns wave headers and locks.
 | **TESTS** | `tests/VectorPilot.Tests/{CardFilter}*.cs` | Parallel OK if **new files only** |
 | **DOCS** | `docs/ASPIRE_PARITY.md`, this kanban | Orchestrator only |
 
+**Disjoint locks do NOT make two workers safe here.** `tests/VectorPilot.Tests.csproj`
+line 18 has a `ProjectReference` to `VectorPilot.App`, so EVERY test run compiles the App.
+An Engine worker whose files are untouched still cannot reach its test phase while an App
+worker has `MainWindow.xaml.cs` half-edited — verified 2026-08-20: H-201's gate went red
+three times on H-101's in-flight code, with errors mutating between runs, then passed
+unchanged once H-101 compiled. Locks prevent *edit* collisions, not *build* collisions.
+Prefer **one worker at a time**; if you must run two, expect the second's gate to be
+unreliable until the first compiles.
+
 Two workers may run iff their lock sets are **disjoint**. Tests that only **add** a new `*Tests.cs` do not take TESTS lock.
 
 `dotnet build` / `verify.sh`: **one at a time**. Workers write code; orchestrator (or a dedicated Verify worker) runs the gate after merge, **or** workers verify on their branch after others have finished building. If MSB3021: kill `VectorPilot.exe`.
