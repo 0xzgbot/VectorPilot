@@ -74,16 +74,13 @@ if printf '%s' "$TEST_OUT" | grep -qE '^Failed!'; then
 fi
 
 # A PARTIAL run is the dangerous green: "Passed! 1321" with no failures still printed
-# VERIFY PASS, so a killed testhost or an aborted run looked like success. Enforce a floor.
-# Raise MIN_TESTS whenever the suite legitimately grows.
+# VERIFY PASS, so a killed testhost or an aborted run looked like success. Bump MIN_TESTS
+# as the suite grows; a stale floor is a weaker guard, not a wrong one.
 MIN_TESTS=1400
-if [ -n "$SUMMARY" ]; then
-  TOTAL="$(printf '%s' "$SUMMARY" | sed -n 's/.*Total: *\([0-9]*\).*/\1/p')"
-  if [ -n "$TOTAL" ] && [ "$TOTAL" -lt "$MIN_TESTS" ]; then
-    echo "PARTIAL RUN: only $TOTAL tests executed, expected >= $MIN_TESTS."
-    echo "  A killed testhost/dotnet mid-run reports a green subset. Rebuild and re-run."
-    FAIL=1
-  fi
+TOTAL="$(printf '%s' "$SUMMARY" | sed -n 's/.*Total: *\([0-9]*\).*/\1/p')"
+if [ -n "$TOTAL" ] && [ "$TOTAL" -lt "$MIN_TESTS" ]; then
+  echo "PARTIAL RUN: only $TOTAL of >=$MIN_TESTS tests ran — killed testhost? Rebuild and re-run."
+  FAIL=1
 fi
 
 echo
