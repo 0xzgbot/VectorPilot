@@ -38,6 +38,14 @@ public sealed class HeightfieldFinishParams
     public double PlungeFeedRateMmPerMin { get; set; } = 300;
     public double SafeZHeightMm { get; set; } = 5.0;
     public double SpindleRpm { get; set; }
+
+    /// <summary>
+    /// Target height of the leftover cusps between finish passes, in mm. Machinists care about
+    /// this rather than raw stepover: with a ball nose of radius r a stepover s leaves
+    /// h = r - sqrt(r^2 - (s/2)^2). 0 (the default) means OFF — <see cref="StepOverMm"/> is used
+    /// directly, so existing behaviour is unchanged.
+    /// </summary>
+    public double ScallopHeightMm { get; set; }
 }
 
 /// <summary>
@@ -140,11 +148,38 @@ public static class HeightfieldRoughEngine
 /// </summary>
 public static class HeightfieldFinishEngine
 {
+    /// <summary>
+    /// Stepover that leaves cusps of the requested height for a ball-nose tool:
+    /// s = 2*sqrt(r^2 - (r-h)^2), r = toolDiameterMm/2. Returns 0 when the request is not
+    /// usable (non-positive tool or scallop, scallop at/above the tool radius, or NaN/Infinity).
+    /// </summary>
+    public static double StepOverForScallop(double toolDiameterMm, double scallopHeightMm)
+    {
+        if (double.IsNaN(toolDiameterMm) || double.IsInfinity(toolDiameterMm)) return 0;
+        if (double.IsNaN(scallopHeightMm) || double.IsInfinity(scallopHeightMm)) return 0;
+        if (toolDiameterMm <= 0 || scallopHeightMm <= 0) return 0;
+        double r = toolDiameterMm / 2.0;
+        if (scallopHeightMm >= r) return 0;
+        double d = r - scallopHeightMm;
+        double inner = r * r - d * d;
+        if (inner <= 0) return 0;
+        return 2.0 * Math.Sqrt(inner);
+    }
+
     public static HeightfieldToolpathResult Compute(HeightfieldData heightfield, HeightfieldFinishParams p)
     {
         var b = heightfield.Bounds;
         double stockTop = heightfield.MaxHeight;
-        double stepOver = Math.Max(0.1, p.StepOverMm);
+        // A scallop-height target overrides the raw stepover: a smaller allowed cusp implies a
+        // smaller stepover, hence a denser toolpath. 0 (or an unusable geometry) falls back to
+        // StepOverMm so default behaviour is untouched.
+        double requestedStepOver = p.StepOverMm;
+        if (p.ScallopHeightMm > 0)
+        {
+            double scallopStepOver = StepOverForScallop(p.ToolDiameterMm, p.ScallopHeightMm);
+            if (scallopStepOver > 0) requestedStepOver = scallopStepOver;
+        }
+        double stepOver = Math.Max(0.1, requestedStepOver);
 
         var lines = new List<string> { "%", "O=FINISH_3D" };
         if (p.SpindleRpm > 0) lines.Add($"M3 S{(int)p.SpindleRpm}");
