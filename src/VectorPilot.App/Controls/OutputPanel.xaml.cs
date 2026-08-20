@@ -57,6 +57,67 @@ public partial class OutputPanel : UserControl
             return s.StartsWith("G0") || s.StartsWith("G1") || s.StartsWith("G2") || s.StartsWith("G3");
         });
 
+    /// <summary>
+    /// Split the posted program into one file per tile. TilingEngine computed tile
+    /// rectangles but had zero call-sites and no way to produce a runnable program.
+    /// </summary>
+    private void ExportTiles_Click(object sender, RoutedEventArgs e)
+    {
+        var toolpaths = AppState.Toolpaths.Toolpaths.Where(t => t.GCode.Count > 0 && HasCuttingMoves(t)).ToList();
+        if (toolpaths.Count == 0)
+        {
+            MessageBox.Show("Nothing to tile — calculate a toolpath in the Cut stage first.",
+                "Export tiles", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!double.TryParse(TxtTileW.Text, out var tw) || !double.TryParse(TxtTileH.Text, out var th))
+        {
+            MessageBox.Show("Tile width and height must be numbers.", "Export tiles",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        double overlap = double.TryParse(TxtTileOverlap.Text, out var ov) ? ov : 0;
+
+        var post = CmbPost.SelectedItem as PostTemplate ?? PostTemplate.Shipped[0];
+        var program = PostTemplateEngine.Emit(toolpaths.SelectMany(t => t.GCode).ToList(), post).Lines;
+
+        var result = GcodeTiler.Split(program, tw, th, overlap);
+        if (!result.Ok)
+        {
+            MessageBox.Show(result.Error!, "Export tiles", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Choose a base name for the tile files",
+            FileName = Sanitize(AppState.CurrentJob?.Name ?? "job") + "-tile",
+            Filter = "G-code (*.tap)|*.tap|All files (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        string dir = System.IO.Path.GetDirectoryName(dlg.FileName)!;
+        string baseName = System.IO.Path.GetFileNameWithoutExtension(dlg.FileName);
+        string ext = System.IO.Path.GetExtension(dlg.FileName);
+        if (string.IsNullOrEmpty(ext)) ext = ".tap";
+
+        int written = 0;
+        foreach (var tile in result.Tiles.Where(t => t.CutMoveCount > 0))
+        {
+            string path = System.IO.Path.Combine(dir,
+                $"{baseName}-R{tile.Region.Row + 1}C{tile.Region.Col + 1}{ext}");
+            System.IO.File.WriteAllLines(path, tile.Gcode);
+            written++;
+        }
+
+        TxtExportInfo.Text = $"{written} tile file(s), {overlap:0.#}mm overlap";
+        MessageBox.Show(
+            $"Wrote {written} tile program(s) to:\n{dir}\n\n" +
+            $"{result.Tiles.Count} tile(s) computed; empty tiles were skipped.",
+            "Export tiles", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
     private void ExportTap_Click(object sender, RoutedEventArgs e)
     {
         // A toolpath whose program is nothing but a comment must not be exportable: it
