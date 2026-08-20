@@ -38,6 +38,49 @@ public partial class MainWindow : Window
         }
     }
 
+    // ---- H-101: Beginner/Advanced mode + job starters ----
+
+    private void UiMode_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (CmbUiMode is null) return;
+
+        AppState.UiMode = CmbUiMode.SelectedIndex == 1 ? UiMode.Advanced : UiMode.Beginner;
+
+        // Refresh an already-built panel; without this the mode only took effect on a panel
+        // constructed after the switch.
+        _cut.RefreshForMode();
+    }
+
+    private void JobStarter_Click(object sender, RoutedEventArgs e) => ShowJobStarter();
+
+    /// <summary>
+    /// Show the three job starters. Returns the overlay so tests can drive the same instance
+    /// the button creates.
+    /// </summary>
+    internal Controls.JobStarterOverlay ShowJobStarter()
+    {
+        var overlay = new Controls.JobStarterOverlay();
+        overlay.Started += (kind, strategyKey) =>
+        {
+            StarterHost.Content = null;
+            StarterHost.Visibility = Visibility.Collapsed;
+
+            // Reflect whatever the starter chose back into the rail combo.
+            CmbUiMode.SelectedIndex = AppState.UiMode == UiMode.Advanced ? 1 : 0;
+            _cut.RefreshForMode();
+
+            if (strategyKey is not null)
+            {
+                _cut.SelectStrategy(strategyKey);
+                StageHost.Content = _cut;      // land the user on the operation itself
+            }
+        };
+
+        StarterHost.Content = overlay;
+        StarterHost.Visibility = Visibility.Visible;
+        return overlay;
+    }
+
     private System.Windows.Threading.DispatcherTimer? _autosaveTimer;
 
     /// <summary>Per-user state root. Local (not Roaming): this is machine-specific.</summary>

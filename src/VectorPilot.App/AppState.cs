@@ -8,6 +8,13 @@ public static class AppState
 {
     public static Job CurrentJob { get; private set; } = Job.CreateDefault();
 
+    /// <summary>
+    /// Beginner or Advanced operation set. Beginner trims the 28-strategy registry to eight
+    /// approachable operations; Advanced offers everything. Read by CutPanel when it fills
+    /// the strategy combo.
+    /// </summary>
+    public static UiMode UiMode { get; set; } = UiMode.Beginner;
+
     /// <summary>Replace the current job (autosave recovery path).</summary>
     public static void RestoreJob(Job job)
     {
