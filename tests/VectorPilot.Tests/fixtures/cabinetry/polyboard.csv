@@ -1,0 +1,6 @@
+PartID,PartName,Width_mm,Height_mm,Thickness_mm,Qty
+PB-01,Carcass Gable,570,720,18,2
+PB-02,Carcass Top Rail,564,80,18,2
+PB-03,Carcass Base,564,570,18,1
+PB-04,Shelf,560,565,18,2
+PB-05,Back,564,720,8,1

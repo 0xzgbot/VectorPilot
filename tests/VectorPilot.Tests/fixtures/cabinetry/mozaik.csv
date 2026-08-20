@@ -1,0 +1,6 @@
+PartNumber,PartName,Width,Height,Thickness,Qty,Material,Notes
+B1-SIDE-L,Base Left Side,584.2,876.3,18,2,Maple Ply,grain vertical
+B1-SIDE-R,Base Right Side,584.2,876.3,18,2,Maple Ply,grain vertical
+B1-BOT,Base Bottom,565.15,584.2,18,1,Maple Ply,
+B1-STRETCH,Base Stretcher,565.15,101.6,18,2,Maple Ply,pocket screw
+B1-DOOR,Base Door Slab,298.45,730.25,19.05,2,White Oak,edge band 4 sides

@@ -1,0 +1,6 @@
+Id,Part,Width,Height,Depth,Quantity,Material
+1001,Wall Cab Side,304.8,762,15.875,2,Birch Ply
+1002,Wall Cab Top,584.2,304.8,15.875,1,Birch Ply
+1003,Wall Cab Bottom,584.2,304.8,15.875,1,Birch Ply
+1004,Wall Cab Back,584.2,762,6.35,1,Birch Ply
+1005,Adjustable Shelf,577.85,292.1,15.875,3,Birch Ply
