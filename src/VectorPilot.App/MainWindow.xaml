@@ -28,6 +28,16 @@
                     <Button Style="{StaticResource RailButton}" Click="Tools_Click" Content="🧰  Tools"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom" Margin="14,10">
+                    <TextBlock Text="MODE" FontSize="9" Foreground="#6A6A80" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbUiMode" Height="24" SelectedIndex="0"
+                              SelectionChanged="UiMode_Changed"
+                              ToolTip="Beginner shows 8 everyday operations; Advanced shows all 28">
+                        <ComboBoxItem Content="Beginner"/>
+                        <ComboBoxItem Content="Advanced"/>
+                    </ComboBox>
+                    <Button x:Name="BtnJobStarter" Content="New job…" Height="24" Margin="0,6,0,8"
+                            Click="JobStarter_Click"
+                            ToolTip="Pick a starting point: Sign, Photo or 3D Relief"/>
                     <TextBlock x:Name="RailStatus" Text="disconnected" FontSize="11" Foreground="#FFB454"/>
                 </StackPanel>
             </DockPanel>
@@ -35,5 +45,10 @@
 
         <!-- Stage host -->
         <ContentControl x:Name="StageHost" Grid.Column="1" Margin="10"/>
+
+        <!-- Job starter overlay: spans both columns, hidden until asked for. Never shown
+             automatically under App.IsAutomated, or ui_verify would hang on it. -->
+        <ContentControl x:Name="StarterHost" Grid.Column="0" Grid.ColumnSpan="2"
+                        Visibility="Collapsed"/>
     </Grid>
 </Window>

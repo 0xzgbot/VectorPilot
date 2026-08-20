@@ -263,11 +263,46 @@ public partial class CutPanel : UserControl
             : null;
     }
 
+    /// <summary>
+    /// Refill the strategy combo for the current <see cref="AppState.UiMode"/>. Called by the
+    /// MainWindow mode toggle and by the job starters, so switching mode takes effect on an
+    /// already-open panel instead of only at construction.
+    /// </summary>
+    public void RefreshForMode() => PopulateStrategies();
+
+    /// <summary>
+    /// Select a strategy by registry key. If the key is not visible in the current mode
+    /// (e.g. a starter picks photo-vcarve, which is not on the Beginner list), switch to
+    /// Advanced rather than silently leaving the user on the wrong operation.
+    /// Returns true when the combo ended up on that key.
+    /// </summary>
+    public bool SelectStrategy(string strategyKey)
+    {
+        if (!UiModeCatalog.IsVisible(AppState.UiMode, strategyKey))
+        {
+            AppState.UiMode = UiMode.Advanced;
+        }
+
+        PopulateStrategies();
+
+        for (int i = 0; i < CmbStrategy.Items.Count; i++)
+        {
+            if (CmbStrategy.Items[i] is StrategyRegistry.Entry entry && entry.Key == strategyKey)
+            {
+                CmbStrategy.SelectedIndex = i;
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>Fill the combo from the registry so every strategy is selectable.</summary>
     private void PopulateStrategies()
     {
-        CmbStrategy.ItemsSource = Registry.Entries;
-        if (Registry.Entries.Count > 0) CmbStrategy.SelectedIndex = 0;
+        // Mode-filtered, so a beginner never meets "Thread Mill" or "Wrapped Fluting".
+        // Advanced returns the whole registry unchanged.
+        CmbStrategy.ItemsSource = UiModeCatalog.Filter(AppState.UiMode, Registry.Entries, e => e.Key);
+        if (CmbStrategy.Items.Count > 0) CmbStrategy.SelectedIndex = 0;
     }
 
     private void BtnAdd_Click(object sender, RoutedEventArgs e)

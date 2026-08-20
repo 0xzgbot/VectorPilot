@@ -1,0 +1,56 @@
+<UserControl x:Class="VectorPilot.App.Controls.JobStarterOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F2101018">
+    <Border VerticalAlignment="Center" HorizontalAlignment="Center"
+            Background="White" CornerRadius="10" Padding="30" MaxWidth="620">
+        <StackPanel>
+            <TextBlock Text="What are you making?" FontSize="22" FontWeight="Bold"/>
+            <TextBlock Text="Pick a starting point. You can switch to Advanced any time for the full tool set."
+                       FontSize="12" Foreground="#666" TextWrapping="Wrap" Margin="0,6,0,18"/>
+
+            <UniformGrid Columns="3">
+                <Button x:Name="BtnStarterSign" Click="StarterSign_Click"
+                        Margin="0,0,6,0" Padding="10,16" MinHeight="96"
+                        ToolTip="Cut lettering or a shaped sign — starts you on V-Carve">
+                    <StackPanel>
+                        <TextBlock Text="&#x2712;" FontSize="26" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Sign" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Letters &amp; shapes" FontSize="10" Foreground="#777"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnStarterPhoto" Click="StarterPhoto_Click"
+                        Margin="3,0" Padding="10,16" MinHeight="96"
+                        ToolTip="Carve or engrave a photograph — starts you on Photo V-Carve">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F5BC;" FontSize="26" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Photo" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="From an image" FontSize="10" Foreground="#777"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnStarter3D" Click="Starter3D_Click"
+                        Margin="6,0,0,0" Padding="10,16" MinHeight="96"
+                        ToolTip="Machine a 3D relief — starts you on 3D Rough">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F5FF;" FontSize="26" HorizontalAlignment="Center"/>
+                        <TextBlock Text="3D Relief" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Model or relief" FontSize="10" Foreground="#777"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </UniformGrid>
+
+            <TextBlock x:Name="StarterNote" FontSize="11" Foreground="#2E7D32"
+                       Margin="0,14,0,0" TextWrapping="Wrap"/>
+
+            <Button x:Name="BtnStarterSkip" Content="Skip — I know what I'm doing"
+                    Click="StarterSkip_Click" HorizontalAlignment="Right"
+                    Margin="0,16,0,0" Padding="10,6"
+                    ToolTip="Close this and switch to the full Advanced tool set"/>
+        </StackPanel>
+    </Border>
+</UserControl>
