@@ -32,6 +32,24 @@
             <Button x:Name="BtnSend" Content="→ Machine" Margin="8,0,0,0" Padding="12,6" Click="BtnSend_Click"/>
             <Button x:Name="BtnSort" Content="Sort by Tool" Margin="8,0,0,0" Padding="12,6" Click="Sort_Click"/>
             <Button x:Name="BtnRecalcDirty" Content="Recalc Dirty" Margin="8,0,0,0" Padding="12,6" Click="RecalcDirty_Click"/>
+            <Separator Margin="10,0" Width="1" Background="#CCC"/>
+            <!-- Array copy: ArrayCopyEngine shipped with zero app call-sites. Creates a
+                 NEW toolpath, so the original is never destroyed. -->
+            <ComboBox x:Name="CmbArrayType" Width="76" Height="24" SelectedIndex="0"
+                      ToolTip="Array pattern">
+                <ComboBoxItem Content="Linear"/>
+                <ComboBoxItem Content="Grid"/>
+                <ComboBoxItem Content="Circular"/>
+            </ComboBox>
+            <TextBox x:Name="TxtArrayCount" Width="34" Height="24" Margin="4,0,0,0" Text="3"
+                     ToolTip="Copies (or columns for a grid)"/>
+            <TextBox x:Name="TxtArraySpacing" Width="44" Height="24" Margin="4,0,0,0" Text="50"
+                     ToolTip="Spacing in mm — circle radius for a circular array"/>
+            <TextBox x:Name="TxtArrayRows" Width="32" Height="24" Margin="4,0,0,0" Text="2"
+                     ToolTip="Grid rows (grid only)"/>
+            <Button x:Name="BtnArray" Content="Array copy" Margin="6,0,0,0" Padding="10,6"
+                    Click="ArrayCopy_Click"
+                    ToolTip="Add a NEW toolpath repeating the selected one (original kept)"/>
         </StackPanel>
 
         <ListBox x:Name="ToolpathList" Grid.Row="2" Margin="0,4,0,0" SelectionChanged="ToolpathList_SelectionChanged"/>

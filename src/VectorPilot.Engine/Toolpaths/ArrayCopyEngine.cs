@@ -195,6 +195,12 @@ public static class ArrayCopyEngine
         var positions = new List<(double Dx, double Dy, double Da, double RotateDeg)>();
         for (int i = 0; i < pattern.Count; i++)
         {
+            // Each copy is ROTATED about (CenterX, CenterY) — Aspire's convention, where
+            // the part's own distance from that centre is the array radius. RadiusMm is
+            // validated for the rotary-axis case but is deliberately NOT a translation
+            // here: adding one on top of the rotation would double-transform the part.
+            // Stride is span/(Count-1), pinned by ArrayMergeRotaryTests (4 copies over
+            // 360 degrees => 0/120/240/360).
             positions.Add((0, 0, 0, pattern.StartAngleDeg + i * step));
         }
 

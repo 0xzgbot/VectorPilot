@@ -309,6 +309,66 @@ public partial class CutPanel : UserControl
         GCodePreview.Text = string.Join("\n", AppState.Toolpaths.Toolpaths.SelectMany(t => t.GCode).Take(60));
     }
 
+    /// <summary>
+    /// Repeat the selected toolpath's G-code as a NEW toolpath. ArrayCopyEngine shipped
+    /// with zero app call-sites, so a user could not array anything.
+    /// </summary>
+    private void ArrayCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (ToolpathList.SelectedItem is not Toolpath src)
+        {
+            SetCalcNote("Select a calculated toolpath to array.");
+            return;
+        }
+        if (src.GCode.Count == 0)
+        {
+            SetCalcNote($"{src.Name} has no G-code yet — Calculate first.");
+            return;
+        }
+
+        int count = int.TryParse(TxtArrayCount.Text, out var c) ? c : 3;
+        double spacing = double.TryParse(TxtArraySpacing.Text, out var s) ? s : 50;
+        int rows = int.TryParse(TxtArrayRows.Text, out var r) ? r : 2;
+
+        if (count < 2) { SetCalcNote("An array needs a count of 2 or more."); return; }
+
+        string kind = (CmbArrayType.SelectedItem as ComboBoxItem)?.Content as string ?? "Linear";
+
+        var result = kind switch
+        {
+            "Grid" => ArrayCopyEngine.ComputeGrid(src.GCode,
+                new GridPattern { Columns = count, Rows = rows, ColumnSpacingMm = spacing, RowSpacingMm = spacing }),
+            "Circular" => ArrayCopyEngine.ComputeCircular(src.GCode,
+                new CircularPattern { Count = count, RadiusMm = spacing, CenterX = 0, CenterY = 0 }),
+            _ => ArrayCopyEngine.ComputeLinear(src.GCode,
+                new LinearPattern { Count = count, SpacingMm = spacing })
+        };
+
+        if (!result.Success || result.GcodeLines.Count == 0)
+        {
+            SetCalcNote(result.ErrorMessage ?? "The array produced no moves.");
+            return;
+        }
+
+        // A NEW toolpath: the original is never modified, so "undo" is simply deleting
+        // this one.
+        var tp = AppState.Toolpaths.Add(src.Strategy);
+        tp.Name = $"{src.Name} — {kind} x{result.TotalCount}";
+        tp.StrategyKey = src.StrategyKey;
+        tp.ParamsJson = src.ParamsJson;
+        tp.CutDepth = src.CutDepth;
+        tp.FeedRate = src.FeedRate;
+        foreach (var id in src.SelectedShapeIds) tp.SelectedShapeIds.Add(id);
+        tp.GCode.Clear();
+        tp.GCode.AddRange(result.GcodeLines);
+        tp.IsDirty = false;
+
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+        RefreshList();
+        ToolpathList.SelectedItem = tp;
+        SetCalcNote($"Added \"{tp.Name}\" — {result.TotalCount} instances, original kept.");
+    }
+
     private void RecalculateToolpath(Toolpath tp)
     {
         // Commit the params form (expression resolution) before dispatch.
