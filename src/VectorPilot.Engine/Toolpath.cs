@@ -19,7 +19,9 @@ public enum ToolpathStrategy
     Moulding,
     Weave,
     ThreadMill,
-    Rounding
+    Rounding,
+    WrappedFluting,
+    DrillBank
 }
 
 /// <summary>A calculated toolpath (strategy + parameters + result g-code).</summary>

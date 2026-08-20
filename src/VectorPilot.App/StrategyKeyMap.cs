@@ -40,6 +40,9 @@ public static class StrategyKeyMap
         ["weave"] = ToolpathStrategy.Weave,
         ["threadmill"] = ToolpathStrategy.ThreadMill,
         ["rounding"] = ToolpathStrategy.Rounding,
+        ["rotary-wrap"] = ToolpathStrategy.RotaryWrap,
+        ["wrapped-fluting"] = ToolpathStrategy.WrappedFluting,
+        ["drill-bank"] = ToolpathStrategy.DrillBank,
         ["rough3d"] = ToolpathStrategy.Rough3D,
         ["finish3d"] = ToolpathStrategy.Finish3D,
         ["photo-vcarve"] = ToolpathStrategy.PhotoVCarve,
@@ -65,6 +68,10 @@ public static class StrategyKeyMap
         ToolpathStrategy.BevelCarving => "bevel",
         ToolpathStrategy.Inlay => "inlay-pocket",
         ToolpathStrategy.QuickEngrave => "quickengrave",
+        // Hyphenated keys: ToString().ToLowerInvariant() would yield "wrappedfluting"
+        // and "drillbank", which are not registry keys, so the reverse map would break.
+        ToolpathStrategy.WrappedFluting => "wrapped-fluting",
+        ToolpathStrategy.DrillBank => "drill-bank",
         _ => strategy.ToString().ToLowerInvariant()
     };
 

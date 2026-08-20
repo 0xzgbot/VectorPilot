@@ -199,6 +199,42 @@ public sealed class StrategyRegistry
             };
         });
 
+        // Engines that shipped with no registry key, so no user could select them.
+        Add<RotaryWrapParams>("rotary-wrap", "Rotary Wrap", false,
+            (s, _, p) => RotaryWrapEngine.Compute(s, p));
+
+        Add<DrillBankParams>("drill-bank", "Drill Bank", false,
+            (_, _, p) =>
+            {
+                // Passing null makes the engine use the params' own grid.
+                var r = DrillBankEngine.Compute(null, p);
+                return new SpecialtyResult
+                {
+                    GcodeLines = r.GcodeLines,
+                    EstimatedTimeSeconds = r.EstimatedTimeSeconds,
+                    FeatureCount = r.PointCount,
+                    Error = r.GcodeLines.Count == 0
+                        ? "Drill Bank produced no holes — check the grid rows/columns."
+                        : null
+                };
+            });
+
+        Add<WrappedFlutingParams>("wrapped-fluting", "Wrapped Fluting", false,
+            (s, _, p) =>
+            {
+                var points = s.SelectMany(v => v.Points).ToList();
+                if (points.Count < 2)
+                {
+                    return new SpecialtyResult
+                    {
+                        GcodeLines = new List<string>(),
+                        Error = "Wrapped Fluting needs a path with at least two points — draw a flute line first."
+                    };
+                }
+                var r = WrappedFlutingToolpathEngine.Compute(points, p);
+                return new SpecialtyResult { GcodeLines = r.Gcode, FeatureCount = r.MoveCount };
+            });
+
         Add<HeightfieldRoughParams>("rough3d", "3D Rough", true, (_, hf, p) => hf is null ? Empty("3D Rough needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldRoughEngine.Compute(hf, p)));
         Add<HeightfieldFinishParams>("finish3d", "3D Finish", true, (_, hf, p) => hf is null ? Empty("3D Finish needs a 3D model or image — load one in the Model stage first.") : StrategyAdapters.ToSpecialty(HeightfieldFinishEngine.Compute(hf, p)));
         Add<PhotoVCarveToolpathParams>("photo-vcarve", "Photo V-Carve", true, (_, hf, p) => hf is null ? Empty("Photo V-Carve needs a 3D model or image — load one in the Model stage first.") : PhotoVCarveEngine.Compute(hf, p));
