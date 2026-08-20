@@ -19,6 +19,15 @@ Supersedes `MASTER_KANBAN.md` (stale M0–M6) and `PARITY_QUEUE.md` (single-agen
 5. When a worker returns: run **Critic** on that branch (diff vs main). If fail, send the worker back. If pass, **you** merge to main (or open PR). Then flip the card `[x]` here in one commit on main.
 6. If a worker hits HTTP 429 / empty diff: do not respawn 7 clones. Shrink the brief, retry **once**, then do that card yourself.
 7. Max **3 workers** at once on this PC (dotnet lock + OneDrive). Prefer **2**.
+8. **Never leave main dirty when spawning.** A worker's `git checkout -b` carries
+   uncommitted orchestrator files onto its branch; deleting that branch then destroys
+   them. Commit the board *before* dispatch. (Cost one recovery via `git reflog` +
+   `cherry-pick` on 2026-08-20.)
+9. **429 reality on this key (2026-08-20):** a 2-worker fan-out died at 7 and 6 API
+   calls with zero files written — same failure as the 7/7 wipeout in `AGENTS.md`
+   rule 6. Both branches had **empty diffs**. Retry once with a shrunk brief, then
+   do the card directly. Always `git diff --stat main hermes/{id}` before believing
+   a worker.
 
 ### Claim syntax in this file
 
@@ -61,7 +70,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Ready (serial App)
 
-- [~] **H-101** `hermes/H-101` Beginner / Advanced + three job starters (Sign / Photo / 3D)  
+- [ ] **H-101** Beginner / Advanced + three job starters (Sign / Photo / 3D)  
   Locks: **APP-SHELL**, **CUT**  
   Parallel-OK: H-201, H-202 (engine-only)  
   OWN: `MainWindow.xaml(.cs)`, new `JobStarterOverlay.xaml`, `CutPanel` combo visibility  
@@ -98,7 +107,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Engine (can overlap Wave 1 App after H-101 is in flight **only** if new files)
 
-- [~] **H-201** `hermes/H-201` Lithophane heightfield (photo → thickness)  
+- [ ] **H-201** Lithophane heightfield (photo → thickness)  
   Locks: **ENGINE-PHOTO** (new files)  
   Parallel-OK: H-101–H-104, H-202, H-203  
   OWN: **new** `src/VectorPilot.Engine/Photo/LithophaneEngine.cs` + `tests/.../LithophaneEngineTests.cs`  
