@@ -115,10 +115,10 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~Lithophane`  
   AC: Light pixels → thicker (or documented invert); closed preview heightfield; no G-code required yet.
 
-- [ ] **H-202** UNBLOCKED (H-201 needed no csproj change — Engine globs `**/*.cs`) Scallop-height 3D finish param  
+- [~] **H-202** `hermes/H-202` Scallop-height 3D finish param  
   Locks: **ENGINE-3D**  
   Parallel-OK: H-201, H-101–H-103 (**not** H-204 if same finish files)  
-  OWN: `HeightfieldFinishEngine` / params — stepover from scallop + tool diameter  
+  OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` (holds BOTH `HeightfieldFinishParams` and `HeightfieldFinishEngine` — there is no `HeightfieldFinishEngine.cs`) — stepover from scallop + tool diameter  
   FORBIDDEN: App  
   Gate: `FullyQualifiedName~ScallopFinish`  
   AC: Smaller scallop → denser G1; test two scallops not equal.
@@ -126,7 +126,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 - [ ] **H-203** Rest-rough leftover stock  
   Locks: **ENGINE-3D** — **conflicts H-202**. Queue **after** H-202.  
   Parallel-OK: H-201, App wave  
-  OWN: `HeightfieldRoughEngine` rest pass  
+  OWN: `HeightfieldRoughEngine` rest pass (also in `Toolpaths/HeightfieldToolpath.cs` — same file as H-202, hence the conflict)  
   FORBIDDEN: App  
   Gate: `FullyQualifiedName~RestRough`  
   AC: Second tool only machines leftover vs first tool’s swept volume (or heightfield mask).
