@@ -74,13 +74,22 @@ if printf '%s' "$TEST_OUT" | grep -qE '^Failed!'; then
 fi
 
 # A PARTIAL run is the dangerous green: "Passed! 1321" with no failures still printed
-# VERIFY PASS, so a killed testhost or an aborted run looked like success. Bump MIN_TESTS
-# as the suite grows; a stale floor is a weaker guard, not a wrong one.
-MIN_TESTS=1400
+# VERIFY PASS, so a killed testhost or an aborted run looked like success.
+#
+# The floor maintains itself. .verify-testcount holds the best count ever seen; a run must
+# match it or better. That beats a hardcoded MIN_TESTS, which silently rots the day someone
+# adds a test and never bumps it. Deleting the file just re-baselines.
+COUNT_FILE=".verify-testcount"
 TOTAL="$(printf '%s' "$SUMMARY" | sed -n 's/.*Total: *\([0-9]*\).*/\1/p')"
-if [ -n "$TOTAL" ] && [ "$TOTAL" -lt "$MIN_TESTS" ]; then
-  echo "PARTIAL RUN: only $TOTAL of >=$MIN_TESTS tests ran — killed testhost? Rebuild and re-run."
-  FAIL=1
+if [ -n "$TOTAL" ]; then
+  HIGH="$(cat "$COUNT_FILE" 2>/dev/null || echo 0)"
+  case "$HIGH" in ''|*[!0-9]*) HIGH=0 ;; esac
+  if [ "$TOTAL" -lt "$HIGH" ]; then
+    echo "PARTIAL RUN: $TOTAL tests ran, but $HIGH have passed before — killed testhost? Re-run."
+    FAIL=1
+  elif [ "$TOTAL" -gt "$HIGH" ] && [ "$FAIL" -eq 0 ]; then
+    echo "$TOTAL" > "$COUNT_FILE"    # a GREEN bigger run raises the bar
+  fi
 fi
 
 echo

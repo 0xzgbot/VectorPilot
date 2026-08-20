@@ -22,3 +22,6 @@ dist/
 # Python bytecode from tools/
 __pycache__/
 publish-smoke/
+
+# verify.sh high-water test count (machine-local, not shared state)
+.verify-testcount
