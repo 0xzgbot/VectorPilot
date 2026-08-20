@@ -93,6 +93,62 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void TextureFill_Click(object sender, RoutedEventArgs e) => DoTextureFill();
+
+    /// <summary>
+    /// Fill the selected CLOSED shapes with a repeating pattern. VectorTextureEngine had no
+    /// app call-site, so decorative fills existed but were unreachable.
+    /// </summary>
+    internal int DoTextureFill(VectorTextureEngine.PatternKind? patternOverride = null)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return 0; }
+        if (Selection.IsEmpty) { SetStatus("Select a closed shape to fill"); return 0; }
+
+        // A texture needs an enclosed region: an open path has no inside to fill.
+        var closed = Selection.Selected
+            .Where(s => s.Closed || s.Type == ShapeType.Circle || s.Type == ShapeType.Rectangle)
+            .ToList();
+
+        if (closed.Count == 0)
+        {
+            SetStatus("Texture fill needs a CLOSED shape — an open path has no inside. " +
+                      "Close it, or use Extend to make the ends meet.");
+            return 0;
+        }
+
+        var kind = patternOverride ?? ((CmbTexture.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content as string) switch
+        {
+            "Dots" => VectorTextureEngine.PatternKind.Dots,
+            "Zigzag" => VectorTextureEngine.PatternKind.Zigzag,
+            _ => VectorTextureEngine.PatternKind.Crosshatch
+        };
+
+        var children = VectorTextureEngine.Generate(closed, new VectorTextureEngine.Params
+        {
+            Pattern = kind,
+            SpacingMm = 4.0,
+            ClipToBoundary = true
+        });
+
+        if (children.Count == 0)
+        {
+            SetStatus($"{kind} produced no geometry — try a larger shape or tighter spacing");
+            return 0;
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        foreach (var c in children) layer.AddShape(c);
+
+        Undo.Push("Texture fill", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        SetStatus($"{kind} fill added {children.Count} shape(s)");
+        RedrawShapes();
+        UpdateEditChrome();
+        return children.Count;
+    }
+
     private void FitCurves_Click(object sender, RoutedEventArgs e) => DoFitCurves();
 
     /// <summary>

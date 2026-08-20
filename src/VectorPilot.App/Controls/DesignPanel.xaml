@@ -60,6 +60,15 @@
                 <Button x:Name="FitCurvesButton" Content="Fit curves" Width="70" Height="24" Margin="6,0,0,0"
                         Click="FitCurves_Click"
                         ToolTip="Smooth the selected polylines, keeping sharp corners (undoable)"/>
+                <ComboBox x:Name="CmbTexture" Width="86" Height="24" Margin="6,0,0,0" SelectedIndex="0"
+                          ToolTip="Texture pattern">
+                    <ComboBoxItem Content="Crosshatch"/>
+                    <ComboBoxItem Content="Dots"/>
+                    <ComboBoxItem Content="Zigzag"/>
+                </ComboBox>
+                <Button x:Name="TextureFillButton" Content="Texture fill" Width="76" Height="24" Margin="4,0,0,0"
+                        Click="TextureFill_Click"
+                        ToolTip="Fill the selected CLOSED shapes with a repeating pattern (undoable)"/>
                 <TextBlock x:Name="ValidateLabel" VerticalAlignment="Center" Margin="6,0,0,0" FontSize="11" Foreground="#B22"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <ComboBox x:Name="CmbViewPreset" Width="132" Height="24" ToolTip="View presets"

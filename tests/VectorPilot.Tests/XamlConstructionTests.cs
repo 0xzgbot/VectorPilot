@@ -10,7 +10,12 @@ namespace VectorPilot.Tests;
 /// spot that let a XAML init-order NullReferenceException ship green: nothing in
 /// the suite had ever instantiated a UI class, so 650 passing tests said nothing
 /// about whether the app could start.
+///
+/// [Collection("STA")] is required: WPF allows only ONE Application per AppDomain, and
+/// DpiScalingTests also creates one. Without a shared collection the two classes run in
+/// parallel and race with "Cannot create more than one System.Windows.Application".
 /// </summary>
+[Collection("STA")]
 public class XamlConstructionTests
 {
     /// <summary>Run an action on a dedicated STA thread and surface any exception.</summary>
