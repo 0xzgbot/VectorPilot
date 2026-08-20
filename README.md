@@ -36,7 +36,7 @@ smoke-test stub guard.
 | PDF (valid xref) | ✅ |
 | Grayscale bitmap (BMP/PNG) | ✅ |
 
-## Toolpath Strategies (20 in the registry)
+## Toolpath Strategies (28 in the registry)
 
 Profile, Pocket, V-Carve, Drill (+DrillBank), Quick Engrave (2 flavors),
 Prism, Fluting, Chamfer, Bevel Carving, Drag Knife, Texture, Inlay (pocket +
@@ -86,9 +86,10 @@ These are locked in by goldens and are **not** Aspire-equivalent:
 
 | Strategy | Actual behaviour |
 |---|---|
+| Pocket | Contour-offset loops plus a clipped raster, not Aspire's full offset pocket. The raster clips against the inset boundary in both axes, so no cut move leaves a circular pocket, but it is still a hybrid: the raster re-covers ground the loops already cleared instead of filling only the leftover region. |
+| V-Carve | A discrete clearance field on a grid, ridge cells chained into polylines, depth from local clearance. A dumbbell's bulbs cut deeper than its neck and the interior is genuinely visited, but the skeleton is a grid approximation rather than an exact medial axis, and there is no separate flat-area clearing pass. |
 
-
-
+Full list with the remaining gaps: `docs/ASPIRE_PARITY.md` (items 8 and 9).
 
 A test count is not a machine you can cut with. See `docs/vectorpilot-review.html`.
 - **Done:** full Mac parity wave (SPK-0209 expressions + document variables,
