@@ -93,6 +93,50 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void TextOnCurve_Click(object sender, RoutedEventArgs e) => DoTextOnCurve();
+
+    /// <summary>
+    /// Lay the typed text along the selected path as outlines. TextOnCurve existed in
+    /// VectorPilot.App with no XAML call-site, so no user could reach it.
+    /// </summary>
+    internal int DoTextOnCurve(string? textOverride = null)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return 0; }
+
+        string text = textOverride ?? TxtCurveText.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            SetStatus("Type the text to place, then select a path and press Text on curve");
+            return 0;
+        }
+
+        var path = Selection.Selected.FirstOrDefault(s => s.Points.Count >= 2);
+        if (path is null)
+        {
+            SetStatus("Select a path with at least two points to run the text along");
+            return 0;
+        }
+
+        var glyphs = TextOnCurve.Place(text, path.Points);
+        if (glyphs.Count == 0)
+        {
+            SetStatus($"\"{text}\" produced no outlines — try a longer path or a shorter string");
+            return 0;
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        foreach (var g in glyphs) layer.AddShape(g);
+
+        Undo.Push("Text on curve", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        SetStatus($"Placed \"{text}\" along the path — {glyphs.Count} outline(s)");
+        RedrawShapes();
+        UpdateEditChrome();
+        return glyphs.Count;
+    }
+
     private void Validate_Click(object sender, RoutedEventArgs e) => DoValidate();
 
     /// <summary>

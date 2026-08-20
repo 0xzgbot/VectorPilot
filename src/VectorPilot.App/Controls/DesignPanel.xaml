@@ -52,6 +52,11 @@
                 <Button x:Name="FilletButton" Content="Fillet" Width="50" Height="24" Margin="4,0,0,0" Click="Fillet_Click" ToolTip="Round the selected shapes' corners by the radius (undoable)"/>
                 <Button x:Name="ExtendButton" Content="Extend" Width="56" Height="24" Margin="4,0,0,0" Click="Extend_Click" ToolTip="Extend open paths at both ends so they meet (undoable)"/>
                 <Button x:Name="ValidateButton" Content="Validate" Width="62" Height="24" Margin="6,0,0,0" Click="Validate_Click" ToolTip="Check for open vectors and self-intersections, and select the offenders"/>
+                <TextBox x:Name="TxtCurveText" Width="90" Height="24" Margin="6,0,0,0"
+                         ToolTip="Text to lay along the selected path"/>
+                <Button x:Name="TextOnCurveButton" Content="Text on curve" Width="88" Height="24" Margin="4,0,0,0"
+                        Click="TextOnCurve_Click"
+                        ToolTip="Lay the text along the selected path as outlines (undoable)"/>
                 <TextBlock x:Name="ValidateLabel" VerticalAlignment="Center" Margin="6,0,0,0" FontSize="11" Foreground="#B22"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <ComboBox x:Name="CmbViewPreset" Width="132" Height="24" ToolTip="View presets"
