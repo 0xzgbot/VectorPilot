@@ -93,6 +93,59 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void Validate_Click(object sender, RoutedEventArgs e) => DoValidate();
+
+    /// <summary>
+    /// Report open vectors / self-intersections and SELECT the offenders so they are
+    /// visible. VectorValidator had no app call-site, so these defects reached Calculate
+    /// silently and produced junk G-code.
+    /// </summary>
+    internal int DoValidate()
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return 0; }
+
+        var shapes = layer.Shapes.ToList();
+        if (shapes.Count == 0)
+        {
+            ValidateLabel.Text = "";
+            SetStatus("Nothing to validate — the layer is empty");
+            return 0;
+        }
+
+        var issues = VectorValidator.Validate(shapes);
+
+        if (issues.Count == 0)
+        {
+            ValidateLabel.Text = "✓ clean";
+            ValidateLabel.Foreground = System.Windows.Media.Brushes.SeaGreen;
+            SetStatus($"All {shapes.Count} shape(s) valid — no open vectors or self-intersections");
+            return 0;
+        }
+
+        // Highlight the offenders by selecting them: that is the existing visual
+        // affordance for "look at these".
+        Selection.Clear();
+        foreach (var idx in issues.Select(i => i.ShapeIndex).Distinct())
+            if (idx >= 0 && idx < shapes.Count)
+                Selection.Select(shapes[idx], additive: true);
+
+        int errors = issues.Count(i => i.Severity == VectorIssueSeverity.Error);
+        int warnings = issues.Count - errors;
+
+        ValidateLabel.Text = errors > 0
+            ? $"⚠ {errors} error(s), {warnings} warning(s)"
+            : $"⚠ {warnings} warning(s)";
+        ValidateLabel.Foreground = errors > 0
+            ? System.Windows.Media.Brushes.Firebrick
+            : System.Windows.Media.Brushes.DarkOrange;
+
+        SetStatus($"{issues.Count} issue(s): " + string.Join("; ", issues.Take(3).Select(i => i.Message)));
+        RedrawShapes();
+        UpdateEditChrome();
+        return issues.Count;
+    }
+
     private void Fillet_Click(object sender, RoutedEventArgs e) => DoFillet();
 
     private void Extend_Click(object sender, RoutedEventArgs e) => DoExtend();

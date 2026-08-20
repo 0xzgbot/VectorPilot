@@ -369,6 +369,28 @@ public partial class CutPanel : UserControl
         SetCalcNote($"Added \"{tp.Name}\" — {result.TotalCount} instances, original kept.");
     }
 
+    /// <summary>
+    /// Why an area strategy cannot run on this selection, or null if it can.
+    ///
+    /// Profile/Pocket/V-Carve are area operations: an OPEN outline has no inside, so
+    /// cutting one produces junk. VectorValidator existed but nothing called it, so this
+    /// Internal so tests exercise the same decision the UI makes.
+    /// </summary>
+    public static string? AreaStrategyBlocker(string strategyKey, string displayName, IReadOnlyList<VectorShape> shapes)
+    {
+        if (strategyKey is not ("profile" or "pocket" or "vcarve")) return null;
+        if (shapes.Count == 0) return null;
+
+        static bool IsOpen(VectorShape s)
+            => !s.Closed && s.Type != ShapeType.Circle && s.Type != ShapeType.Rectangle;
+
+        int open = shapes.Count(IsOpen);
+        if (open < shapes.Count) return null;   // at least one closed shape to cut
+
+        return $"{displayName} needs a closed outline — {open} selected shape(s) are open paths. " +
+               "Close them, or use Extend in Design to make the ends meet.";
+    }
+
     private void RecalculateToolpath(Toolpath tp)
     {
         // Commit the params form (expression resolution) before dispatch.
@@ -400,6 +422,18 @@ public partial class CutPanel : UserControl
             tp.GCode.Add($"({entry.DisplayName}: needs a 3D relief — bake one in the Model stage)");
             tp.IsDirty = true;
             SetCalcNote($"{entry.DisplayName} needs a relief. Build one in the Model stage, then Calculate.");
+            return;
+        }
+
+        // Profile and Pocket are area operations: an OPEN outline has no inside, so
+        // cutting one produces junk (a pocket "fills" a region that is not enclosed).
+        // VectorValidator existed but nothing called it, so this reached the machine.
+        if (AreaStrategyBlocker(entry.Key, entry.DisplayName, shapes) is { } blocker)
+        {
+            tp.GCode.Clear();
+            tp.GCode.Add($"({entry.DisplayName}: {blocker})");
+            tp.IsDirty = true;
+            SetCalcNote(blocker);
             return;
         }
 
