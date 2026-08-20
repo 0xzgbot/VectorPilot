@@ -51,7 +51,7 @@ Two workers may run iff their lock sets are **disjoint**. Tests that only **add*
 
 ## Wave 0 — Locks and honesty (orchestrator, no spawn)
 
-- [ ] **H-000** Orchestrator: add `hermes/{id}` to `.gitignore` is **wrong** — do not. Confirm `git status` clean on main before Wave 1. Point `AGENTS.md` at this file (one sentence). No feature work.
+- [x] **H-000** Orchestrator: add `hermes/{id}` to `.gitignore` is **wrong** — do not. Confirm `git status` clean on main before Wave 1. Point `AGENTS.md` at this file (one sentence). No feature work.
 
 ---
 
@@ -61,7 +61,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Ready (serial App)
 
-- [ ] **H-101** Beginner / Advanced + three job starters (Sign / Photo / 3D)  
+- [~] **H-101** `hermes/H-101` Beginner / Advanced + three job starters (Sign / Photo / 3D)  
   Locks: **APP-SHELL**, **CUT**  
   Parallel-OK: H-201, H-202 (engine-only)  
   OWN: `MainWindow.xaml(.cs)`, new `JobStarterOverlay.xaml`, `CutPanel` combo visibility  
@@ -98,7 +98,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Engine (can overlap Wave 1 App after H-101 is in flight **only** if new files)
 
-- [ ] **H-201** Lithophane heightfield (photo → thickness)  
+- [~] **H-201** `hermes/H-201` Lithophane heightfield (photo → thickness)  
   Locks: **ENGINE-PHOTO** (new files)  
   Parallel-OK: H-101–H-104, H-202, H-203  
   OWN: **new** `src/VectorPilot.Engine/Photo/LithophaneEngine.cs` + `tests/.../LithophaneEngineTests.cs`  
@@ -273,3 +273,5 @@ Pass: short list of residual risks only.
 ## Done log
 
 (orchestrator appends `H-xxx` + merge SHA)
+
+- `H-000` — e946298 (clean main, AGENTS.md points here, README units claim corrected + 11 pinning tests)
