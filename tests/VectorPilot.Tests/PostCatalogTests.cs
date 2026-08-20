@@ -21,10 +21,41 @@ public class ShippedPostCatalogTests
         => PostTemplateEngine.Emit(Moves, t).Lines;
 
     [Fact]
-    public void Catalog_Ships_Far_More_Than_Three_Posts()
+    public void Catalog_Reaches_Aspire_Scale()
     {
-        Assert.True(PostTemplate.Shipped.Count >= 20,
-            $"expected 20+ shipped posts, got {PostTemplate.Shipped.Count}");
+        // Aspire ships 53+ posts. The parity doc claimed the row while only 3 existed,
+        // then 20; this pins the real number so the claim cannot drift again.
+        Assert.True(PostTemplate.Shipped.Count >= 53,
+            $"expected 53+ shipped posts, got {PostTemplate.Shipped.Count}");
+    }
+
+    [Fact]
+    public void Industrial_Controllers_Are_Present()
+    {
+        foreach (var name in new[] { "Haas", "Fanuc", "SINUMERIK", "Heidenhain", "Okuma", "Centroid" })
+            Assert.Contains(PostTemplate.Shipped,
+                t => t.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Router_And_Laser_Controllers_Are_Present()
+    {
+        foreach (var name in new[] { "WinCNC", "Masso", "UCCNC", "ShopBot", "X-Carve", "LongMill", "Laser", "Plasma" })
+            Assert.Contains(PostTemplate.Shipped,
+                t => t.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void No_Post_Ends_On_A_Pause_Instead_Of_A_Program_End()
+    {
+        // M0 pauses and waits for an operator; a job posted that way hangs forever.
+        // The Duet post originally shipped with M0 and the retract/end invariant caught it.
+        foreach (var t in PostTemplate.Shipped)
+        {
+            var lines = Emit(t);
+            Assert.True(lines.Any(l => l.Contains("M2") || l.Contains("M30")),
+                $"{t.Name} never ends the program");
+        }
     }
 
     [Fact]

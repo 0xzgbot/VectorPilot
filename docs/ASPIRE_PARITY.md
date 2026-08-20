@@ -10,7 +10,7 @@ Generated 2026-08-10. Status key: ✅ parity, 🟡 partial, ❌ absent, ⛔ bloc
 |---|---|---|
 | 17 toolpath strategies | 20 in the strategy registry (Profile, Pocket, V-Carve, Drill, Drill Bank, Quick Engrave, Photo V-Carve, Sketch Carve, Rough 3D, Finish 3D, Texture, Drag Knife, Prism, Fluting, Chamfer, Bevel, Sweep, Moulding, Weave, Wrapped Fluting, Laser, Rotary Wrap) | ✅ superset |
 | 7 tool types (End Mill, V-Bit, Ball Nose, Drill, Diamond Drag, Laser, Thread Mill) | 10 in ToolType (adds RadiusedEndMill, Engraving, RadiusedEngraving) | ✅ superset |
-| 53+ post processors, 5 categories | **20 shipped templates** (GRBL/FluidNC/Marlin/LinuxCNC/Mach3/Haas/… mm+inch, rotary-Y2A) + template engine ([W\|M\|O\|F] grammar, arbitrary user templates); picker changes the exported `.tap` | 🟡 catalog 20/53 |
+| 53+ post processors, 5 categories | **54 shipped templates** in 4 groups: industrial (Haas/Fanuc/SINUMERIK/Heidenhain/Okuma/Centroid), routers (GRBL/FluidNC/Mach3-4/WinCNC/Masso/UCCNC/PlanetCNC/ShopBot/X-Carve/LongMill/Shapeoko/Onefinity/Avid), firmware (Marlin/Smoothieware/Duet/LinuxCNC), laser+plasma; each mm+inch, plus rotary-Y2A. Template engine ([W\|M\|O\|F] grammar) still accepts arbitrary user posts; picker changes the exported `.tap` | ✅ 54/53+ |
 | Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907) + **Corner Rounding gadget** (real tangent arcs); no Lua/HTML gadget host | 🟡 |
 | Cabinetry import (CSV PartListMapping, 5 transformation types) | CabinetryImport.cs (Mozaik/KCD/CabinetSense/CabinetPartsPro/Polyboard/SmartWOP) | 🟡 needs fixture validation |
 | 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport | 🟡 no camera animation |
@@ -53,9 +53,8 @@ R013/R014/R017/keep-out + V-Carve open-path gate + checklist (spindle/work-zero)
 
 ## Known honest gaps
 
-1. Post-processor catalog: **20 shipped** vs Aspire's 53+ (template engine supports
-   arbitrary posts — catalog population is data work). Selection now genuinely
-   changes the exported `.tap`.
+1. ~~Post-processor catalog~~ — CLOSED: 54 shipped vs Aspire's 53+, verified live in
+   the picker. Selection genuinely changes the exported `.tap`.
 2. Gadget host (Lua) — only the keyhole gadget engine exists.
 3. Cabinetry import lacks fixture-based validation.
 4. 3D preview lacks camera animation (static orbit).
