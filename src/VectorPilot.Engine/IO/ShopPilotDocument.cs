@@ -61,6 +61,23 @@ public sealed class PersistedToolpath
     public double SpindleSpeed { get; set; }
     public bool IsDirty { get; set; }
     public List<string> GCode { get; set; } = new();
+
+    /// <summary>
+    /// The registry key ("threadmill", "laser-picture", …). Saving only the legacy
+    /// <see cref="Strategy"/> enum name loses every strategy that shares an enum case or was
+    /// added after it, so a reloaded job silently became a different operation.
+    ///
+    /// Optional for backward compatibility: documents written before this field reload with
+    /// the key derived from Strategy.
+    /// </summary>
+    public string? StrategyKey { get; set; }
+
+    /// <summary>
+    /// The strategy's parameters. Without this a reloaded toolpath came back with DEFAULT
+    /// params — tab counts, depths and stepovers the user had set were silently discarded,
+    /// and the reloaded job cut differently from the one that was saved.
+    /// </summary>
+    public string? ParamsJson { get; set; }
 }
 
 /// <summary>Sheet DTO with the Mac's width/depth/height key naming.</summary>

@@ -17,7 +17,12 @@ public static class ToolpathPersistence
         FeedRate = t.FeedRate,
         SpindleSpeed = t.SpindleSpeed,
         IsDirty = t.IsDirty,
-        GCode = t.GCode.ToList()
+        GCode = t.GCode.ToList(),
+
+        // Both of these were dropped: a saved job reloaded as the wrong strategy with
+        // default params, which cut differently from what the user saved.
+        StrategyKey = t.StrategyKey,
+        ParamsJson = t.ParamsJson
     };
 
     public static Toolpath FromPersisted(PersistedToolpath p)
@@ -32,6 +37,12 @@ public static class ToolpathPersistence
         };
         if (Guid.TryParse(p.Id, out var id)) t.SetId(id);
         if (Enum.TryParse<ToolpathStrategy>(p.Strategy, ignoreCase: true, out var strategy)) t.Strategy = strategy;
+
+        // Restore the exact key and params. Older documents carry neither, so fall back to
+        // the enum-derived key and leave params at their defaults.
+        if (!string.IsNullOrWhiteSpace(p.StrategyKey)) t.StrategyKey = p.StrategyKey!;
+        if (!string.IsNullOrWhiteSpace(p.ParamsJson)) t.ParamsJson = p.ParamsJson!;
+
         t.GCode.AddRange(p.GCode);
         return t;
     }
