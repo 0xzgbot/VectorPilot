@@ -2,7 +2,7 @@
 
 Windows C#/.NET 8 + WPF port of the macOS ShopPilot CNC app, benchmarked against
 Vectric Aspire 12.5 (the reference feature surface). Status verified by the
-harness: **355/355 tests green** (xUnit), golden G-code byte-parity, engine
+harness: **1167/1167 tests green** (xUnit), golden G-code byte-parity, engine
 smoke-test stub guard.
 
 ## Importers
@@ -51,7 +51,7 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 |---|---|
 | Heightfield core + rasterizer | ✅ |
 | STL/OBJ/3MF → heightfield | ✅ |
-| Component tree + combine modes | ⚠ engine + panel built, NOT hosted in any stage yet |
+| Component tree + combine modes | ✅ engine + panel, hosted in the Model stage |
 | Sculpt engine | ✅ |
 | 2-rail sweep / extrude | ✅ |
 | Weave | ✅ interlaced relief surface (WeaveReliefGenerator: plain/twill/satin) |
@@ -74,8 +74,9 @@ zones, tiling, nesting, toolpath templates, sort/merge, array copy, rotary wrap.
 
 ## Status
 
-- **671/671 tests green** (xUnit). Local gate is `./verify.sh` (Release + zero-warning);
-  GitHub CI is weaker (Debug, no warning gate) — trust `verify.sh`.
+- **1167/1167 tests green** (xUnit). Local gate is `./verify.sh` (Release +
+  zero-warning); GitHub CI enforces the same bar (Release, `-warnaserror`, full suite,
+  self-contained publish smoke).
   Release workflow (self-contained publish → tests → Inno Setup installer)
   green — the `vectorpilot-setup` exe is built per tag.
 

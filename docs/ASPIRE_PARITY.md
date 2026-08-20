@@ -65,15 +65,30 @@ R013/R014/R017/keep-out + V-Carve open-path gate + checklist (spindle/work-zero)
    button to Stop). Shaded/AA parity with OSG is still not claimed.
 5. SketchUp/V3M/3DM importers — vendor-blocked stubs.
 6. Real-hardware machine control unverified (simulator is the max coverage here).
-7. Thread milling is not a registered strategy (no `threadmill` key in
-   `StrategyRegistry`).
-8. Pocket clearing is contour-offset loops + clipped raster, not Aspire's full
-   offset pocket. Curved walls are followed; the interior remainder is still
-   rastered.
-9. V-carve depth comes from nearest-opposing-edge distance, not a true medial-axis
-   skeleton. Width drives depth correctly, but it is not a Vectric-equivalent
-   V-carve.
+7. ~~Thread milling is not a registered strategy~~ — CLOSED: `threadmill` key
+   registered and selectable; helical interpolation with per-pass radial stepover.
+8. Pocket clearing is contour-offset loops + a clipped raster, not Aspire's full
+   offset pocket. The raster no longer overhangs a curved wall (it clips against the
+   inset boundary in both axes, not just X), and no cut move leaves a circular pocket.
+   But it is still a hybrid: the raster re-covers ground the loops already cleared
+   rather than filling only the leftover region. Suppressing it by predicting
+   "the loops got everything" was tried and reverted — it left a small rectangle's
+   floor uncut, and a redundant pass is safer than a missed one.
+9. V-carve now cuts a medial axis: a discrete clearance field on a grid, ridge cells
+   chained into polylines, depth from local clearance. A dumbbell's bulbs cut deeper
+   than its neck and the interior is genuinely visited (outline-only carving never
+   reached it). Still NOT Vectric-equivalent: the skeleton is a grid approximation
+   rather than an exact medial axis, and there is no separate flat-area clearing pass
+   for regions wider than the bit can reach in one plunge.
 10. A7 "real UI automation" is UIAutomation via PowerShell + pyautogui
     (`tools/ui_verify.py`), **not** FlaUI as the card specified. It does drive the
     live app and read real control state, but the card's stated dependency was never
     added.
+11. Engines that shipped with no app call-site are now reachable: nesting (Design),
+    tiling (Output, one program per tile), array copy (Cut), fillet/extend (Design),
+    the vector validator (Design + a Cut guard that refuses area strategies on an
+    all-open selection), toolpath templates (Cut), and three previously unselectable
+    strategies — Rotary Wrap, Wrapped Fluting, Drill Bank. 27 strategies in the combo.
+12. Still genuinely missing vs Aspire: HTML gadget dialogs (only a Lua script editor),
+    shaded/anti-aliased OSG-quality preview, and a true offset-pocket / exact
+    medial-axis pair as noted in 8 and 9.
