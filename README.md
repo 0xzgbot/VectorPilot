@@ -118,6 +118,9 @@ A test count is not a machine you can cut with. See `docs/vectorpilot-review.htm
 - **E-stop / safety:** the transport handles `!` (hold), `~` (resume), and
   soft-reset; wire a physical E-stop to your controller's input per its
   manual — VectorPilot cannot override a hardware stop.
-- **Units:** the serial layer streams in inches (G20); the engine layer works
-  in mm — the Machine Config conversion handles the mapping.
+- **Units:** the engine works in mm. The selected machine profile decides the
+  posted modal — `PostSelector` maps `MachineProfile.Units` to `GCodeUnits`, so an
+  mm profile streams **G21** and an inch profile streams **G20**. The old claim
+  that "the serial layer streams in inches" was wrong; pinned by
+  `MachineUnitsMappingTests`.
 - **File association:** the installer registers `.shoppilot` packages.

@@ -37,4 +37,6 @@ Port of macOS ShopPilot to Windows (C#/.NET 8 + WPF). Mac source of truth, read-
 - V-carve: FIXED — depth now derives from local channel width (VCarveGeometry); the Y-position golden was regenerated.
 - Weave: FIXED — WeaveReliefGenerator emits a real interlaced heightfield; the estimator remains for cost/time only.
 - `MASTER_KANBAN.md` and `GAMEPLAN-ASPIRE-PARITY.md` are stale. `PARITY_QUEUE.md`
-  is current.
+  is the old single-agent queue (complete). **Hermes multi-agent work uses
+  [`HERMES_KANBAN.md`](./HERMES_KANBAN.md)** — orchestrator spawns workers on
+  disjoint file locks; workers never commit `main`.
