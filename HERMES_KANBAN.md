@@ -70,7 +70,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Ready (serial App)
 
-- [~] **H-101** `hermes/H-101` (critic running) Beginner / Advanced + three job starters (Sign / Photo / 3D)  
+- [x] **H-101** Beginner / Advanced + three job starters (Sign / Photo / 3D)  
   Locks: **APP-SHELL**, **CUT**  
   Parallel-OK: H-201, H-202 (engine-only)  
   OWN: `MainWindow.xaml(.cs)`, new `JobStarterOverlay.xaml`, `CutPanel` combo visibility  
@@ -78,7 +78,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~JobStarter` — Advanced shows full registry; Beginner shows ≤8 operations; Photo/3D starters exist as clickable UI  
   AC: User can start without seeing Thread Mill.
 
-- [ ] **H-102** Cuts/Layers list (LightBurn-style operations list)  
+- [ ] **H-102** READY (H-101 merged) Cuts/Layers list (LightBurn-style operations list)  
   Locks: **CUT**  
   Depends: H-101 merged  
   Parallel-OK: H-201, H-202, H-203  
@@ -285,3 +285,4 @@ Pass: short list of residual risks only.
 
 - `H-000` — e946298 (clean main, AGENTS.md points here, README units claim corrected + 11 pinning tests)
 - `H-201` — a7c3426 (LithophaneEngine + 11 tests; dark→thicker, Invert flag; new files only, no csproj change)
+- `H-101` — 43e95c9 (Beginner/Advanced rail combo + Sign/Photo/3D starters; live combo 8 items, no Thread Mill; 26 tests)
