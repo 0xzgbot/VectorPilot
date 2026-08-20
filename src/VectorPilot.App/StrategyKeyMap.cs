@@ -43,6 +43,7 @@ public static class StrategyKeyMap
         ["rotary-wrap"] = ToolpathStrategy.RotaryWrap,
         ["wrapped-fluting"] = ToolpathStrategy.WrappedFluting,
         ["drill-bank"] = ToolpathStrategy.DrillBank,
+        ["laser-picture"] = ToolpathStrategy.LaserPicture,
         ["rough3d"] = ToolpathStrategy.Rough3D,
         ["finish3d"] = ToolpathStrategy.Finish3D,
         ["photo-vcarve"] = ToolpathStrategy.PhotoVCarve,
@@ -72,6 +73,7 @@ public static class StrategyKeyMap
         // and "drillbank", which are not registry keys, so the reverse map would break.
         ToolpathStrategy.WrappedFluting => "wrapped-fluting",
         ToolpathStrategy.DrillBank => "drill-bank",
+        ToolpathStrategy.LaserPicture => "laser-picture",
         _ => strategy.ToString().ToLowerInvariant()
     };
 

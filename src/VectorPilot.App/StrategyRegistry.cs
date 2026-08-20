@@ -126,6 +126,15 @@ public sealed class StrategyRegistry
         Add<LaserCutParams>("laser-cut", "Laser Cut", false, (s, _, p) => LaserCutEngine.Compute(s, p));
         Add<LaserFillParams>("laser-fill", "Laser Fill", false, (s, _, p) => LaserFillEngine.Compute(s, p));
 
+        // Laser Picture takes a HEIGHTFIELD (greyscale image) rather than vectors, which is
+        // why it was left out when laser-cut/laser-fill were registered. usesHeightfield:true
+        // routes it through the same honest Empty() path as the 3D strategies, so a missing
+        // relief reports a reason instead of emitting a runnable-looking "%" program.
+        Add<LaserPictureParams>("laser-picture", "Laser Picture", true,
+            (_, hf, p) => hf is null
+                ? Empty("Laser Picture needs an image or 3D relief — load one in the Model stage first.")
+                : LaserPictureEngine.Compute(hf, p));
+
         // E2: the last two unported strategies.
         Add<MouldingToolpathParams>("moulding", "Moulding", false, (s, _, p) =>
         {

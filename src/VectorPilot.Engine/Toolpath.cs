@@ -21,7 +21,8 @@ public enum ToolpathStrategy
     ThreadMill,
     Rounding,
     WrappedFluting,
-    DrillBank
+    DrillBank,
+    LaserPicture
 }
 
 /// <summary>A calculated toolpath (strategy + parameters + result g-code).</summary>
