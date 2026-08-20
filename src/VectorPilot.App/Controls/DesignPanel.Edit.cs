@@ -93,6 +93,38 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void Nest_Click(object sender, RoutedEventArgs e) => DoNest();
+
+    /// <summary>
+    /// Pack the selected closed shapes onto the sheet, undoably. NestingEngine shipped
+    /// with ZERO app call-sites — it computed placements nobody ever applied.
+    /// </summary>
+    internal void DoNest(double spacingMm = 2.0)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return; }
+
+        if (Selection.IsEmpty) { SetStatus("Select closed shapes to nest"); return; }
+
+        var sheet = AppState.CurrentJob!.ActiveSheet;
+        var before = UndoStack.Snapshot(layer);
+
+        var outcome = NestApply.Apply(
+            Selection.Selected.ToList(), sheet.Width, sheet.Height, spacingMm);
+
+        if (!outcome.Ok) { SetStatus(outcome.Error!); return; }
+
+        Undo.Push("Nest", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        SetStatus(outcome.Unplaced > 0
+            ? $"Nested {outcome.Placed} shape(s), {outcome.Unplaced} did not fit — {outcome.Utilization:P0} sheet use"
+            : $"Nested {outcome.Placed} shape(s) — {outcome.Utilization:P0} sheet use");
+
+        RedrawShapes();
+        UpdateEditChrome();
+    }
+
     /// <summary>Run a sandboxed Lua gadget and add whatever it draws to this layer.</summary>
     private void Gadget_Click(object sender, RoutedEventArgs e)
     {

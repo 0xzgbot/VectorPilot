@@ -7,6 +7,8 @@ public sealed class NestPart
 {
     public required VectorShape Shape { get; init; }
     public VectorPoint Position { get; init; }
+    /// <summary>Placement rotation in DEGREES (0 or 90). Was radians, which read as
+    /// 1.57 degrees to every consumer and so never rotated anything.</summary>
     public double Rotation { get; init; }
     public int Index { get; init; }
 
@@ -59,13 +61,20 @@ public sealed class NestResult
 /// <summary>Rectangular shelf-packing nesting (ported from NestingEngine.swift).</summary>
 public static class NestingEngine
 {
-    public static NestResult Nest(IReadOnlyList<VectorShape> parts, double sheetWidth, double sheetHeight, double margin = 5.0)
+    /// <param name="margin">Border kept clear at the sheet edge (mm).</param>
+    /// <param name="spacing">
+    /// Gap kept between neighbouring parts (mm). Previously parts were packed flush
+    /// against each other — a 0mm kerf gap, which is uncuttable: the tool needs room for
+    /// its own diameter between two outlines.
+    /// </param>
+    public static NestResult Nest(IReadOnlyList<VectorShape> parts, double sheetWidth, double sheetHeight, double margin = 5.0, double spacing = 0.0)
     {
         if (parts.Count == 0)
         {
             return new NestResult { SheetArea = sheetWidth * sheetHeight, Utilization = 0 };
         }
 
+        double gap = Math.Max(0, spacing);
         double usableWidth = sheetWidth - 2 * margin;
         double usableHeight = sheetHeight - 2 * margin;
 
@@ -85,7 +94,9 @@ public static class NestingEngine
 
         foreach (var item in indexed)
         {
-            double pw = item.Bb.Width, ph = item.Bb.Height;
+            // Reserve the inter-part gap as part of the footprint, so the next part is
+            // pushed clear of this one.
+            double pw = item.Bb.Width + gap, ph = item.Bb.Height + gap;
             bool placedFlag = false;
 
             for (int si = 0; si < freeSpaces.Count; si++)
@@ -117,7 +128,7 @@ public static class NestingEngine
                 if (ph <= sw && pw <= sh)
                 {
                     var pos = new VectorPoint(space.MinX, space.MinY);
-                    placed.Add(new NestPart { Shape = item.Shape, Position = pos, Rotation = Math.PI / 2, Index = item.Index });
+                    placed.Add(new NestPart { Shape = item.Shape, Position = pos, Rotation = 90, Index = item.Index });
                     totalPlacedArea += item.Area;
                     placedFlag = true;
 

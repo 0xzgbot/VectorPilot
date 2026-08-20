@@ -72,6 +72,8 @@ public class NestingEngineTests
         var tall = new List<VectorShape> { VectorShape.Rectangle(0, 0, 5, 30) };
         var r = NestingEngine.Nest(tall, sheetWidth: 40, sheetHeight: 20, margin: 0);
         Assert.Single(r.Parts);
-        Assert.Equal(Math.PI / 2, r.Parts[0].Rotation, 6);
+        // Rotation is DEGREES. It used to be stored as Math.PI/2 radians, which every
+        // consumer read as 1.57 degrees — so a "rotated" placement was never rotated.
+        Assert.Equal(90, r.Parts[0].Rotation, 6);
     }
 }
