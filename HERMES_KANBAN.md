@@ -70,7 +70,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Ready (serial App)
 
-- [ ] **H-101** Beginner / Advanced + three job starters (Sign / Photo / 3D)  
+- [~] **H-101** `hermes/H-101` (critic running) Beginner / Advanced + three job starters (Sign / Photo / 3D)  
   Locks: **APP-SHELL**, **CUT**  
   Parallel-OK: H-201, H-202 (engine-only)  
   OWN: `MainWindow.xaml(.cs)`, new `JobStarterOverlay.xaml`, `CutPanel` combo visibility  
@@ -107,7 +107,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ### Engine (can overlap Wave 1 App after H-101 is in flight **only** if new files)
 
-- [ ] **H-201** Lithophane heightfield (photo → thickness)  
+- [x] **H-201** Lithophane heightfield (photo → thickness)  
   Locks: **ENGINE-PHOTO** (new files)  
   Parallel-OK: H-101–H-104, H-202, H-203  
   OWN: **new** `src/VectorPilot.Engine/Photo/LithophaneEngine.cs` + `tests/.../LithophaneEngineTests.cs`  
@@ -115,7 +115,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~Lithophane`  
   AC: Light pixels → thicker (or documented invert); closed preview heightfield; no G-code required yet.
 
-- [ ] **H-202** Scallop-height 3D finish param  
+- [ ] **H-202** UNBLOCKED (H-201 needed no csproj change — Engine globs `**/*.cs`) Scallop-height 3D finish param  
   Locks: **ENGINE-3D**  
   Parallel-OK: H-201, H-101–H-103 (**not** H-204 if same finish files)  
   OWN: `HeightfieldFinishEngine` / params — stepover from scallop + tool diameter  
@@ -284,3 +284,4 @@ Pass: short list of residual risks only.
 (orchestrator appends `H-xxx` + merge SHA)
 
 - `H-000` — e946298 (clean main, AGENTS.md points here, README units claim corrected + 11 pinning tests)
+- `H-201` — a7c3426 (LithophaneEngine + 11 tests; dark→thicker, Invert flag; new files only, no csproj change)
