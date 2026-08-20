@@ -7,9 +7,17 @@
             <ColumnDefinition Width="14"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <!-- Everything scrollable… -->
+            <RowDefinition Height="*"/>
+            <!-- …and the safety chrome PINNED below it, so E-STOP can never be scrolled
+                 out of view. It used to live inside the ScrollViewer, which meant a short
+                 window (or 150% DPI scaling) could push it off-screen while a job ran. -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <!-- LEFT: connection + DRO + jog -->
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Column="0" Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <TextBlock Text="Machine Control" FontSize="20" FontWeight="Bold"/>
 
@@ -125,28 +133,35 @@
                             <Button x:Name="BtnResume" Content="▶ Resume" Click="StreamResume_Click" Padding="8,6" Margin="4,0"/>
                             <Button x:Name="BtnStop" Content="⏹ Stop" Click="StreamStop_Click" Padding="8,6" Margin="4,0,0,0" Background="#B71C1C" Foreground="White" BorderThickness="0"/>
                         </UniformGrid>
-                        <!-- Safety chrome: ALWAYS enabled, never gated on connection or stream state. -->
-                        <UniformGrid Columns="2" Margin="0,10,0,0">
-                            <Button x:Name="BtnEStop" Content="■ E-STOP" Click="EStop_Click" IsEnabled="True"
-                                    FontWeight="Bold" FontSize="14" Padding="8,10" Margin="0,0,4,0"
-                                    Background="#C62828" Foreground="White" BorderThickness="0"
-                                    ToolTip="Feed hold + cancel stream. Always available."/>
-                            <Button x:Name="BtnReset" Content="⟲ Reset" Click="Reset_Click" IsEnabled="True"
-                                    FontWeight="Bold" Padding="8,10" Margin="4,0,0,0"
-                                    Background="#455A64" Foreground="White" BorderThickness="0"
-                                    ToolTip="GRBL soft reset (Ctrl-X). Always available."/>
-                        </UniformGrid>
                         <CheckBox x:Name="ConsoleToggle" Content="Raw TX/RX console" IsChecked="True"
                                   Margin="0,10,0,0"/>
-                        <TextBlock Text="⚠ Software is not a substitute for a hardware e-stop. E-STOP and Reset are always available in this panel."
-                                   FontSize="10" Foreground="#B45400" Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- RIGHT: console -->
-        <Border Grid.Column="2" Background="#0E0E14" CornerRadius="6" Padding="10">
+        <!-- PINNED safety chrome: outside the ScrollViewer, so E-STOP and Reset are on
+             screen at every window size and DPI scale. ALWAYS enabled, never gated on
+             connection or stream state. -->
+        <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,10,0,0">
+            <UniformGrid Columns="2">
+                <Button x:Name="BtnEStop" Content="■ E-STOP" Click="EStop_Click" IsEnabled="True"
+                        FontWeight="Bold" FontSize="14" Padding="8,10" Margin="0,0,4,0"
+                        MinHeight="44"
+                        Background="#C62828" Foreground="White" BorderThickness="0"
+                        ToolTip="Feed hold + cancel stream. Always available."/>
+                <Button x:Name="BtnReset" Content="⟲ Reset" Click="Reset_Click" IsEnabled="True"
+                        FontWeight="Bold" Padding="8,10" Margin="4,0,0,0"
+                        MinHeight="44"
+                        Background="#455A64" Foreground="White" BorderThickness="0"
+                        ToolTip="GRBL soft reset (Ctrl-X). Always available."/>
+            </UniformGrid>
+            <TextBlock Text="⚠ Software is not a substitute for a hardware e-stop. E-STOP and Reset are always available in this panel."
+                       FontSize="10" Foreground="#B45400" Margin="0,8,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- RIGHT: console — spans both rows so it keeps the full height. -->
+        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Background="#0E0E14" CornerRadius="6" Padding="10">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Console — raw TX/RX" Foreground="#9AC8FF" FontSize="11" Margin="0,0,0,6"/>
                 <ScrollViewer x:Name="ConsoleScroller" VerticalScrollBarVisibility="Auto">
