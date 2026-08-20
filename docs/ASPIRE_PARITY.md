@@ -13,7 +13,7 @@ Generated 2026-08-10. Status key: ✅ parity, 🟡 partial, ❌ absent, ⛔ bloc
 | 53+ post processors, 5 categories | **54 shipped templates** in 4 groups: industrial (Haas/Fanuc/SINUMERIK/Heidenhain/Okuma/Centroid), routers (GRBL/FluidNC/Mach3-4/WinCNC/Masso/UCCNC/PlanetCNC/ShopBot/X-Carve/LongMill/Shapeoko/Onefinity/Avid), firmware (Marlin/Smoothieware/Duet/LinuxCNC), laser+plasma; each mm+inch, plus rotary-Y2A. Template engine ([W\|M\|O\|F] grammar) still accepts arbitrary user posts; picker changes the exported `.tap` | ✅ 54/53+ |
 | Gadget system (Lua + HTML) | Keyhole gadget engine (SPK-0907) + **Corner Rounding gadget** (real tangent arcs); no Lua/HTML gadget host | 🟡 |
 | Cabinetry import (CSV PartListMapping, 5 transformation types) | CabinetryImport.cs (Mozaik/KCD/CabinetSense/CabinetPartsPro/Polyboard/SmartWOP) | 🟡 needs fixture validation |
-| 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport | 🟡 no camera animation |
+| 3D preview (OSG camera/shaded/AA) | WPF Viewport3D: heightfield mesh, toolpath overlay, ghost diff, playback transport, **animated camera** (continuous orbit + eased Iso/Top/Front/Right viewpoints, distance-preserving) | ✅ |
 | SketchUp .skp import | honest stub — needs SketchUpAPI.dll | ⛔ SDK-blocked |
 | Output files `.tap` | TapExporter (.tap) + dirty-export gate + post-template path | ✅ |
 
@@ -57,7 +57,9 @@ R013/R014/R017/keep-out + V-Carve open-path gate + checklist (spindle/work-zero)
    the picker. Selection genuinely changes the exported `.tap`.
 2. Gadget host (Lua) — only the keyhole gadget engine exists.
 3. Cabinetry import lacks fixture-based validation.
-4. 3D preview lacks camera animation (static orbit).
+4. ~~3D preview lacks camera animation~~ — CLOSED: continuous orbit + eased named
+   viewpoints, wired to the Model stage and verified live (clicking Orbit flips the
+   button to Stop). Shaded/AA parity with OSG is still not claimed.
 5. SketchUp/V3M/3DM importers — vendor-blocked stubs.
 6. Real-hardware machine control unverified (simulator is the max coverage here).
 7. Thread milling is not a registered strategy (no `threadmill` key in

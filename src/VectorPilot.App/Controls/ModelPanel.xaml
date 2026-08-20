@@ -29,6 +29,22 @@
                         Click="Bake_Click" ToolTip="Send the composite to the Toolpaths stage"/>
                 <TextBlock x:Name="StatusLabel" Foreground="#555" VerticalAlignment="Center" Margin="14,0,0,0"/>
             </StackPanel>
+
+            <!-- Animated camera (Aspire OSG camera row): the preview previously had a
+                 manual nudge-rotate only. -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <TextBlock Text="View:" VerticalAlignment="Center" Foreground="#555"/>
+                <Button x:Name="BtnViewIso" Content="Iso" Width="46" Height="24" Margin="6,0,0,0"
+                        Click="ViewIso_Click" ToolTip="Ease the camera to an isometric view"/>
+                <Button x:Name="BtnViewTop" Content="Top" Width="46" Height="24" Margin="4,0,0,0"
+                        Click="ViewTop_Click" ToolTip="Ease the camera to look straight down"/>
+                <Button x:Name="BtnViewFront" Content="Front" Width="52" Height="24" Margin="4,0,0,0"
+                        Click="ViewFront_Click"/>
+                <Button x:Name="BtnViewRight" Content="Right" Width="52" Height="24" Margin="4,0,0,0"
+                        Click="ViewRight_Click"/>
+                <Button x:Name="BtnOrbit" Content="▶ Orbit" Width="76" Height="24" Margin="10,0,0,0"
+                        Click="Orbit_Click" ToolTip="Animate a continuous camera orbit"/>
+            </StackPanel>
         </StackPanel>
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" Margin="6,0,6,6">

@@ -178,6 +178,113 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         cam.Position = (Point3D)(rot.Transform((Vector3D)cam.Position));
     }
 
+    // ---- animated camera (Aspire OSG camera row) ----
+    //
+    // The preview only ever had this manual Rotate(): a static orbit the user nudged by
+    // hand. Aspire animates the camera, which is how you actually inspect a 3D relief.
+
+    private System.Windows.Threading.DispatcherTimer? _orbitTimer;
+
+    /// <summary>Degrees per second while the camera is orbiting.</summary>
+    public double OrbitSpeedDegreesPerSecond { get; set; } = 24.0;
+
+    /// <summary>True while the camera is animating.</summary>
+    public bool IsOrbiting => _orbitTimer?.IsEnabled == true;
+
+    /// <summary>Start a continuous camera orbit around the model's Z axis.</summary>
+    public void StartOrbit()
+    {
+        if (_orbitTimer is null)
+        {
+            _orbitTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(33)   // ~30fps
+            };
+            _orbitTimer.Tick += (_, _) =>
+                Rotate(OrbitSpeedDegreesPerSecond * _orbitTimer!.Interval.TotalSeconds);
+        }
+        _orbitTimer.Start();
+    }
+
+    /// <summary>Stop the orbit, leaving the camera where it is.</summary>
+    public void StopOrbit() => _orbitTimer?.Stop();
+
+    /// <summary>Toggle the orbit; returns the new state.</summary>
+    public bool ToggleOrbit()
+    {
+        if (IsOrbiting) StopOrbit(); else StartOrbit();
+        return IsOrbiting;
+    }
+
+    /// <summary>
+    /// Ease the camera to a named viewpoint over <paramref name="milliseconds"/>.
+    /// Uses a smooth-step so the move decelerates instead of snapping.
+    /// </summary>
+    public void AnimateToView(CameraViewpoint view, int milliseconds = 450)
+    {
+        StopOrbit();
+
+        var cam = Camera;
+        var (target, look) = ViewpointVectors(view, cam);
+
+        var startPos = cam.Position;
+        var startLook = cam.LookDirection;
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var timer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+
+        timer.Tick += (_, _) =>
+        {
+            double t = Math.Clamp(sw.Elapsed.TotalMilliseconds / Math.Max(1, milliseconds), 0, 1);
+            double e = t * t * (3 - 2 * t);   // smooth-step
+
+            cam.Position = new Point3D(
+                startPos.X + (target.X - startPos.X) * e,
+                startPos.Y + (target.Y - startPos.Y) * e,
+                startPos.Z + (target.Z - startPos.Z) * e);
+
+            cam.LookDirection = new Vector3D(
+                startLook.X + (look.X - startLook.X) * e,
+                startLook.Y + (look.Y - startLook.Y) * e,
+                startLook.Z + (look.Z - startLook.Z) * e);
+
+            if (t >= 1) timer.Stop();
+        };
+        timer.Start();
+    }
+
+    /// <summary>
+    /// Camera position + look direction for a named viewpoint. Public so it can be
+    /// verified without a WPF dispatcher pumping animation ticks.
+    /// </summary>
+    public static (Point3D Position, Vector3D Look) ViewpointVectors(
+        CameraViewpoint view, PerspectiveCamera cam)
+    {
+        // Preserve the current orbit distance so a view change does not also zoom.
+        double d = Math.Max(1.0, Math.Sqrt(
+            cam.Position.X * cam.Position.X +
+            cam.Position.Y * cam.Position.Y +
+            cam.Position.Z * cam.Position.Z));
+
+        // 1/sqrt(3) exactly — the rounded 0.577 literal drifts the orbit distance
+        // (0.09mm over 150mm), which shows up as a view change quietly zooming.
+        double iso = 1.0 / Math.Sqrt(3.0);
+
+        return view switch
+        {
+            CameraViewpoint.Top => (new Point3D(0, 0, d), new Vector3D(0, 0, -1)),
+            CameraViewpoint.Front => (new Point3D(0, -d, 0), new Vector3D(0, 1, 0)),
+            CameraViewpoint.Right => (new Point3D(d, 0, 0), new Vector3D(-1, 0, 0)),
+            CameraViewpoint.Isometric => (
+                new Point3D(d * iso, -d * iso, d * iso),
+                new Vector3D(-iso, iso, -iso)),
+            _ => (cam.Position, cam.LookDirection)
+        };
+    }
+
     // ---- Toolpath simulation playback ----
 
     private SimulationPlayback? _playback;

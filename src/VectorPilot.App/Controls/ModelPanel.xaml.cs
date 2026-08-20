@@ -109,6 +109,23 @@ public partial class ModelPanel : UserControl
             _ => fallback
         };
 
+    // ---- animated camera handlers (Aspire OSG camera row) ----
+
+    private void ViewIso_Click(object sender, RoutedEventArgs e)
+        => Preview.AnimateToView(CameraViewpoint.Isometric);
+
+    private void ViewTop_Click(object sender, RoutedEventArgs e)
+        => Preview.AnimateToView(CameraViewpoint.Top);
+
+    private void ViewFront_Click(object sender, RoutedEventArgs e)
+        => Preview.AnimateToView(CameraViewpoint.Front);
+
+    private void ViewRight_Click(object sender, RoutedEventArgs e)
+        => Preview.AnimateToView(CameraViewpoint.Right);
+
+    private void Orbit_Click(object sender, RoutedEventArgs e)
+        => BtnOrbit.Content = Preview.ToggleOrbit() ? "■ Stop" : "▶ Orbit";
+
     /// <summary>Wire the weave generator to the UI (it shipped engine-only).</summary>
     private void AddWeave_Click(object sender, RoutedEventArgs e)
     {
