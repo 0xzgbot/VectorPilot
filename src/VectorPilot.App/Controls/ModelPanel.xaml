@@ -28,6 +28,15 @@
                 <Button x:Name="BtnBake" Content="Bake to job" Height="26" Padding="10,0" Margin="6,0,0,0"
                         Click="Bake_Click" ToolTip="Send the composite to the Toolpaths stage"/>
                 <TextBlock x:Name="StatusLabel" Foreground="#555" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                <TextBlock Text="Offset mm:" VerticalAlignment="Center" Margin="14,0,0,0" Foreground="#555"/>
+                <TextBox x:Name="TxtModelOffset" Width="44" Height="24" Margin="4,0,0,0" Text="1.0"
+                         ToolTip="Raise (+) or lower (−) the whole relief by this many mm"/>
+                <Button x:Name="BtnModelOffset" Content="Apply offset" Width="86" Height="24" Margin="4,0,0,0"
+                        Click="ModelOffset_Click"
+                        ToolTip="Inflate or deflate the composite relief (undoable)"/>
+                <Button x:Name="BtnModelOffsetUndo" Content="Undo offset" Width="80" Height="24" Margin="4,0,0,0"
+                        Click="ModelOffsetUndo_Click" IsEnabled="False"
+                        ToolTip="Restore the relief to before the last offset"/>
             </StackPanel>
 
             <!-- Animated camera (Aspire OSG camera row): the preview previously had a

@@ -109,6 +109,72 @@ public partial class ModelPanel : UserControl
             _ => fallback
         };
 
+    // ---- model offset (ModelOffsetEngine had zero app call-sites) ----
+
+    /// <summary>The relief as it was before the last offset, for one-step undo.</summary>
+    private HeightfieldData? _preOffsetHeightfield;
+
+    private void ModelOffset_Click(object sender, RoutedEventArgs e) => DoModelOffset();
+
+    /// <summary>
+    /// Inflate or deflate the composite relief. ModelOffsetEngine existed with no app
+    /// call-site, so a user could never thicken a model before roughing.
+    /// </summary>
+    internal bool DoModelOffset(double? offsetOverride = null)
+    {
+        var hf = AppState.Heightfield ?? AppState.ModelHeightfield;
+        if (hf is null)
+        {
+            StatusLabel.Text = ("No relief loaded — import a model or bitmap first");
+            return false;
+        }
+
+        double mm = offsetOverride ?? (double.TryParse(TxtModelOffset.Text, out var v) ? v : 0);
+        if (Math.Abs(mm) < 1e-9)
+        {
+            StatusLabel.Text = ("Offset of 0mm changes nothing");
+            return false;
+        }
+
+        var result = ModelOffsetEngine.Offset(hf, new ModelOffsetEngine.OffsetParams { OffsetMm = mm });
+        if (result is null)
+        {
+            StatusLabel.Text = ("Offset produced no change");
+            return false;
+        }
+
+        _preOffsetHeightfield = hf;
+        AppState.Heightfield = result.Heightfield;
+        AppState.ModelHeightfield = result.Heightfield;
+        BtnModelOffsetUndo.IsEnabled = true;
+
+        StatusLabel.Text = ($"Offset {mm:+0.##;-0.##}mm — {result.ChangedCellCount} cells, " +
+                  $"max height now {result.MaxHeightAfter:0.##}mm");
+        Refresh();
+        return true;
+    }
+
+    private void ModelOffsetUndo_Click(object sender, RoutedEventArgs e) => UndoModelOffset();
+
+    /// <summary>Restore the relief captured before the last offset.</summary>
+    internal bool UndoModelOffset()
+    {
+        if (_preOffsetHeightfield is null)
+        {
+            StatusLabel.Text = ("Nothing to undo");
+            return false;
+        }
+
+        AppState.Heightfield = _preOffsetHeightfield;
+        AppState.ModelHeightfield = _preOffsetHeightfield;
+        _preOffsetHeightfield = null;
+        BtnModelOffsetUndo.IsEnabled = false;
+
+        StatusLabel.Text = ("Offset undone");
+        Refresh();
+        return true;
+    }
+
     // ---- animated camera handlers (Aspire OSG camera row) ----
 
     private void ViewIso_Click(object sender, RoutedEventArgs e)
