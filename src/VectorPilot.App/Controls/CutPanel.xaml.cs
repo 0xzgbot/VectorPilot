@@ -568,6 +568,45 @@ public partial class CutPanel : UserControl
         => JobGate.AreaStrategyBlocker(strategyKey, displayName, shapes);
 
     /// <summary>
+    /// Merge the Tabs box into the toolpath's ParamsJson, so holding tabs reach the SAME
+    /// program the Machine stage streams.
+    ///
+    /// ProfileParams.TabCount and the engine's tab logic both already worked; the gap was
+    /// the UI. tabCount defaulted to 0 with no control, so a user could not ask for tabs at
+    /// all and every profiled part came loose on the last pass.
+    /// </summary>
+    internal void ApplyTabCount(Toolpath tp)
+    {
+        if (TxtTabCount is null) return;
+        if (!StrategyKeyMap.IsProfileLike(tp.StrategyKey)) return;
+        if (!int.TryParse(TxtTabCount.Text, out int tabs) || tabs < 0) return;
+
+        tp.ParamsJson = MergeParam(tp.ParamsJson, "tabCount", tabs);
+    }
+
+    /// <summary>Set one numeric key in a params JSON object, preserving the rest.</summary>
+    public static string MergeParam(string paramsJson, string key, double value)
+    {
+        Dictionary<string, System.Text.Json.JsonElement> map;
+        try
+        {
+            map = System.Text.Json.JsonSerializer
+                      .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(paramsJson)
+                  ?? new Dictionary<string, System.Text.Json.JsonElement>();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            map = new Dictionary<string, System.Text.Json.JsonElement>();
+        }
+
+        using var doc = System.Text.Json.JsonDocument.Parse(
+            System.Text.Json.JsonSerializer.Serialize(value));
+        map[key] = doc.RootElement.Clone();
+
+        return System.Text.Json.JsonSerializer.Serialize(map);
+    }
+
+    /// <summary>
     /// UI-thread half of a recalculation: commit the params form, resolve the strategy and
     /// selection, and reject the cases that need a message. Returns null when nothing
     /// should be computed (the reason is already on screen).
@@ -576,6 +615,7 @@ public partial class CutPanel : UserControl
     {
         // Commit the params form (expression resolution) before dispatch.
         CommitParamsForm(tp);
+        ApplyTabCount(tp);
         var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
         if (layer is null) return null;
         var shapes = layer.Shapes.Where(s => tp.SelectedShapeIds.Contains(s.Id)).ToList();

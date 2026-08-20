@@ -27,6 +27,9 @@
             </ComboBox>
             <TextBox x:Name="TxtDepth" Text="0.25" Width="70" Margin="8,0,0,0" ToolTip="Cut depth"/>
             <TextBox x:Name="TxtFeed" Text="100" Width="60" Margin="6,0,0,0" ToolTip="Feed rate"/>
+            <TextBlock Text="Tabs:" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#555"/>
+            <TextBox x:Name="TxtTabCount" Text="0" Width="32" Margin="4,0,0,0"
+                     ToolTip="Holding tabs around a profile — 0 for none. The part falls loose without them."/>
             <Button x:Name="BtnAdd" Content="+ Add Toolpath" Margin="10,0,0,0" Padding="12,6" Click="BtnAdd_Click"/>
             <Button x:Name="BtnCalc" Content="Calculate All" Margin="8,0,0,0" Padding="12,6" Click="BtnCalc_Click"/>
             <Button x:Name="BtnSend" Content="→ Machine" Margin="8,0,0,0" Padding="12,6" Click="BtnSend_Click"/>

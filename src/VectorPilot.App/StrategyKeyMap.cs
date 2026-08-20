@@ -79,4 +79,12 @@ public static class StrategyKeyMap
 
     /// <summary>Every key the map knows.</summary>
     public static IReadOnlyCollection<string> Keys => KeyToEnum.Keys;
+
+    /// <summary>
+    /// Strategies whose params carry holding tabs (ProfileParams.TabCount). Only "profile"
+    /// exists in the registry today, so the Cut panel must not inject a tabCount into a
+    /// pocket or a 3D finish where the engine would ignore it.
+    /// </summary>
+    public static bool IsProfileLike(string? strategyKey)
+        => strategyKey == "profile";
 }
