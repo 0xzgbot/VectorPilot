@@ -57,6 +57,9 @@
                 <Button x:Name="TextOnCurveButton" Content="Text on curve" Width="88" Height="24" Margin="4,0,0,0"
                         Click="TextOnCurve_Click"
                         ToolTip="Lay the text along the selected path as outlines (undoable)"/>
+                <Button x:Name="FitCurvesButton" Content="Fit curves" Width="70" Height="24" Margin="6,0,0,0"
+                        Click="FitCurves_Click"
+                        ToolTip="Smooth the selected polylines, keeping sharp corners (undoable)"/>
                 <TextBlock x:Name="ValidateLabel" VerticalAlignment="Center" Margin="6,0,0,0" FontSize="11" Foreground="#B22"/>
                 <Separator Margin="10,0" Width="1" Background="#CCC"/>
                 <ComboBox x:Name="CmbViewPreset" Width="132" Height="24" ToolTip="View presets"

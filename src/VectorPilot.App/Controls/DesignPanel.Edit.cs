@@ -93,6 +93,59 @@ public partial class DesignPanel
         return (pixels, w, h);
     }
 
+    private void FitCurves_Click(object sender, RoutedEventArgs e) => DoFitCurves();
+
+    /// <summary>
+    /// Smooth the selected polylines. FitCurvesEngine had no app call-site, so imported
+    /// DXF/traced geometry could never be cleaned up before cutting.
+    /// </summary>
+    internal int DoFitCurves(double? smoothingOverride = null)
+    {
+        var layer = AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return 0; }
+        if (Selection.IsEmpty) { SetStatus("Select polylines to fit"); return 0; }
+
+        // Opt in to decimation: smoothing alone only moves points, so without a tolerance
+        // the button would report "fitted" while streaming exactly as many moves.
+        var p = new FitCurvesParams
+        {
+            Smoothing = smoothingOverride ?? 0.5,
+            SimplifyToleranceMm = 0.05
+        };
+
+        var before = UndoStack.Snapshot(layer);
+        int changed = 0, removed = 0;
+
+        foreach (var shape in Selection.Selected.ToList())
+        {
+            if (shape.Points.Count < 3) continue;
+
+            var result = FitCurvesEngine.Fit(shape, p);
+            if (result.Fitted.Count < 2) continue;
+
+            removed += result.InputPointCount - result.OutputPointCount;
+            shape.Points.Clear();
+            shape.Points.AddRange(result.Fitted);
+            changed++;
+        }
+
+        if (changed == 0)
+        {
+            SetStatus("Nothing to fit — select a polyline with at least three points");
+            return 0;
+        }
+
+        Undo.Push("Fit curves", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        SetStatus(removed > 0
+            ? $"Fitted {changed} shape(s) — {removed} point(s) removed"
+            : $"Fitted {changed} shape(s)");
+        RedrawShapes();
+        UpdateEditChrome();
+        return changed;
+    }
+
     private void TextOnCurve_Click(object sender, RoutedEventArgs e) => DoTextOnCurve();
 
     /// <summary>
