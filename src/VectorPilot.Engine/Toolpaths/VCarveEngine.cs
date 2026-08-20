@@ -14,6 +14,18 @@ public sealed class VCarveParams
     public double LeadOutDistanceMm { get; set; } = 5.0;
     public double StepOverMm { get; set; } = 1.0;
     public bool FlatBottomMode { get; set; }
+
+    /// <summary>
+    /// Cut the shape's medial axis (skeleton) as well as its outline.
+    ///
+    /// Without this the engine only samples depth ALONG THE INPUT PATH, so the middle of a
+    /// closed shape is never visited — a V-carve of a wide letter or a dumbbell leaves the
+    /// deepest region uncut. On by default.
+    /// </summary>
+    public bool MedialAxisPass { get; set; } = true;
+
+    /// <summary>Clearance-field grid resolution for the skeleton (mm).</summary>
+    public double MedialAxisCellMm { get; set; } = 1.0;
     public Dictionary<Guid, double> VectorDepths { get; set; } = new();
     public double StartDepthMm { get; set; }
     public double FlatDepthMm { get; set; } = 1.0;
@@ -158,6 +170,50 @@ public static class VCarveEngine
             }
 
             totalCuttingLength += PathLength(vector.Points);
+
+            // ---- medial-axis (skeleton) pass ----
+            //
+            // Tracing the outline alone leaves the middle of a closed shape uncut: a
+            // V-bit must plunge deepest along the SPINE, where the shape is widest.
+            // Sampling depth along the input path — which is all this engine used to do —
+            // can never reach it.
+            if (params_.MedialAxisPass && vector.Closed && vector.Points.Count >= 3)
+            {
+                var skeleton = MedialAxis.Compute(vector.Points, params_.MedialAxisCellMm);
+                if (skeleton.IsEmpty) continue;
+
+                g.Add("");
+                g.Add($"(Medial axis: {skeleton.Paths.Count} ridge path(s), " +
+                      $"max clearance {F3(skeleton.MaxClearanceMm)}mm)");
+
+                foreach (var path in skeleton.Paths)
+                {
+                    if (path.Count < 2) continue;
+
+                    g.Add("G0 Z5.0");
+
+                    var head = path[0];
+                    // DepthForHalfWidth already returns a NEGATIVE, maxDepth-clamped Z.
+                    // Negating it again put the cutter ABOVE the stock (Z+6), cutting air.
+                    double headZ = VCarveGeometry.DepthForHalfWidth(
+                        head.ClearanceMm, params_.VBitAngleDegrees, maxDepth);
+
+                    g.Add($"G0 X{F3(head.Position.X)} Y{F3(head.Position.Y)}");
+                    g.Add($"G1 Z{F3(headZ)} F{(int)plunge}");
+
+                    for (int i = 1; i < path.Count; i++)
+                    {
+                        var pt = path[i];
+                        // Depth follows the LOCAL half-width: wide spine = deeper cut.
+                        double z = VCarveGeometry.DepthForHalfWidth(
+                            pt.ClearanceMm, params_.VBitAngleDegrees, maxDepth);
+                        g.Add($"G1 X{F3(pt.Position.X)} Y{F3(pt.Position.Y)} Z{F3(z)} F{(int)feed}");
+                    }
+
+                    g.Add("G0 Z5.0");
+                    totalCuttingLength += PathLength(path.Select(p => p.Position).ToList());
+                }
+            }
         }
 
         g.Add("");
