@@ -177,7 +177,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~StlWizard`  
   AC: One STL → component on sheet bounds; cancel leaves job unchanged.
 
-- [ ] **H-302** Sculpt on 3D view (Aspire loop)  
+- [x] **H-302** Sculpt on 3D view (Aspire loop)  
   Locks: **MODEL**  
   Depends: H-301 not required  
   Parallel-OK: H-201, H-103 if locks disjoint — **MODEL vs MACHINE OK**  
