@@ -50,7 +50,7 @@ public partial class DesignPanel : UserControl
 
     internal readonly NodeEditSession NodeEdit = new();
 
-    internal Layer? ActiveLayer => AppState.CurrentJob?.ActiveSheet.ActiveLayer;
+    public Layer? ActiveLayer => AppState.CurrentJob?.ActiveSheet.ActiveLayer;
 
     private void Refresh()
     {

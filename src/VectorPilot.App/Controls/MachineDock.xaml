@@ -1,0 +1,27 @@
+<UserControl x:Class="VectorPilot.App.Controls.MachineDock"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Pinned machine dock: lives OUTSIDE the stage host, so E-stop/Hold survive leaving
+         the Machine stage. Safety chrome is never gated on connection or stream state. -->
+    <Border Background="#191922" Padding="10,6" BorderBrush="#2A2A3A" BorderThickness="0,1,0,0">
+        <DockPanel LastChildFill="False">
+            <TextBlock x:Name="DockConnState" Text="machine: not connected"
+                       VerticalAlignment="Center" Foreground="#FFB454" Margin="0,0,14,0"/>
+            <Button x:Name="BtnDockConnect" Content="Connect…" Click="DockConnect_Click"
+                    MinWidth="86" MinHeight="30" Margin="0,0,10,0"
+                    ToolTip="Go to the Machine stage to pick a port and connect"/>
+            <Button x:Name="BtnDockEStop" Content="■ E-STOP" Click="DockEStop_Click"
+                    MinWidth="92" MinHeight="30" Background="#C62828" Foreground="White"
+                    FontWeight="Bold" Margin="0,0,10,0"
+                    ToolTip="Immediate stop. Always available, connected or not."/>
+            <Button x:Name="BtnDockHold" Content="‖ Hold" Click="DockHold_Click"
+                    MinWidth="72" MinHeight="30" Margin="0,0,10,0"
+                    ToolTip="Feed hold (GRBL realtime '!'). Always available."/>
+            <Button x:Name="BtnDockReset" Content="⟲ Reset" Click="DockReset_Click"
+                    MinWidth="72" MinHeight="30" Margin="0,0,10,0"
+                    ToolTip="Soft reset (GRBL Ctrl-X). Always available."/>
+            <TextBlock x:Name="DockNote" VerticalAlignment="Center" Foreground="#8888A0"
+                       Margin="6,0,0,0"/>
+        </DockPanel>
+    </Border>
+</UserControl>

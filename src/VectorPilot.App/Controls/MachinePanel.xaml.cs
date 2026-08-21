@@ -19,6 +19,9 @@ public partial class MachinePanel : UserControl
     public event Action<string>? RailStatusChanged;
     public event Action<string>? DocumentTitleChanged;
 
+    /// <summary>Raised when a session is created (H-103): MainWindow hands it to the dock.</summary>
+    public event Action<MachineSession?>? SessionCreated;
+
     /// <summary>The one session this panel drives. Internal so tests can inspect it.</summary>
     internal MachineSession? Session { get; private set; }
 
@@ -84,6 +87,7 @@ public partial class MachinePanel : UserControl
 
         Session = new MachineSession(transport);
         Session.Alarm += OnSessionAlarm;
+        SessionCreated?.Invoke(Session);
         _consoleShown = 0;
 
         try
@@ -114,6 +118,9 @@ public partial class MachinePanel : UserControl
             try { await Session.DisconnectAsync(); } catch { /* ignore */ }
             Session.Alarm -= OnSessionAlarm;
         }
+        // H-103: the dock shows connection state; tell it the session is gone.
+        SessionCreated?.Invoke(null);
+        Session = null;
         ConnState.Text = "disconnected";
         ConnState.Foreground = System.Windows.Media.Brushes.Orange;
         BtnConnect.Content = "Connect";
