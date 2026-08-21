@@ -8,7 +8,8 @@ using Xunit;
 namespace VectorPilot.Tests;
 
 /// <summary>
-/// Document round-trip against the REAL Mac fixtures in ../ShopPilot/fixtures/shoppilot.
+/// Document round-trip against the REAL Mac fixtures in fixtures/shoppilot
+/// (vendored from ShopPilot so CI does not need a sibling checkout).
 ///
 /// A .shoppilot document is a bundle directory: manifest.json + toolpaths.json +
 /// sheets/&lt;id&gt;.json. If VectorPilot cannot read what the Mac writes, "file
@@ -20,13 +21,19 @@ public class DocumentRoundTripTests
     {
         get
         {
-            // tests run from bin/<cfg>/net8.0; walk up to the repo, then across.
+            // tests run from bin/<cfg>/net8.0; walk up to the repo root (has src/).
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
             while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "src")))
                 dir = dir.Parent;
-            return dir is null
-                ? ""
-                : Path.GetFullPath(Path.Combine(dir.FullName, "..", "ShopPilot", "fixtures", "shoppilot"));
+            if (dir is null)
+                return "";
+
+            string vendored = Path.GetFullPath(Path.Combine(dir.FullName, "fixtures", "shoppilot"));
+            if (Directory.Exists(vendored))
+                return vendored;
+
+            // Local dual-checkout: ../ShopPilot next to this repo.
+            return Path.GetFullPath(Path.Combine(dir.FullName, "..", "ShopPilot", "fixtures", "shoppilot"));
         }
     }
 

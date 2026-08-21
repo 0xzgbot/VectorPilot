@@ -35,7 +35,13 @@ public partial class DesignPanel : UserControl
         // Card P2: repaint when the Toolpaths stage changes which shapes are followed.
         AppState.FollowedSourceChanged += () =>
         {
-            if (IsLoaded) Dispatcher.BeginInvoke(new Action(RedrawShapes));
+            // Dispatcher (not IsLoaded) is safe off-thread. Tests raise this event
+            // from a worker thread after STA UI construction; touching IsLoaded
+            // here throws "the calling thread cannot access this object".
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (IsLoaded) RedrawShapes();
+            }));
         };
     }
 
