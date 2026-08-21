@@ -102,7 +102,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   AC: Each toolpath is a row (name, strategy, time); double-click opens **named fields** not a JSON blob; Calculate uses row ParamsJson.  
   Recon for brief: `CutPanel.xaml.cs` already has toolpath list + `CommitParamsForm` / `ParamsJson` — extend that list; do not invent a second registry.
 
-- [ ] **H-103** App-lifetime machine dock (gSender/LightBurn)  
+- [x] **H-103** App-lifetime machine dock (gSender/LightBurn)  
   Locks: **APP-SHELL**, **MACHINE**  
   Depends: none if H-101 not touching MachinePanel — **conflict with H-101**. Do **after** H-101.  
   Parallel-OK: H-201–H-203  
@@ -111,7 +111,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~MachineDock`  
   AC: Leave Machine stage; Hold/E-stop still enabled. No auto-start.
 
-- [ ] **H-104** Frame job + click-to-jog on canvas  
+- [x] **H-104** Frame job + click-to-jog on canvas  
   Locks: **DESIGN**, **MACHINE**  
   Depends: H-103  
   Parallel-OK: H-201–H-204  
@@ -138,7 +138,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~ScallopFinish`  
   AC: Smaller scallop → denser G1; test two scallops not equal.
 
-- [ ] **H-203** READY — **tests-only**: the rest algorithm ALREADY EXISTS (`PreviousToolDiameterMm` line 27, `IsRestRough` line 29, run-width skip lines 116-117 of `Toolpaths/HeightfieldToolpath.cs`). Verified `rough3d` defaults already serialize `previousToolDiameterMm:0` and the params grid renders every numeric key, so **NO App change is needed**. Do NOT write a new rest engine. Rest-rough leftover stock  
+- [x] **H-203** DONE (RestRoughTests.cs only; engine untouched) — was tests-only: the rest algorithm ALREADY EXISTS (`PreviousToolDiameterMm` line 27, `IsRestRough` line 29, run-width skip lines 116-117 of `Toolpaths/HeightfieldToolpath.cs`). Verified `rough3d` defaults already serialize `previousToolDiameterMm:0` and the params grid renders every numeric key, so **NO App change is needed**. Do NOT write a new rest engine. Rest-rough leftover stock  
   Locks: **ENGINE-3D** — **conflicts H-202**. Queue **after** H-202.  
   Parallel-OK: H-201, App wave  
   OWN: `src/VectorPilot.Engine/Toolpaths/HeightfieldToolpath.cs` — type `HeightfieldRoughEngine` in that **same** file as H-202. Do not add `HeightfieldRoughEngine.cs`.  
@@ -150,7 +150,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ## Wave 2 — Photo product (App + photo engine)
 
-- [ ] **H-210** Photo workspace UI  
+- [x] **H-210** Photo workspace UI  
   Locks: **CUT** or new `PhotoPanel.xaml` hosted from MainWindow (**APP-SHELL** if new stage)  
   Depends: H-201, H-101  
   OWN: **new** `src/VectorPilot.App/Controls/PhotoPanel.xaml(.cs)` OR a region in `CutPanel` if no new stage; `src/VectorPilot.Engine/Photo/LithophaneEngine.cs` (read); `src/VectorPilot.Engine/Toolpaths/PhotoVCarveEngine.cs` (read). Prefer new PhotoPanel so CUT lock is only the host one-liner in `MainWindow.xaml`.  
@@ -307,4 +307,5 @@ Pass: short list of residual risks only.
 - `H-101` critic fix — c5f1796 (rail combo no longer shows Beginner while state is Advanced; 3 tests drive the real click through the real window)
 - `H-202` — 2b8e207 (ScallopHeightMm drives finish stepover, opt-in default 0; 13 tests)
 - gate — 1ae10e3 (verify.sh rejects partial runs via a self-maintaining high-water floor)
+- mythos wave — 356334e/c035cb5 on main: H-103 27b8529 (MachineDock pinned strip), H-104 16d9b46 (Frame + Ctrl+Click jog), H-203 04b3b0b (RestRoughTests only), H-210 42f3cea (Photo stage). 1449/1449 green after merging remote fixes 907b03b/a61b42b.
 - `H-102` — b1bbcad (Cuts list is a ListView of real Toolpath items: Name/Strategy/Time/Dirty/Lines; selection survives refresh; **revived Array copy + Save/Apply template, which were dead because SelectedItem was always a string**; 11 tests)
