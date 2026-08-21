@@ -30,6 +30,7 @@
                     <Button Style="{StaticResource RailButton}" Tag="setup" Click="Stage_Click" Content="⚙  Setup"/>
                     <Button Style="{StaticResource RailButton}" Tag="design" Click="Stage_Click" Content="✏  Design"/>
                     <Button Style="{StaticResource RailButton}" Tag="model" Click="Stage_Click" Content="🗿  Model"/>
+                    <Button Style="{StaticResource RailButton}" Tag="photo" Click="Stage_Click" Content="🖼  Photo"/>
                     <Button Style="{StaticResource RailButton}" Tag="cut" Click="Stage_Click" Content="🛠  Toolpaths"/>
                     <Button Style="{StaticResource RailButton}" Tag="machine" Click="Stage_Click" Content="🔌  Machine"/>
                     <Button Style="{StaticResource RailButton}" Tag="output" Click="Stage_Click" Content="📤  Output"/>

@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly CutPanel _cut = new();
     private readonly MachinePanel _machine = new();
     private readonly OutputPanel _output = new();
+    private readonly PhotoPanel _photo = new();
 
     public MainWindow()
     {
@@ -241,6 +242,7 @@ public partial class MainWindow : Window
         {
             "design" => _design,
             "model" => _model,
+            "photo" => _photo,
             "cut" => _cut,
             "machine" => _machine,
             "output" => _output,
