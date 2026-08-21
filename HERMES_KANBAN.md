@@ -158,7 +158,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~PhotoWorkspace` + grep XAML click handlers  
   AC: Preview updates before Calculate; empty image uses honest Empty() not fake `%`.
 
-- [ ] **H-211** Wire Photo V-Carve + lithophane + grayscale component through Cuts list  
+- [x] **H-211** Wire Photo V-Carve + lithophane + grayscale component through Cuts list  
   Locks: **CUT**, **ENGINE-PHOTO**  
   Depends: H-102, H-210, H-201  
   Parallel-OK: none with other CUT  
