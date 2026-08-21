@@ -12,6 +12,9 @@ public partial class DesignPanel
     private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
     {
         Focus();
+        // H-104: Ctrl+Click with a connected machine jogs the head to the clicked point.
+        // Runs BEFORE selection handling; without the modifier this is a no-op.
+        Canvas_MouseDown_ForJog(e);
         var world = ScreenToWorld(e.GetPosition(DrawCanvas));
         var layer = ActiveLayer;
         if (layer is null) return;

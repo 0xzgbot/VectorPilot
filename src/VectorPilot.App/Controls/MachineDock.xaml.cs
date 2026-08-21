@@ -80,6 +80,8 @@ public partial class MachineDock : UserControl
         AppState.ReplaceTransport(transport);
         DockConnState.Text = $"connected · {transport.Name}";
         DockConnState.Foreground = System.Windows.Media.Brushes.LimeGreen;
+        // State changed behind the panels' backs — let chrome re-evaluate (Frame button etc).
+        DockMessage?.Invoke($"dock: adopted · {transport.Name}");
     }
 
     /// <summary>Reflect connection state changes driven from the Machine panel.</summary>
@@ -89,6 +91,9 @@ public partial class MachineDock : UserControl
         DockConnState.Text = "machine: not connected";
         DockConnState.Foreground = System.Windows.Media.Brushes.Orange;
     }
+
+    /// <summary>Test seam: re-raise the dock message so listeners re-evaluate chrome.</summary>
+    public void RaiseDockMessageForTest() => DockMessage?.Invoke("dock: state changed");
 
     // ---- safety chrome: never gated on connection or stream state ----
 

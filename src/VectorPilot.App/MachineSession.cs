@@ -15,6 +15,18 @@ public sealed class MachineSession : IAsyncDisposable
     private GCodeStreamer? _streamer;
 
     public DroModel Dro { get; private set; } = new();
+
+    /// <summary>Test seam: seed the DRO so jog-delta math has a known head position.</summary>
+    public void SetDroForTest(double x, double y)
+    {
+        Dro = DroModel.From(new ParsedMachineStatus
+        {
+            State = "Idle",
+            WPosX = x,
+            WPosY = y,
+            WPosZ = 0,
+        });
+    }
     public bool IsConnected => _transport.IsOpen;
     public bool IsStreaming { get; private set; }
 
@@ -119,6 +131,35 @@ public sealed class MachineSession : IAsyncDisposable
     public async Task PollAsync()
     {
         if (_transport.IsOpen) await _transport.WriteLineAsync("?");
+    }
+
+    /// <summary>
+    /// Frame the job: rapid (G0) around the rectangle [x0,x1]x[y0,y1] at safe Z, so the
+    /// operator can see the machine's travel cover the work area before cutting. Emits
+    /// lift → four corners → return to start. Returns false when not connected.
+    ///
+    /// H-104: gSender/LightBurn both frame before every job; without it the first sign of
+    /// a mis-set origin is a tool crash.
+    /// </summary>
+    public async Task<bool> FrameAsync(double x0, double y0, double x1, double y1, double feed, double safeZ)
+    {
+        if (!_transport.IsOpen) return false;
+
+        var lines = new List<string>
+        {
+            $"G0 Z{safeZ:0.###}",
+            $"G0 X{x0:0.###} Y{y0:0.###}",
+            $"G0 X{x1:0.###} Y{y0:0.###}",
+            $"G0 X{x1:0.###} Y{y1:0.###}",
+            $"G0 X{x0:0.###} Y{y1:0.###}",
+            $"G0 X{x0:0.###} Y{y0:0.###}",
+        };
+        foreach (var line in lines)
+        {
+            Log($">> {line}");
+            await _transport.WriteLineAsync(line);
+        }
+        return true;
     }
 
     public async Task<bool> JogAsync(double dx, double dy, double dz, double feed)

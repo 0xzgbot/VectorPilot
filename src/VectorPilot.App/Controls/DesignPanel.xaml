@@ -43,6 +43,9 @@
                 <Button x:Name="IntersectButton" Content="Intersect" Width="70" Height="24" Margin="6,0,0,0" Click="Intersect_Click" ToolTip="Keep only the overlap"/>
                 <Button x:Name="TraceButton" Content="Trace bitmap…" Width="102" Height="24" Margin="6,0,0,0" Click="Trace_Click" ToolTip="Import an image and trace its outlines to vectors"/>
                 <Button x:Name="KeepOutButton" Content="Keep-out" Width="72" Height="24" Margin="6,0,0,0" Click="KeepOut_Click" ToolTip="Mark the selection's bounds as a no-cut zone (clamps, hold-downs)"/>
+                <Button x:Name="FrameButton" Content="Frame" Width="60" Height="24" Margin="10,0,0,0"
+                        IsEnabled="False" Click="Frame_Click"
+                        ToolTip="Rapid the tool around the job bounds so you can see the travel before cutting. Needs a connected machine."/>
                 <Button x:Name="GroupButton" Content="Group" Width="58" Height="24" Margin="6,0,0,0" Click="Group_Click" ToolTip="Group the selection (Ctrl+G) — selecting one member selects all"/>
                 <Button x:Name="UngroupButton" Content="Ungroup" Width="66" Height="24" Margin="6,0,0,0" Click="Ungroup_Click" ToolTip="Dissolve the selection's group (Ctrl+Shift+G)"/>
                 <Button x:Name="GadgetButton" Content="Gadget…" Width="70" Height="24" Margin="6,0,0,0" Click="Gadget_Click" ToolTip="Generate geometry with a sandboxed Lua script"/>

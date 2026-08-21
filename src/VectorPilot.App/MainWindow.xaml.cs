@@ -31,6 +31,7 @@ public partial class MainWindow : Window
         {
             if (s is not null) MachineDock.Adopt(s, s.Transport);
         };
+        _design.AttachMachineDock(MachineDock);   // H-104: Frame + click-to-jog on Design
 
         StageHost.Content = _setup;
         PreviewKeyDown += MainWindow_PreviewKeyDown;   // Ctrl+K palette hook
