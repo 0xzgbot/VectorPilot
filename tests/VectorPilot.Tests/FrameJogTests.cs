@@ -190,12 +190,12 @@ public class FrameJogTests
     // ---- click-to-jog ----
 
     [Fact]
-    public void Click_To_Jog_Computes_A_Relative_Move_From_The_Dro()
+    public async Task Click_To_Jog_Computes_A_Relative_Move_From_The_Dro()
     {
         // The jog delta is (clicked world point) - (DRO position). Pin that arithmetic at
         // the session boundary: a head at (30, 20) clicked at (100, 50) jogs +70, +30.
         var session = new MachineSession(new SimulatorTransport());
-        session.ConnectAsync(new MachineProfile { Name = "Sim" }).Wait();
+        await session.ConnectAsync(new MachineProfile { Name = "Sim" });
         session.SetDroForTest(30, 20);
 
         double curX = session.Dro.X is { } sx ? double.Parse(sx, System.Globalization.CultureInfo.InvariantCulture) : 0;
@@ -205,13 +205,13 @@ public class FrameJogTests
 
         Assert.Equal(70, dx, 3);
         Assert.Equal(30, dy, 3);
-        Assert.True(session.JogAsync(dx, dy, 0, 1500).Result);
+        Assert.True(await session.JogAsync(dx, dy, 0, 1500));
     }
 
     [Fact]
-    public void Jog_Without_A_Connection_Is_Refused()
+    public async Task Jog_Without_A_Connection_Is_Refused()
     {
         var session = new MachineSession(new SimulatorTransport());
-        Assert.False(session.JogAsync(10, 0, 0, 1000).Result);
+        Assert.False(await session.JogAsync(10, 0, 0, 1000));
     }
 }

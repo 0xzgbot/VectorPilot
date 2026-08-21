@@ -17,6 +17,9 @@ public partial class ModelPanel : UserControl
     public ModelPanel()
     {
         InitializeComponent();
+        // H-211: one shared component stack for the whole app — a grayscale photo
+        // relief lands in the same stack this panel's tree displays.
+        Tree.UseSharedStack(AppState.Components);
         Loaded += (_, _) =>
         {
             CmbWeavePattern.ItemsSource = new[] { "Plain", "Twill", "Satin" };

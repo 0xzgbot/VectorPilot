@@ -21,6 +21,10 @@ public partial class CutPanel : UserControl
     /// the selection and still yields real Toolpath items.</summary>
     public void RefreshCutsList() => RefreshList();
 
+    /// <summary>H-211: the Toolpath OBJECTS currently shown as Cuts rows (tests).</summary>
+    public System.Collections.Generic.IReadOnlyList<Toolpath> ToolpathListViewItems()
+        => ToolpathList.Items.OfType<Toolpath>().ToList();
+
     private void RefreshList()
     {
         // H-102: add the Toolpath OBJECTS, not formatted strings. Six call-sites
