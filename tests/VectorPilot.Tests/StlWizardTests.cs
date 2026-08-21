@@ -26,7 +26,11 @@ public class StlWizardTests
                 if (Application.Current is null) _ = new Application();
                 body();
             }
-            catch (Exception ex) { error = ex; }
+            catch (Exception ex)
+            {
+                error = ex;
+                Console.Error.WriteLine("INNER-STACK>>> " + ex + "\n" + ex.StackTrace);
+            }
         });
         t.SetApartmentState(ApartmentState.STA);
         t.Start();

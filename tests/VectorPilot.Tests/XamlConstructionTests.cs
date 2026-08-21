@@ -57,7 +57,7 @@ public class XamlConstructionTests
     {
         var panel = new ModelPanel();
         Assert.NotNull(panel.FindName("Tree"));       // the component tree is hosted
-        Assert.NotNull(panel.FindName("Preview"));    // with a live composite preview
+        Assert.NotNull(panel.FindName("View3D"));     // with a live composite preview
         Assert.NotNull(panel.FindName("BtnBake"));
     });
 
