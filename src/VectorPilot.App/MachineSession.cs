@@ -18,6 +18,12 @@ public sealed class MachineSession : IAsyncDisposable
     public bool IsConnected => _transport.IsOpen;
     public bool IsStreaming { get; private set; }
 
+    /// <summary>
+    /// The transport this session drives. Exposed for the machine dock's Hold, which needs
+    /// the realtime '!' (pause) — MachineSession itself has no Hold method.
+    /// </summary>
+    public IMachineTransport Transport => _transport;
+
     /// <summary>Raw TX/RX log for the console toggle (newest last).</summary>
     public List<string> ConsoleLog { get; } = new();
     public bool ConsoleEnabled { get; set; } = true;

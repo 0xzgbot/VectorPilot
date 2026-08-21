@@ -22,6 +22,16 @@ public partial class MainWindow : Window
         InitializeComponent();
         _machine.RailStatusChanged += s => RailStatus.Text = s;
         _machine.DocumentTitleChanged += t => DocTitle.Text = t;
+
+        // H-103: the machine is always on screen. The dock owns the app-lifetime session;
+        // the Machine panel hands its session over on connect and adopts the dock's.
+        MachineDock.MachineStageRequested += () => Stage_ClickByTag("machine");
+        MachineDock.DockMessage += s => RailStatus.Text = s;
+        _machine.SessionCreated += s =>
+        {
+            if (s is not null) MachineDock.Adopt(s, s.Transport);
+        };
+
         StageHost.Content = _setup;
         PreviewKeyDown += MainWindow_PreviewKeyDown;   // Ctrl+K palette hook
         StartAutosaveTimer();                           // crash-recovery autosave
@@ -220,6 +230,12 @@ public partial class MainWindow : Window
     private void Stage_Click(object sender, RoutedEventArgs e)
     {
         var tag = ((Button)sender).Tag as string;
+        Stage_ClickByTag(tag);
+    }
+
+    /// <summary>Stage switch by tag, so the dock's Connect… can route to the Machine stage.</summary>
+    private void Stage_ClickByTag(string? tag)
+    {
         StageHost.Content = tag switch
         {
             "design" => _design,

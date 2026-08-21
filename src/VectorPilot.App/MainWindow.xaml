@@ -6,10 +6,18 @@
         MinWidth="1024" MinHeight="700"
         WindowStartupLocation="CenterScreen" Background="{StaticResource PanelBg}">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="190"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <!-- Machine dock: pinned shell strip. The machine is always on screen; E-stop,
+                 Hold and Reset survive leaving the Machine stage (H-103). -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="190"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
         <!-- Stage rail -->
         <Border Grid.Column="0" Background="{StaticResource RailBg}">
@@ -50,5 +58,10 @@
              automatically under App.IsAutomated, or ui_verify would hang on it. -->
         <ContentControl x:Name="StarterHost" Grid.Column="0" Grid.ColumnSpan="2"
                         Visibility="Collapsed"/>
+        </Grid>
+
+        <!-- Machine dock (H-103): pinned shell strip below every stage. E-stop / Hold /
+             Reset stay visible and enabled after leaving the Machine stage; no auto-start. -->
+        <controls:MachineDock x:Name="MachineDock" Grid.Row="1"/>
     </Grid>
 </Window>
