@@ -1,0 +1,79 @@
+<Window x:Class="VectorPilot.App.Controls.StlImportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Import STL — stock setup" Width="560" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="FileLabel" FontWeight="Bold" TextWrapping="Wrap"
+                   Text="model.stl" ToolTip="The file being imported"/>
+
+        <!-- Stock -->
+        <GroupBox Grid.Row="1" Header="Stock / sheet bounds" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" Margin="4">
+                <StackPanel>
+                    <TextBlock Text="Stock X (mm)"/>
+                    <TextBox x:Name="TxtStockX" x:FieldModifier="public" Width="80" Text="200" TextChanged="Field_Changed"/>
+                </StackPanel>
+                <StackPanel Margin="8,0,0,0">
+                    <TextBlock Text="Stock Y (mm)"/>
+                    <TextBox x:Name="TxtStockY" x:FieldModifier="public" Width="80" Text="200" TextChanged="Field_Changed"/>
+                </StackPanel>
+                <StackPanel Margin="8,0,0,0">
+                    <TextBlock Text="Stock Z (mm)"/>
+                    <TextBox x:Name="TxtStockZ" x:FieldModifier="public" Width="80" Text="25" TextChanged="Field_Changed"/>
+                </StackPanel>
+                <CheckBox x:Name="ChkFitSheet" Content="Use job sheet size" Margin="16,14,0,0"
+                          Checked="FitSheet_Changed" Unchecked="FitSheet_Changed"
+                          ToolTip="Fill the X/Y boxes from the job's active sheet instead of typing them"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Model placement -->
+        <GroupBox Grid.Row="2" Header="Model placement" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" Margin="4">
+                <StackPanel>
+                    <TextBlock Text="Origin corner"/>
+                    <ComboBox x:Name="CmbOrigin" x:FieldModifier="public" Width="110" SelectedIndex="4">
+                        <ComboBoxItem>Bottom-Left</ComboBoxItem>
+                        <ComboBoxItem>Bottom-Center</ComboBoxItem>
+                        <ComboBoxItem>Bottom-Right</ComboBoxItem>
+                        <ComboBoxItem>Top-Left</ComboBoxItem>
+                        <ComboBoxItem>Center</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Margin="8,0,0,0">
+                    <TextBlock Text="Scale factor"/>
+                    <TextBox x:Name="TxtScale" x:FieldModifier="public" Width="70" Text="1.0" TextChanged="Field_Changed"/>
+                </StackPanel>
+                <StackPanel Margin="8,0,0,0">
+                    <TextBlock Text="Cell size (mm)"/>
+                    <TextBox x:Name="TxtCell" x:FieldModifier="public" Width="70" Text="1.0" TextChanged="Field_Changed"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Preview + result -->
+        <Border Grid.Row="3" Background="#F2F2F2" Padding="8" Margin="0,10,0,0" CornerRadius="4">
+            <StackPanel>
+                <TextBlock x:Name="PreviewLabel" Foreground="#333" FontSize="11"
+                           Text="model not loaded yet" TextWrapping="Wrap"/>
+                <ProgressBar x:Name="FitBar" Height="8" Minimum="0" Maximum="1" Margin="0,6,0,0"/>
+                <TextBlock x:Name="FitNote" Foreground="#666" FontSize="11" Margin="0,4,0,0" Text=""/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Cancel" Width="84" Height="26" IsCancel="True" Click="Cancel_Click"/>
+            <Button x:Name="BtnOk" x:FieldModifier="public" Content="Add component" Width="110" Height="26" Margin="8,0,0,0"
+                    IsDefault="True" Click="Ok_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

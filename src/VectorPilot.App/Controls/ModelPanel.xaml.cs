@@ -14,6 +14,10 @@ public partial class ModelPanel : UserControl
     private int _shapeCount;
     private int _weaveCount;
 
+    /// <summary>The component stack this panel edits (shared app stack). Public because
+    /// the test project has no InternalsVisibleTo.</summary>
+    public ComponentTreeViewModel Vm => Tree.Vm;
+
     public ModelPanel()
     {
         InitializeComponent();
@@ -27,8 +31,6 @@ public partial class ModelPanel : UserControl
             Refresh();
         };
     }
-
-    private ComponentTreeViewModel Vm => Tree.Vm;
 
     private void Refresh()
     {
@@ -58,6 +60,14 @@ public partial class ModelPanel : UserControl
         };
         if (dlg.ShowDialog() != true) return;
 
+        // H-301: an STL goes through the stock-setup wizard (stock/origin/scale/preview);
+        // every other format keeps the direct one-shot import.
+        if (dlg.FileName.EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
+        {
+            ImportStlViaWizard(dlg.FileName);
+            return;
+        }
+
         try
         {
             var hf = LoadHeightfield(dlg.FileName);
@@ -70,6 +80,42 @@ public partial class ModelPanel : UserControl
         {
             StatusLabel.Text = $"import failed: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// H-301: run the STL through the stock wizard. Nothing touches the job until the
+    /// user confirms OK — cancel leaves components and AppState exactly as they were.
+    /// </summary>
+    internal void ImportStlViaWizard(string stlPath)
+    {
+        var wizard = new StlImportDialog(stlPath) { Owner = Window.GetWindow(this) };
+        wizard.ShowDialog();
+        if (!wizard.Confirmed || wizard.ResultHeightfield is not { } hf)
+        {
+            CancelStlImport();
+            return;
+        }
+
+        AddStlComponent(hf, System.IO.Path.GetFileNameWithoutExtension(stlPath),
+            $"{wizard.TriangleCount} triangles");
+    }
+
+    /// <summary>The commit half of the wizard flow (public seam: tests drive it with
+    /// the exact heightfield an OK'd dialog produced).</summary>
+    public void AddStlComponent(HeightfieldData hf, string name, string? note = null)
+    {
+        Vm.Add(hf, name);
+        AppState.ModelHeightfield = Vm.Composite;
+        Refresh();
+        StatusLabel.Text = note is null
+            ? $"STL component added: {name}"
+            : $"STL component added ({note})";
+    }
+
+    /// <summary>The cancel half of the wizard flow: status only, zero job mutation.</summary>
+    public void CancelStlImport()
+    {
+        StatusLabel.Text = "STL import cancelled — job unchanged";
     }
 
     /// <summary>Dispatch a mesh file to its heightfield importer.</summary>
