@@ -115,5 +115,15 @@ public sealed class ComponentTreeViewModel
         return true;
     }
 
-    public void Recomposite() => Composite = ComponentCompositor.Composite(Components);
+    public void Recomposite()
+    {
+        Composite = ComponentCompositor.Composite(Components);
+        // H-303: let the shell react (3D preview redraw) whenever the composite
+        // changes — height/fade edits mutate it without going through a click.
+        CompositeChanged?.Invoke();
+    }
+
+    /// <summary>H-303: raised after every recomposite. Subscribers must marshal
+    /// themselves onto their own dispatcher.</summary>
+    public event Action? CompositeChanged;
 }

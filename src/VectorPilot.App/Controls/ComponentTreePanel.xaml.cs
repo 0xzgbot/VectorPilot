@@ -20,6 +20,7 @@ public partial class ComponentTreePanel : UserControl
         ToolPicker.ItemsSource = Enum.GetValues<SculptTool>();
         ShapePicker.ItemsSource = Enum.GetValues<BrushShape>();
         FalloffPicker.ItemsSource = Enum.GetValues<BrushFalloff>();
+        FadeDirectionPicker.ItemsSource = Enum.GetValues<FadeDirection>();
 
         ToolPicker.SelectedItem = SculptTool.Brush;
         ShapePicker.SelectedItem = Vm.BrushShape;
@@ -68,6 +69,109 @@ public partial class ComponentTreePanel : UserControl
         if (!_ready) return;
         Vm.SelectedIndex = ComponentList.SelectedIndex;
         if (Vm.Selected is { } sel) ModePicker.SelectedItem = sel.CombineMode;
+        LoadModifierControls();
+    }
+
+    // ---- H-303: per-component height scale + fade (dynamic modifiers) ----
+
+    /// <summary>Mirror the selected component's HeightScale/Fade into the controls.
+    /// Suppresses handler re-entry while the sliders move programmatically.</summary>
+    private void LoadModifierControls()
+    {
+        if (!_ready || Vm.Selected is not { } sel)
+        {
+            HeightScaleSlider.IsEnabled = TxtHeightScale.IsEnabled =
+                FadeAmountSlider.IsEnabled = FadeDirectionPicker.IsEnabled = false;
+            return;
+        }
+
+        HeightScaleSlider.IsEnabled = TxtHeightScale.IsEnabled =
+            FadeAmountSlider.IsEnabled = FadeDirectionPicker.IsEnabled = true;
+
+        _loadingModifiers = true;
+        try
+        {
+            double scale = sel.HeightScale ?? 1.0;
+            HeightScaleSlider.Value = Math.Clamp(scale, HeightScaleSlider.Minimum, HeightScaleSlider.Maximum);
+            TxtHeightScale.Text = scale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+            FadeAmountSlider.Value = sel.FadeAmount ?? 0.0;
+            FadeDirectionPicker.SelectedItem = sel.FadeDirection ?? FadeDirection.None;
+        }
+        finally { _loadingModifiers = false; }
+    }
+
+    private bool _loadingModifiers;
+
+    /// <summary>True when any modifier actually changed the selection — lets tests
+    /// and callers decide whether a recomposite is worth reporting.</summary>
+    public bool LastModifierChanged { get; private set; }
+
+    private void ComponentModifier_Changed(object sender, RoutedEventArgs e)
+        => ComponentModifier_ChangedCore();
+
+    // Slider overload: RoutedPropertyChangedEventArgs<double>.
+    private void ComponentModifier_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+        => ComponentModifier_ChangedCore();
+
+    private void ComponentModifier_ChangedCore()
+    {
+        if (!_ready || _loadingModifiers || Vm.Selected is not { } sel) return;
+
+        _loadingModifiers = true;
+        try
+        {
+            double slider = HeightScaleSlider.Value;
+            string? text = TxtHeightScale.Text?.Trim();
+            if (!string.IsNullOrEmpty(text) &&
+                double.TryParse(text, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var typed))
+            {
+                slider = typed;   // the text box wins while it has content
+            }
+            sel.HeightScale = slider > 0 ? slider : null;
+
+            var dir = FadeDirectionPicker.SelectedItem as FadeDirection? ?? FadeDirection.None;
+            double amt = FadeAmountSlider.Value;
+            sel.FadeDirection = dir == FadeDirection.None ? null : dir;
+            sel.FadeAmount = dir == FadeDirection.None || amt <= 0 ? null : amt;
+
+            // Keep the slider and the text box agreeing with what was stored.
+            double shown = sel.HeightScale ?? 1.0;
+            HeightScaleSlider.Value = Math.Clamp(shown, HeightScaleSlider.Minimum, HeightScaleSlider.Maximum);
+            TxtHeightScale.Text = shown.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        finally { _loadingModifiers = false; }
+
+        Vm.Recomposite();
+        Refresh();
+        LastModifierChanged = true;
+    }
+
+    private void HeightScale_TextCommitted(object sender, RoutedEventArgs e)
+        => ComponentModifier_ChangedCore();
+
+    // TextBox.KeyDown fires KeyEventArgs (not RoutedEventArgs) — route it too.
+    private void HeightScale_TextCommitted(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter) ComponentModifier_ChangedCore();
+    }
+
+    /// <summary>H-303 test seam (no InternalsVisibleTo): drive the exact code path
+    /// the Height/Fade controls run, with explicit values instead of UI input.</summary>
+    public void RaiseModifierChangedForTest(double? heightScale, double? fadeAmount, FadeDirection? fadeDirection)
+    {
+        _loadingModifiers = true;
+        try
+        {
+            HeightScaleSlider.Value = Math.Clamp(heightScale ?? 1.0,
+                HeightScaleSlider.Minimum, HeightScaleSlider.Maximum);
+            TxtHeightScale.Text = (heightScale ?? 1.0).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            FadeAmountSlider.Value = fadeAmount ?? 0;
+            FadeDirectionPicker.SelectedItem = fadeDirection ?? FadeDirection.None;
+        }
+        finally { _loadingModifiers = false; }
+        ComponentModifier_ChangedCore();
     }
 
     private void Visible_Changed(object sender, RoutedEventArgs e)

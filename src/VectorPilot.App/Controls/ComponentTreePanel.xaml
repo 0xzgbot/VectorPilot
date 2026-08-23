@@ -30,6 +30,23 @@
                 <TextBlock Text="Mode" VerticalAlignment="Center" Width="52"/>
                 <ComboBox x:Name="ModePicker" Width="140" SelectionChanged="Mode_Changed"/>
             </StackPanel>
+            <!-- H-303: per-component dynamic modifiers (scale → tilt → fade), applied at
+                 composite time by ComponentModifierEngine. The stored grid stays pristine. -->
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock Text="Height ×" VerticalAlignment="Center" Width="52"
+                           ToolTip="Scale the selected component's heights before compositing"/>
+                <Slider x:Name="HeightScaleSlider" Width="100" Minimum="0" Maximum="3" Value="1"
+                        ValueChanged="ComponentModifier_Changed"/>
+                <TextBox x:Name="TxtHeightScale" Width="34" Height="22" Margin="4,0,0,0" Text="1.00"
+                         LostFocus="HeightScale_TextCommitted" KeyDown="HeightScale_TextCommitted"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                <TextBlock Text="Fade" VerticalAlignment="Center" Width="52"
+                           ToolTip="Fade the component's height toward the base along a direction"/>
+                <ComboBox x:Name="FadeDirectionPicker" Width="94" SelectionChanged="ComponentModifier_Changed"/>
+                <Slider x:Name="FadeAmountSlider" Width="80" Minimum="0" Maximum="1" Value="0"
+                        Margin="4,0,0,0" ValueChanged="ComponentModifier_Changed"/>
+            </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                 <Button Content="▲" Width="30" Height="24" Click="MoveUp_Click" ToolTip="Move up (order matters)"/>
                 <Button Content="▼" Width="30" Height="24" Margin="6,0,0,0" Click="MoveDown_Click"/>
