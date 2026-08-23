@@ -39,6 +39,14 @@ public partial class ModelPanel : UserControl
             BtnSculptUndo.IsEnabled = true;
             return true;
         };
+        // H-303: height/fade edits recomposite without a click — redraw on every change.
+        // AppState.Components outlives any one panel (tests construct many), so a stale
+        // panel must not touch the visual tree from another thread: skip instead.
+        Vm.CompositeChanged += () =>
+        {
+            if (!Dispatcher.CheckAccess()) return;
+            if (Vm.Composite is { } hf) _preview.ShowHeightfield(hf);
+        };
         Loaded += (_, _) =>
         {
             CmbWeavePattern.ItemsSource = new[] { "Plain", "Twill", "Satin" };

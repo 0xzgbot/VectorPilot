@@ -30,6 +30,8 @@
                     <Button Style="{StaticResource RailButton}" Tag="setup" Click="Stage_Click" Content="⚙  Setup"/>
                     <Button Style="{StaticResource RailButton}" Tag="design" Click="Stage_Click" Content="✏  Design"/>
                     <Button Style="{StaticResource RailButton}" Tag="model" Click="Stage_Click" Content="🗿  Model"/>
+                    <Button Style="{StaticResource RailButton}" Click="SplitView_Click" Content="⇔  Split 2D|3D"
+                            ToolTip="Show the Design (2D) and Model (3D) stages side by side"/>
                     <Button Style="{StaticResource RailButton}" Tag="photo" Click="Stage_Click" Content="🖼  Photo"/>
                     <Button Style="{StaticResource RailButton}" Tag="cut" Click="Stage_Click" Content="🛠  Toolpaths"/>
                     <Button Style="{StaticResource RailButton}" Tag="machine" Click="Stage_Click" Content="🔌  Machine"/>
@@ -52,7 +54,9 @@
             </DockPanel>
         </Border>
 
-        <!-- Stage host -->
+        <!-- Stage host. H-303: when the split is on this ContentControl holds a
+             two-column Grid (2D Design | 3D Model) instead of a lone panel —
+             tests still drive it by content type, not layout. -->
         <ContentControl x:Name="StageHost" Grid.Column="1" Margin="10"/>
 
         <!-- Job starter overlay: spans both columns, hidden until asked for. Never shown

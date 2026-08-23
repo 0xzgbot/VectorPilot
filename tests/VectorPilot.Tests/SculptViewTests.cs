@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using VectorPilot.App;
 using VectorPilot.App.Controls;
 using VectorPilot.Engine;
@@ -10,6 +11,10 @@ namespace VectorPilot.Tests;
 /// H-302: dragging on the 3D mesh changes the selected component's heightfield,
 /// and the stroke is undoable. Tests drive the same public SculptAt seam the
 /// XAML mouse handlers call — never SculptEngine in isolation.
+/// H-303 additions live here too: the split 2D | 3D shell stage and the
+/// component tree's height/fade controls (this file's STA harness is the one
+/// new WPF test classes must not race — see the suite's shared-Application
+/// ordering).
 /// </summary>
 [Collection("STA")]
 public class SculptViewTests
@@ -22,6 +27,17 @@ public class SculptViewTests
             try
             {
                 if (Application.Current is null) _ = new Application();
+                var res = Application.Current!.Resources;
+                if (!res.Contains("PanelBg"))
+                {
+                    res["RailBg"] = new System.Windows.Media.SolidColorBrush(
+                        System.Windows.Media.Color.FromRgb(0x19, 0x19, 0x22));
+                    res["Accent"] = new System.Windows.Media.SolidColorBrush(
+                        System.Windows.Media.Color.FromRgb(0x3D, 0x7E, 0xFF));
+                    res["PanelBg"] = new System.Windows.Media.SolidColorBrush(
+                        System.Windows.Media.Color.FromRgb(0xF4, 0xF4, 0xF6));
+                    res["RailButton"] = new Style(typeof(Button));
+                }
                 body();
             }
             catch (Exception ex) { error = ex; }
@@ -141,5 +157,149 @@ public class SculptViewTests
             Assert.False(applied, "a sub-cell brush must affect nothing");
             Assert.False(vm.HasSculptUndo, "an off-surface stroke must not arm undo");
         });
+    }
+
+    // ---- H-303: split 2D | 3D + component height/fade ----
+
+    private static void ClickStage(MainWindow w, string tag)
+        => typeof(MainWindow).GetMethod("Stage_ClickByTag",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance)!.Invoke(w, new object?[] { tag });
+
+    [Fact]
+    public void Split_Toggle_Shows_Both_Stages_And_Toggles_Back()
+    {
+        OnSta(() =>
+        {
+            var w = new MainWindow();
+
+            // ON: the stage host holds a Grid with BOTH panels inside.
+            Assert.True(w.ToggleSplitView());
+            Assert.True(w.IsSplitViewActive);
+
+            var host = (ContentControl)w.FindName("StageHost")!;
+            var grid = Assert.IsType<Grid>(host.Content);
+
+            var panels = new List<UIElement>();
+            Collect(grid, panels);
+            Assert.Contains(panels, p => p is DesignPanel);
+            Assert.Contains(panels, p => p is ModelPanel);
+
+            // OFF: back to the Model stage alone.
+            Assert.False(w.ToggleSplitView());
+            Assert.False(w.IsSplitViewActive);
+            Assert.IsType<ModelPanel>(host.Content);
+        });
+    }
+
+    [Fact]
+    public void Entering_Design_Or_Model_Reenters_An_Active_Split_Other_Stages_Leave_It()
+    {
+        OnSta(() =>
+        {
+            var w = new MainWindow();
+            Assert.True(w.ToggleSplitView());
+
+            var host = (ContentControl)w.FindName("StageHost")!;
+
+            // The rail's Model button while split: still both stages (the split IS
+            // where both of them live).
+            ClickStage(w, "model");
+            Assert.True(w.IsSplitViewActive);
+            Assert.IsType<Grid>(host.Content);
+
+            // Any other stage leaves the split behind.
+            ClickStage(w, "photo");
+            Assert.False(w.IsSplitViewActive);
+            Assert.IsType<PhotoPanel>(host.Content);
+        });
+    }
+
+    [Fact]
+    public void Height_Scale_On_A_Component_Changes_The_Composite_Max_Height()
+    {
+        OnSta(() =>
+        {
+            var panel = new ModelPanel();
+            var vm = panel.Vm;
+            vm.Components.Clear();   // shared app stack — start clean
+            var c = vm.Add(FlatGrid(), "scale me");
+
+            double beforeMax = vm.Composite!.MaxHeight;
+            var beforeGrid = vm.Composite.Heights.ToArray();
+
+            vm.Selected!.HeightScale = 2.0;
+            vm.Recomposite();
+
+            Assert.Equal(beforeMax * 2.0, vm.Composite.MaxHeight, 5);
+            Assert.NotEqual(beforeGrid, vm.Composite.Heights);
+
+            // Leave the shared stack as found — a stray misaligned grid turns every
+            // later composite (e.g. the STL wizard's) into null.
+            vm.Remove(c);
+        });
+    }
+
+    [Fact]
+    public void Fade_Ramp_Lowers_One_Edge_Of_The_Composite_But_Not_The_Other()
+    {
+        OnSta(() =>
+        {
+            var panel = new ModelPanel();
+            var vm = panel.Vm;
+            vm.Components.Clear();   // shared app stack — start clean
+            var c = vm.Add(FlatGrid(), "fade me");
+
+            vm.Selected!.FadeAmount = 0.75;
+            vm.Selected.FadeDirection = FadeDirection.LeftToRight;
+            vm.Recomposite();
+
+            var hf = vm.Composite!;
+            Assert.Equal(2.0, hf.Heights[0], 3);                   // left (full) edge untouched
+            Assert.Equal(2.0 * 0.25, hf.Heights[hf.Width - 1], 3); // right edge scaled to 1-amount
+
+            vm.Remove(c);
+        });
+    }
+
+    [Fact]
+    public void The_Tree_Panel_Height_Control_Recomposites_And_Fires_The_Redraw_Event()
+    {
+        OnSta(() =>
+        {
+            var panel = new ModelPanel();
+            var tree = (ComponentTreePanel)panel.FindName("Tree")!;
+            var vm = panel.Vm;
+            vm.Components.Clear();   // shared app stack — start clean
+            var c = vm.Add(FlatGrid(), "slider me");
+
+            // The modifier controls are dead until the panel's Loaded hook runs
+            // (_ready) — raise the real event rather than poking the flag.
+            tree.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+
+            bool redrawFired = false;
+            vm.CompositeChanged += () => redrawFired = true;
+
+            // Drive the exact code path the Height slider runs; the composite must
+            // change through ComponentModifierEngine, not a direct grid write.
+            vm.SelectedIndex = 0;
+            tree.RaiseModifierChangedForTest(heightScale: 1.5, fadeAmount: null, fadeDirection: null);
+
+            Assert.True(redrawFired, "composite change did not announce itself");
+            Assert.Equal(3.0, vm.Composite!.MaxHeight, 5);
+
+            vm.Remove(c);
+        });
+    }
+
+    private static void Collect(DependencyObject parent, List<UIElement> into)
+    {
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < n; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is UIElement u) into.Add(u);
+            Collect(child, into);
+        }
     }
 }

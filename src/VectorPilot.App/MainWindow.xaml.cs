@@ -243,9 +243,23 @@ public partial class MainWindow : Window
         Stage_ClickByTag(tag);
     }
 
+    /// <summary>H-303: rail button for the split 2D | 3D stage.</summary>
+    private void SplitView_Click(object sender, RoutedEventArgs e) => ToggleSplitView();
+
     /// <summary>Stage switch by tag, so the dock's Connect… can route to the Machine stage.</summary>
     private void Stage_ClickByTag(string? tag)
     {
+        // H-303: Design and Model share the stage side by side (2D | 3D) once the
+        // split is on; either rail button re-enters it. Every other stage is a
+        // plain swap and turns the split back off, like Aspire leaving the tab.
+        if (_splitActive && tag is "design" or "model")
+        {
+            SetSplitContent(_design, _model);
+            if (tag == "design") _design.RefreshIfVisible();
+            return;
+        }
+        ExitSplit();
+
         StageHost.Content = tag switch
         {
             "design" => _design,
@@ -258,6 +272,76 @@ public partial class MainWindow : Window
         };
         if (tag is "design" or "cut" or "output") _design.RefreshIfVisible();
     }
+
+    // ---- H-303: Split 2D | 3D ----
+
+    private bool _splitActive;
+
+    /// <summary>True while the Design and Model stages are shown side by side.
+    /// Public seam: tests check the shell state without rendering the window.</summary>
+    public bool IsSplitViewActive => _splitActive;
+
+    /// <summary>
+    /// Toggle the split 2D | 3D stage. On: both views show at once — the vector
+    /// design canvas left, the 3D composite right. Off: the Model stage alone.
+    /// Returns the resulting state (public because the test project has no
+    /// InternalsVisibleTo).
+    /// </summary>
+    public bool ToggleSplitView()
+    {
+        if (!_splitActive)
+        {
+            SetSplitContent(_design, _model);
+        }
+        else
+        {
+            ExitSplit();
+            StageHost.Content = _model;
+        }
+        return _splitActive;
+    }
+
+    private void SetSplitContent(object left, object right)
+    {
+        // A Border hosts ONE child: detach the panels from the previous split
+        // layout before rebinding them into the new one, or WPF throws
+        // "already the logical child of another element".
+        if (_splitLeft is not null) _splitLeft.Child = null;
+        if (_splitRight is not null) _splitRight.Child = null;
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) });   // divider
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var l = new Border { Child = (UIElement)left };
+        var r = new Border
+        {
+            Background = (System.Windows.Media.Brush)App.Current.Resources["PanelBg"],
+            Child = (UIElement)right
+        };
+        Grid.SetColumn(l, 0);
+        Grid.SetColumn(r, 2);
+        grid.Children.Add(l);
+        grid.Children.Add(r);
+
+        _splitLeft = l;
+        _splitRight = r;
+        StageHost.Content = grid;
+        _splitActive = true;
+        _design.RefreshIfVisible();
+    }
+
+    private void ExitSplit()
+    {
+        // Hand the panels back before anything else claims them as content.
+        if (_splitLeft is not null) _splitLeft.Child = null;
+        if (_splitRight is not null) _splitRight.Child = null;
+        _splitActive = false;
+    }
+
+    private Border? _splitLeft;
+    private Border? _splitRight;
 
     private static readonly CommandRegistry PaletteCommands = BuildPaletteCommands();
 
@@ -317,6 +401,11 @@ public partial class MainWindow : Window
             var w = new Controls.CommandPaletteWindow(reg) { Owner = Application.Current.MainWindow };
             w.ShowDialog();
         }));
+        reg.Register(new CommandRegistry.Command("splitview", "Toggle Split 2D | 3D View…", null, "View", () =>
+        {
+            if (Application.Current?.MainWindow is MainWindow mw) mw.ToggleSplitView();
+        }));
+
         reg.Register(new CommandRegistry.Command("preferences", "Preferences…", null, "Tools", () =>
         {
             var w = new Controls.PreferencesWindow { Owner = Application.Current.MainWindow };
