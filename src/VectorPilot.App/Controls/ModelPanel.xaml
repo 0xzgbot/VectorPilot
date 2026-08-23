@@ -37,6 +37,9 @@
                 <Button x:Name="BtnModelOffsetUndo" Content="Undo offset" Width="80" Height="24" Margin="4,0,0,0"
                         Click="ModelOffsetUndo_Click" IsEnabled="False"
                         ToolTip="Restore the relief to before the last offset"/>
+                <Button x:Name="BtnSculptUndo" Content="Undo stroke" Width="84" Height="24" Margin="4,0,0,0"
+                        Click="SculptUndo_Click" IsEnabled="False"
+                        ToolTip="Restore the selected component to before the last sculpt stroke (drag on the 3D view to sculpt)"/>
             </StackPanel>
 
             <!-- Animated camera (Aspire OSG camera row): the preview previously had a
@@ -58,7 +61,7 @@
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" Margin="6,0,6,6">
             <Grid>
-                <c:ThreeDPreview x:Name="Preview"/>
+                <c:ThreeDPreview x:Name="View3D"/>
                 <TextBlock x:Name="EmptyHint" Text="No components yet — import a heightfield or add a shape relief."
                            Foreground="#999" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>

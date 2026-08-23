@@ -16,12 +16,87 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
     public ThreeDPreview()
     {
         InitializeComponent();
+
+        // H-302: drag-to-sculpt. Left-drag on the mesh converts to stock XY and
+        // strokes the sculpt target; right-drag still orbits nothing (camera is
+        // animated separately), so the whole surface is the sculpt canvas.
+        Viewport.MouseLeftButtonDown += Sculpt_Down;
+        Viewport.MouseMove += Sculpt_Move;
+        Viewport.MouseLeftButtonUp += (_, _) => _sculpting = false;
+        Viewport.MouseLeave += (_, _) => _sculpting = false;
     }
+
+    // ---- H-302: drag-to-sculpt ----
+
+    private bool _sculpting;
+
+    /// <summary>Receives (worldX, worldY) for each drag sample and reports whether the
+    /// stroke actually changed anything. ModelPanel wires this to the component stack;
+    /// null = sculpting disabled.</summary>
+    public event Func<double, double, bool>? SculptStroke;
+
+    /// <summary>Heightfield currently shown, for screen→stock mapping.</summary>
+    private HeightfieldData? _shownField;
 
     /// <summary>Show the heightfield as a solid mesh. Pass null to clear.</summary>
     public void ShowHeightfield(HeightfieldData? heightfield, double? maxZ = null)
     {
+        _shownField = heightfield;
         StockModel.Content = heightfield is null ? null : BuildMesh(heightfield, maxZ ?? heightfield.MaxHeight);
+    }
+
+    /// <summary>
+    /// Screen point → stock XY using the SHOWN field's bounds (the mesh is drawn
+    /// centered on the origin: x = (col − (w−1)/2)·cell). Public so tests drive the
+    /// exact mapping the mouse handler uses.
+    /// </summary>
+    public bool TryScreenToStock(Point p, out double x, out double y)
+    {
+        x = y = 0;
+        if (_shownField is not { } hf) return false;
+
+        double w = hf.Width * hf.CellSizeMm, h = hf.Height * hf.CellSizeMm;
+
+        // Project: the camera looks at the origin; map viewport pixels to the mesh's
+        // world rectangle via the viewport's relative position. This is exact for the
+        // default top-down-ish camera and monotonic for orbit angles — good enough to
+        // place a brush, and the SAME math the drag path uses. An unrendered control
+        // (tests, hidden tab) reports 0 size; fall back to a nominal 400×300 surface
+        // so the mapping still lands ON the mesh instead of kilometres away.
+        double vpW = Viewport.ActualWidth > 1 ? Viewport.ActualWidth : 400;
+        double vpH = Viewport.ActualHeight > 1 ? Viewport.ActualHeight : 300;
+        var relX = Math.Clamp(p.X / vpW, 0, 1);
+        var relY = Math.Clamp(p.Y / vpH, 0, 1);
+        x = (relX - 0.5) * w;
+        y = (relY - 0.5) * h;
+        return true;
+    }
+
+    /// <summary>One sculpt sample at a viewport point (public test seam). True only
+    /// when the stroke actually modified the heightfield.</summary>
+    public bool SculptAt(Point p)
+    {
+        if (!TryScreenToStock(p, out var x, out var y)) return false;
+        return SculptStroke?.Invoke(x, y) == true;
+    }
+
+    private void Sculpt_Down(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (SculptStroke is null) return;
+        _sculpting = true;
+        Viewport.CaptureMouse();
+        SculptAt(e.GetPosition(Viewport));
+    }
+
+    private void Sculpt_Move(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (!_sculpting || SculptStroke is null) return;
+        if (System.Windows.Input.Mouse.LeftButton != System.Windows.Input.MouseButtonState.Pressed)
+        {
+            _sculpting = false;
+            return;
+        }
+        SculptAt(e.GetPosition(Viewport));
     }
 
     /// <summary>Overlay toolpath segments (rapid = dashed red, cut = solid blue).</summary>

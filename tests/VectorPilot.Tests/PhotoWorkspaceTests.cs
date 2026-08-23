@@ -167,12 +167,12 @@ public class PhotoWorkspaceTests
 
             Assert.Equal(before + 1, AppState.Toolpaths.Toolpaths.Count);
             var tp = AppState.Toolpaths.Toolpaths[^1];
-            Assert.Equal("laser-picture", tp.StrategyKey);
-            // Laser picture emits DOTS (G0 move + M3 power pulse), not G1 — the honest form.
-            bool hasMotion = tp.GCode.Any(l => l.TrimStart().StartsWith("G0"));
-            bool hasPower = tp.GCode.Any(l => l.TrimStart().StartsWith("M3"));
-            Assert.True(hasMotion && hasPower,
-                "lithophane program had neither dot moves nor laser power lines");
+            // H-211: the lithophane is a MILLED plate — the thickness field runs through
+            // finish3d (HeightfieldFinishEngine), which raster-rows the surface and emits
+            // real G1 cutting moves. The old laser-picture route (G0 dots + M3 power
+            // pulses, no G1, no Cuts row) is gone.
+            Assert.Equal("finish3d", tp.StrategyKey);
+            Assert.Contains(tp.GCode, l => l.TrimStart().StartsWith("G1"));
 
             AppState.Toolpaths.Toolpaths.Remove(tp);
         });
@@ -186,6 +186,7 @@ public class PhotoWorkspaceTests
             var panel = new PhotoPanel();
             panel.LoadImage(WriteStepPng(Path.GetTempPath()));
             int before = AppState.Toolpaths.Toolpaths.Count;
+            int componentsBefore = AppState.Components.Components.Count;
 
             panel.Relief3D_Click(null!, null!);
 
@@ -193,8 +194,12 @@ public class PhotoWorkspaceTests
             var tp = AppState.Toolpaths.Toolpaths[^1];
             Assert.Equal("sketch-carve", tp.StrategyKey);
             Assert.Contains(tp.GCode, l => l.TrimStart().StartsWith("G1"));
+            // H-211: the relief is also a MODEL action — a grayscale component lands
+            // on the shared stack.
+            Assert.Equal(componentsBefore + 1, AppState.Components.Components.Count);
 
             AppState.Toolpaths.Toolpaths.Remove(tp);
+            AppState.Components.Components.RemoveAt(AppState.Components.Components.Count - 1);
         });
     }
 

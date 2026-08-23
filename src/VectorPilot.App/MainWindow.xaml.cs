@@ -34,6 +34,14 @@ public partial class MainWindow : Window
         };
         _design.AttachMachineDock(MachineDock);   // H-104: Frame + click-to-jog on Design
 
+        // H-211: a photo action lands a toolpath while its own panel is on stage —
+        // the Cuts list is a snapshot, so tell it to rebuild right away.
+        _photo.CutsChanged += () =>
+        {
+            if (!Dispatcher.CheckAccess()) return;
+            _cut.RefreshCutsList();
+        };
+
         StageHost.Content = _setup;
         PreviewKeyDown += MainWindow_PreviewKeyDown;   // Ctrl+K palette hook
         StartAutosaveTimer();                           // crash-recovery autosave

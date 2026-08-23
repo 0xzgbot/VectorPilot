@@ -34,6 +34,12 @@ public static class AppState
     public static HeightfieldData? ModelHeightfield { get; set; }
 
     /// <summary>
+    /// H-211: the shared relief component stack. The Model stage's tree owns the UI,
+    /// but a grayscale photo relief lands here too so both stages see one stack.
+    /// </summary>
+    public static ComponentTreeViewModel Components { get; } = new();
+
+    /// <summary>
     /// Card P2: shape ids belonging to the toolpath currently selected in the
     /// Toolpaths stage. The Design canvas highlights these so the link between a
     /// toolpath and the geometry it cuts is visible.

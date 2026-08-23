@@ -14,9 +14,31 @@ public partial class ModelPanel : UserControl
     private int _shapeCount;
     private int _weaveCount;
 
+    /// <summary>The component stack this panel edits (shared app stack). Public because
+    /// the test project has no InternalsVisibleTo.</summary>
+    public ComponentTreeViewModel Vm => Tree.Vm;
+
+    /// <summary>The 3D preview (public: tests drive the sculpt drag seam).</summary>
+    public ThreeDPreview Preview => _preview;
+
+    private ThreeDPreview _preview = null!;   // assigned in InitializeComponent
+
     public ModelPanel()
     {
         InitializeComponent();
+        _preview = (ThreeDPreview)FindName("View3D")!;   // expose the internal x:Name field publicly
+        // H-211: one shared component stack for the whole app — a grayscale photo
+        // relief lands in the same stack this panel's tree displays.
+        Tree.UseSharedStack(AppState.Components);
+        // H-302: drag on the 3D mesh strokes the selected component's heightfield,
+        // then the composite re-renders — the Aspire sculpt loop.
+        Preview.SculptStroke += (x, y) =>
+        {
+            if (!Vm.Sculpt(SculptTool.Brush, x, y)) return false;
+            if (Vm.Composite is { } hf) _preview.ShowHeightfield(hf);
+            BtnSculptUndo.IsEnabled = true;
+            return true;
+        };
         Loaded += (_, _) =>
         {
             CmbWeavePattern.ItemsSource = new[] { "Plain", "Twill", "Satin" };
@@ -25,7 +47,13 @@ public partial class ModelPanel : UserControl
         };
     }
 
-    private ComponentTreeViewModel Vm => Tree.Vm;
+    /// <summary>H-302: undo the last sculpt stroke and re-render.</summary>
+    private void SculptUndo_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Vm.UndoLastStroke()) return;
+        if (Vm.Composite is { } hf) Preview.ShowHeightfield(hf);
+        BtnSculptUndo.IsEnabled = Vm.HasSculptUndo;
+    }
 
     private void Refresh()
     {
@@ -55,6 +83,14 @@ public partial class ModelPanel : UserControl
         };
         if (dlg.ShowDialog() != true) return;
 
+        // H-301: an STL goes through the stock-setup wizard (stock/origin/scale/preview);
+        // every other format keeps the direct one-shot import.
+        if (dlg.FileName.EndsWith(".stl", StringComparison.OrdinalIgnoreCase))
+        {
+            ImportStlViaWizard(dlg.FileName);
+            return;
+        }
+
         try
         {
             var hf = LoadHeightfield(dlg.FileName);
@@ -67,6 +103,42 @@ public partial class ModelPanel : UserControl
         {
             StatusLabel.Text = $"import failed: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// H-301: run the STL through the stock wizard. Nothing touches the job until the
+    /// user confirms OK — cancel leaves components and AppState exactly as they were.
+    /// </summary>
+    internal void ImportStlViaWizard(string stlPath)
+    {
+        var wizard = new StlImportDialog(stlPath) { Owner = Window.GetWindow(this) };
+        wizard.ShowDialog();
+        if (!wizard.Confirmed || wizard.ResultHeightfield is not { } hf)
+        {
+            CancelStlImport();
+            return;
+        }
+
+        AddStlComponent(hf, System.IO.Path.GetFileNameWithoutExtension(stlPath),
+            $"{wizard.TriangleCount} triangles");
+    }
+
+    /// <summary>The commit half of the wizard flow (public seam: tests drive it with
+    /// the exact heightfield an OK'd dialog produced).</summary>
+    public void AddStlComponent(HeightfieldData hf, string name, string? note = null)
+    {
+        Vm.Add(hf, name);
+        AppState.ModelHeightfield = Vm.Composite;
+        Refresh();
+        StatusLabel.Text = note is null
+            ? $"STL component added: {name}"
+            : $"STL component added ({note})";
+    }
+
+    /// <summary>The cancel half of the wizard flow: status only, zero job mutation.</summary>
+    public void CancelStlImport()
+    {
+        StatusLabel.Text = "STL import cancelled — job unchanged";
     }
 
     /// <summary>Dispatch a mesh file to its heightfield importer.</summary>

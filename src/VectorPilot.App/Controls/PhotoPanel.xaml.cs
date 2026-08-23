@@ -27,6 +27,16 @@ public partial class PhotoPanel : UserControl
     private int _width, _height;
     private string _fileName = "photo";
 
+    /// <summary>
+    /// H-211: raised whenever a photo action lands a toolpath in AppState.Toolpaths.
+    /// MainWindow subscribes this to CutPanel.RefreshCutsList so the Cuts list — a
+    /// snapshot rebuilt on demand — actually shows the new row without navigating.
+    /// </summary>
+    public event Action? CutsChanged;
+
+    /// <summary>H-211 test seam: fire the refresh signal exactly as BuildToolpath does.</summary>
+    public void RaiseCutsChangedForTest() => CutsChanged?.Invoke();
+
     public PhotoPanel()
     {
         InitializeComponent();
@@ -171,6 +181,7 @@ public partial class PhotoPanel : UserControl
         tp.EstimatedTimeSeconds = result.EstimatedTimeSeconds;
 
         AppState.Toolpaths.Toolpaths.Add(tp);
+        CutsChanged?.Invoke();   // H-211: the Cuts list is a snapshot — tell it to rebuild
         return tp;
     }
 
@@ -195,8 +206,6 @@ public partial class PhotoPanel : UserControl
 
     public void Lithophane_Click(object sender, RoutedEventArgs e) => RunLithophane();
 
-    public void Relief3D_Click(object sender, RoutedEventArgs e) => RunPhotoAction("sketch-carve", "Photo relief");
-
     /// <summary>V-carve / relief consume the LUMINANCE as a 0..1 surface directly.</summary>
     private void RunPhotoAction(string strategyKey, string label)
     {
@@ -218,6 +227,36 @@ public partial class PhotoPanel : UserControl
             : $"{label} added to Cuts ({tp.GCode.Count} lines)";
     }
 
+    /// <summary>
+    /// H-211: the grayscale relief is a MODEL action, not only a cut. The luminance
+    /// becomes a ReliefComponent on the shared component stack (the same stack the
+    /// Model stage's tree shows), then the same field goes through sketch-carve so
+    /// the Cuts list gets a real mill program with G1 moves.
+    /// </summary>
+    public void Relief3D_Click(object sender, RoutedEventArgs e)
+    {
+        var lum = AdjustedLuminance();
+        if (lum.Length == 0)
+        {
+            PhotoStatus.Text = "import a photo first";
+            return;
+        }
+
+        const double cell = 0.25;
+        var hf = new HeightfieldData(_width, _height, cell, 0, 0,
+            lum.Select(v => v * 3.0).ToArray());
+
+        // Land it on the component stack (shared with ModelPanel) and keep the job's
+        // model heightfield in sync so downstream 3D strategies see it too.
+        AppState.Components.Add(hf, $"Grayscale relief · {_fileName}");
+        AppState.ModelHeightfield = AppState.Components.Composite;
+
+        var tp = BuildToolpath("sketch-carve", hf, $"Photo relief · {_fileName}");
+        PhotoStatus.Text = tp is null
+            ? "sketch-carve unavailable"
+            : $"Photo relief added to Cuts ({tp.GCode.Count} lines) + component stack";
+    }
+
     /// <summary>Lithophane consumes luminance through the dedicated engine (dark → thick).</summary>
     private void RunLithophane()
     {
@@ -232,13 +271,15 @@ public partial class PhotoPanel : UserControl
         var hf = LithophaneEngine.Compute(lum, _width, _height, p);
         if (hf is null)
         {
-            PhotoStatus.Text = "could not build the lithophane field from this image";
+            PhotoStatus.Text = "could not build the lithophane plate from this image";
             return;
         }
 
-        // The litho engine returns thicknesses; hand THAT to laser-picture's heightfield slot
-        // so the Cuts list gets a real, honest toolpath.
-        var tp = BuildToolpath("laser-picture", hf, $"Lithophane · {_fileName}");
+        // H-211: the lithophane is a MILLED plate, not a laser job. The thickness field
+        // goes through the finish3d registry entry (HeightfieldFinishEngine), which
+        // raster-rows the surface and emits real G1 cutting moves. The old laser-picture
+        // route emitted dot-burning G0/M3 lines — no G1, no mill program.
+        var tp = BuildToolpath("finish3d", hf, $"Lithophane · {_fileName}");
         PhotoStatus.Text = tp is null
             ? "lithophane strategy unavailable"
             : $"Lithophane added to Cuts ({tp.GCode.Count} lines)";

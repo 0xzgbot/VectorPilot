@@ -82,7 +82,35 @@ public sealed class ComponentTreeViewModel
         var result = SculptEngine.ApplyStroke(stroke, Selected.Heightfield);
         if (result.CellsAffected == 0) return false;
 
+        // H-302: one-step undo. Snapshot the pre-stroke field so UndoSculpt can
+        // restore it; only kept when cells actually changed.
+        _preSculptHeightfield = Selected.Heightfield;
+        HasSculptUndo = true;
+
         Selected.Heightfield = result.Heightfield;
+        Recomposite();
+        return true;
+    }
+
+    // ---- H-302: sculpt undo (documented single step) ----
+
+    private HeightfieldData? _preSculptHeightfield;
+
+    /// <summary>True when a stroke has been applied and not yet undone.</summary>
+    public bool HasSculptUndo { get; private set; }
+
+    /// <summary>
+    /// Restore the heightfield as it was before the LAST stroke (one-step undo —
+    /// a stroke chain is intentionally NOT tracked; each new stroke replaces the
+    /// snapshot). Returns false when there is nothing to undo.
+    /// </summary>
+    public bool UndoLastStroke()
+    {
+        if (!HasSculptUndo || _preSculptHeightfield is null || Selected is null) return false;
+
+        Selected.Heightfield = _preSculptHeightfield;
+        _preSculptHeightfield = null;
+        HasSculptUndo = false;
         Recomposite();
         return true;
     }

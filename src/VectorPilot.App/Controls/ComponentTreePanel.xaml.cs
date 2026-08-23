@@ -7,7 +7,9 @@ namespace VectorPilot.App.Controls;
 /// <summary>Card A6: component tree + combine modes + sculpt brush controls.</summary>
 public partial class ComponentTreePanel : UserControl
 {
-    internal readonly ComponentTreeViewModel Vm = new();
+    // H-211: the panel's stack. Defaults to its own; UseSharedStack swaps in the
+    // app-wide VM so every stage edits one component stack.
+    internal ComponentTreeViewModel Vm { get; private set; } = new();
     private bool _ready;
 
     public ComponentTreePanel()
@@ -26,6 +28,24 @@ public partial class ComponentTreePanel : UserControl
         // Handlers attach after the visual tree exists (A5 lesson: XAML-attached
         // handlers fire during init before siblings are created).
         Loaded += (_, _) => { _ready = true; Refresh(); };
+    }
+
+    /// <summary>
+    /// H-211: point this panel at the app-wide shared stack so components created on
+    /// other stages (e.g. a grayscale photo relief) show up here. Brush settings are
+    /// copied onto the shared VM so the sliders keep driving the active stack.
+    /// </summary>
+    internal void UseSharedStack(ComponentTreeViewModel shared)
+    {
+        var brushShape = Vm.BrushShape;
+        var brushFalloff = Vm.BrushFalloff;
+        double radius = Vm.BrushRadiusMm, strength = Vm.BrushStrength;
+        Vm = shared;
+        Vm.BrushShape = brushShape;
+        Vm.BrushFalloff = brushFalloff;
+        Vm.BrushRadiusMm = radius;
+        Vm.BrushStrength = strength;
+        if (_ready) Refresh();
     }
 
     internal void Refresh()

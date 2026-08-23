@@ -158,7 +158,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~PhotoWorkspace` + grep XAML click handlers  
   AC: Preview updates before Calculate; empty image uses honest Empty() not fake `%`.
 
-- [ ] **H-211** Wire Photo V-Carve + lithophane + grayscale component through Cuts list  
+- [x] **H-211** Wire Photo V-Carve + lithophane + grayscale component through Cuts list  
   Locks: **CUT**, **ENGINE-PHOTO**  
   Depends: H-102, H-210, H-201  
   Parallel-OK: none with other CUT  
@@ -169,7 +169,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ## Wave 3 — 3D product UI
 
-- [ ] **H-301** STL-to-stock wizard (MeshCAM-style)  
+- [x] **H-301** STL-to-stock wizard (MeshCAM-style)  
   Locks: **MODEL**  
   Parallel-OK: H-201 if not merged conflict; H-202 done  
   OWN: `src/VectorPilot.App/Controls/ModelPanel.xaml(.cs)`; STL import already in Engine — grep `StlImporter` (`src/VectorPilot.Engine/Import/` or similar). No `StlWizard.cs` unless you add **new** `Controls/StlImportDialog.xaml(.cs)`.  
@@ -177,7 +177,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~StlWizard`  
   AC: One STL → component on sheet bounds; cancel leaves job unchanged.
 
-- [ ] **H-302** Sculpt on 3D view (Aspire loop)  
+- [x] **H-302** Sculpt on 3D view (Aspire loop)  
   Locks: **MODEL**  
   Depends: H-301 not required  
   Parallel-OK: H-201, H-103 if locks disjoint — **MODEL vs MACHINE OK**  
