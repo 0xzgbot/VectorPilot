@@ -309,3 +309,7 @@ Pass: short list of residual risks only.
 - gate — 1ae10e3 (verify.sh rejects partial runs via a self-maintaining high-water floor)
 - mythos wave — 356334e/c035cb5 on main: H-103 27b8529 (MachineDock pinned strip), H-104 16d9b46 (Frame + Ctrl+Click jog), H-203 04b3b0b (RestRoughTests only), H-210 42f3cea (Photo stage). 1449/1449 green after merging remote fixes 907b03b/a61b42b.
 - `H-102` — b1bbcad (Cuts list is a ListView of real Toolpath items: Name/Strategy/Time/Dirty/Lines; selection survives refresh; **revived Array copy + Save/Apply template, which were dead because SelectedItem was always a string**; 11 tests)
+- `H-211` — f223d94 (photo V-Carve + lithophane + grayscale land as real Cuts rows via StrategyRegistry.Compute)
+- `H-301` — cd69dcc (STL-to-stock wizard: new StlImportDialog, opened from ModelPanel; one STL → component; cancel leaves job unchanged)
+- `H-302` — 0e08114 (drag on the 3D mesh sculpts the selected component via ComponentTreeViewModel → SculptEngine + undo)
+- merge(wave2/3) — 856f892 (H-211+H-301+H-302 to main in one branch hermes/h-211-301-302; FrameJogTests async conversion un-reds CI xUnit1031; 1464/1464 green)
