@@ -40,6 +40,23 @@ public sealed class VCarveParams
     public double ClearanceStepOverMm { get; set; } = 0.4;
     public double SpindleRpm { get; set; }
 
+    /// <summary>
+    /// P-202: clear flat areas the V-bit physically cannot reach. Where a shape's
+    /// half-width exceeds the depth-limited tip width, a V-bit bottoms out at
+    /// MaxDepthOfCutMm and leaves uncut stock on either side of the spine. With
+    /// this flag the medial-axis ridge in those too-wide regions gets a second,
+    /// offset sweep at full depth (endmill-clear style), so wide slots and fat
+    /// letterforms bottom out flat instead of leaving a ridge of stock.
+    /// </summary>
+    public bool FlatAreaClearing { get; set; }
+
+    /// <summary>How far beyond the V-bit's reachable width a region must be before
+    /// the flat-clearing sweep visits it, as a fraction of TipWidthAtDepth.</summary>
+    public double FlatAreaThresholdFactor { get; set; } = 1.5;
+
+    /// <summary>Sweep line spacing inside flat regions, in mm.</summary>
+    public double FlatAreaStepOverMm { get; set; } = 1.0;
+
     /// <summary>Half-angle of the V-bit in radians.</summary>
     public double HalfAngleRadians => (Math.PI / 180.0 * VBitAngleDegrees) / 2.0;
 
@@ -213,6 +230,17 @@ public static class VCarveEngine
                     g.Add("G0 Z5.0");
                     totalCuttingLength += PathLength(path.Select(p => p.Position).ToList());
                 }
+
+                // ---- P-202: flat-area clearing ----
+                //
+                // Where the ridge's clearance exceeds what a V-bit can widen to by
+                // MaxDepthOfCutMm, the bit bottoms out and stock remains on both
+                // sides. Sweep the too-wide ridge segments laterally at full depth,
+                // stepping across the flat width — endmill-clear style.
+                if (params_.FlatAreaClearing)
+                {
+                    g.AddRange(FlatAreaSweep(skeleton, vector, params_, maxDepth));
+                }
             }
         }
 
@@ -233,6 +261,77 @@ public static class VCarveEngine
             BoundsMaxX = hasBounds ? maxX : null,
             BoundsMaxY = hasBounds ? maxY : null
         };
+    }
+
+    /// <summary>
+    /// P-202: sweep the too-wide segments of the medial-axis ridge at full depth.
+    /// A ridge point is "flat" when its clearance exceeds the V-bit's reachable
+    /// half-width (TipWidthAtDepth/2) by the threshold factor. For each flat run,
+    /// lateral passes step across the flat width on BOTH sides of the spine at
+    /// -maxDepth, so the fat region bottoms out instead of keeping a stock ridge.
+    /// </summary>
+    internal static List<string> FlatAreaSweep(
+        MedialAxis.Result skeleton, VectorShape vector, VCarveParams p, double maxDepth)
+    {
+        var g = new List<string>();
+        string F3(double v) => v.ToString("F3", CultureInfo.InvariantCulture);
+
+        double tipHalf = p.TipWidthAtDepth(maxDepth) / 2.0;
+        double threshold = Math.Max(tipHalf * p.FlatAreaThresholdFactor, tipHalf + 1e-6);
+        double zFlat = -maxDepth;
+        double feed = (int)p.FeedRateMmPerMin;
+        double plunge = (int)p.PlungeFeedRateMmPerMin;
+
+        foreach (var path in skeleton.Paths)
+        {
+            // Split the ridge into maximal runs where clearance >= threshold.
+            int i = 0;
+            while (i < path.Count)
+            {
+                if (path[i].ClearanceMm < threshold) { i++; continue; }
+                int j = i;
+                while (j + 1 < path.Count && path[j + 1].ClearanceMm >= threshold) j++;
+
+                // Flat run [i..j]: sweep laterally. The extra half-width each side
+                // of the spine that the V-bit cannot reach:
+                double extra = path[i].ClearanceMm - tipHalf;
+                if (extra > 1e-6 && path[i].Position.DistanceTo(path[j].Position) > 1e-6)
+                {
+                    int sweeps = Math.Max(1, (int)Math.Ceiling(extra * 2 / Math.Max(p.FlatAreaStepOverMm, 0.05)));
+                    // Lateral direction: perpendicular to the run's overall direction.
+                    double dx = path[j].Position.X - path[i].Position.X;
+                    double dy = path[j].Position.Y - path[i].Position.Y;
+                    double len = Math.Sqrt(dx * dx + dy * dy);
+                    if (len > 1e-9)
+                    {
+                        double px = -dy / len, py = dx / len;   // unit perpendicular
+
+                        for (int sIdx = 0; sIdx <= sweeps; sIdx++)
+                        {
+                            // Offsets straddle the spine: 0, +step, −step, +2·step, …
+                            double off = ((sIdx + 1) / 2) * (sIdx % 2 == 1 ? 1 : -1)
+                                         * p.FlatAreaStepOverMm;
+                            if (Math.Abs(off) > extra) continue;   // stay inside the flat band
+
+                            g.Add("G0 Z5.0");
+                            var a = path[i].Position;
+                            var b = path[j].Position;
+                            g.Add($"G0 X{F3(a.X + px * off)} Y{F3(a.Y + py * off)}");
+                            g.Add($"G1 Z{F3(zFlat)} F{(int)plunge}");
+                            g.Add($"G1 X{F3(b.X + px * off)} Y{F3(b.Y + py * off)} F{(int)feed}");
+                            g.Add("G0 Z5.0");
+                        }
+                    }
+                }
+
+                i = j + 1;
+            }
+        }
+
+        if (g.Count > 0)
+            g.Insert(0, $"(Flat area clearing: regions wider than {F3(tipHalf * 2)}mm tip width)");
+
+        return g;
     }
 
     /// <summary>
