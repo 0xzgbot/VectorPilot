@@ -131,6 +131,15 @@ public partial class OutputPanel : UserControl
             return;
         }
 
+        // P-301: a dual-sided job exports TWO programs — front and mirrored back —
+        // with the flip instructions between them. Single-sided jobs are unchanged.
+        if (AppState.CurrentJob.IsDoubleSided)
+        {
+            var status = ExportDualSided(toolpaths);
+            if (status is not null) TxtExportInfo.Text = status;
+            return;
+        }
+
         // Honour the post picker. This used to call the plain exporter and ignore
         // CmbPost entirely, so the selected controller had no effect on the .tap —
         // and it overwrote the same filename the template export writes.
@@ -145,6 +154,128 @@ public partial class OutputPanel : UserControl
 
         var path = TapExporter.Export(target, toolpaths);
         TxtExportInfo.Text = $"Wrote {path} (no post selected — generic GRBL)";
+    }
+
+    /// <summary>
+    /// P-301: dual-sided export. The FRONT program is the calculated toolpaths as-is.
+    /// The BACK program mirrors every cutting move about the job's FlipAxis using
+    /// DualSidedMachining.MapPoint (an involution), so back-side cuts land correctly
+    /// after the physical turn-over. Writes {job}-front.tap and {job}-back.tap plus
+    /// flip instructions embedded at the end of the front file. Returns a status
+    /// line, or null when nothing was written. Public seam: tests drive this exact
+    /// path (no InternalsVisibleTo).
+    /// </summary>
+    public string? ExportDualSided(IReadOnlyList<Toolpath> toolpaths)
+    {
+        var job = AppState.CurrentJob;
+        var sheet = job.ActiveSheet;
+
+        var dir = OutputDir();
+        var baseName = Sanitize(job.Name);
+        var post = CmbPost.SelectedItem as PostTemplate;
+
+        string Front() => Path.Combine(dir, baseName + "-front.tap");
+        string Back() => Path.Combine(dir, baseName + "-back.tap");
+
+        try
+        {
+            // FRONT: as calculated.
+            if (post is not null) TapExporter.ExportWithTemplate(Front(), toolpaths, post);
+            else TapExporter.Export(Front(), toolpaths);
+
+            // BACK: mirror every motion coordinate through the flip transform. G-code
+            // lines are transformed textually per move; comments/headers pass through
+            // so each side keeps its own program identity.
+            double stockW = ParseMm(sheet?.Width, 200);
+            double stockH = ParseMm(sheet?.Height, 300);
+            var backLines = new List<string>();
+            foreach (var tp in toolpaths)
+            foreach (var line in tp.GCode)
+                backLines.Add(MirrorMotionLine(line, job.FlipAxis, stockW, stockH));
+
+            var backFile = new List<string> { $"(BACK SIDE — flip {job.FlipAxis})" };
+            backFile.AddRange(DualSidedMachining.FlipInstructions(job.FlipAxis, sheet?.Thickness ?? 18));
+            backFile.AddRange(backLines);
+            File.WriteAllLines(Back(), backFile);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Dual-sided export failed: {ex.Message}", "Export",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return null;
+        }
+
+        return $"Dual-sided: wrote {Front()} and {Back()} (flip {job.FlipAxis})";
+    }
+
+    /// <summary>
+    /// Mirror one G-code line's X (Vertical flip) or Y (Horizontal flip) coordinate
+    /// about the stock dimension. Non-motion lines pass through untouched.
+    /// Public seam: tests pin the exact transform the export writes.
+    /// </summary>
+    public static string MirrorMotionLine(string line, FlipAxis axis, double stockW, double stockH)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(
+            line, @"^(G[01]\s+)(.*)$");
+        if (!m.Success) return line;
+
+        string head = m.Groups[1].Value, rest = m.Groups[2].Value;
+        char coord = axis == FlipAxis.Vertical ? 'X' : 'Y';
+        double span = axis == FlipAxis.Vertical ? stockW : stockH;
+
+        var cm = System.Text.RegularExpressions.Regex.Match(
+            rest, $@"{coord}(-?\d+(?:\.\d+)?)");
+        if (!cm.Success) return line;
+
+        double v = double.Parse(cm.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        double mirrored = span - v;
+
+        string replaced = rest[..cm.Index] +
+                          $"{coord}{mirrored.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)}" +
+                          rest[(cm.Index + cm.Length)..];
+        return head + replaced;
+    }
+
+    private static double ParseMm(double? value, double fallback) => value ?? fallback;
+
+    /// <summary>P-301 test seam: run the dual-sided export against an explicit
+    /// output directory. Never shows a modal — failures return null with the
+    /// message in <see cref="LastExportError"/> so tests cannot hang.</summary>
+    public string? LastExportError { get; private set; }
+
+    public string? ExportDualSidedToTest(IReadOnlyList<Toolpath> toolpaths, string directory)
+    {
+        var job = AppState.CurrentJob;
+        var sheet = job.ActiveSheet;
+        var baseName = Sanitize(job.Name);
+        string Front() => Path.Combine(directory, baseName + "-front.tap");
+        string Back() => Path.Combine(directory, baseName + "-back.tap");
+        LastExportError = null;
+
+        try
+        {
+            if (CmbPost.SelectedItem is PostTemplate post) TapExporter.ExportWithTemplate(Front(), toolpaths, post);
+            else TapExporter.Export(Front(), toolpaths);
+
+            double stockW = ParseMm(sheet?.Width, 200);
+            double stockH = ParseMm(sheet?.Height, 300);
+            var backLines = new List<string>
+            {
+                $"(BACK SIDE — flip {job.FlipAxis})",
+            };
+            backLines.AddRange(DualSidedMachining.FlipInstructions(job.FlipAxis, sheet?.Thickness ?? 18));
+            foreach (var tp in toolpaths)
+            foreach (var line in tp.GCode)
+                backLines.Add(MirrorMotionLine(line, job.FlipAxis, stockW, stockH));
+            File.WriteAllLines(Back(), backLines);
+        }
+        catch (Exception ex)
+        {
+            LastExportError = ex.Message;   // no modal: tests must never block
+            return null;
+        }
+
+        return $"Dual-sided: wrote {Front()} and {Back()} (flip {job.FlipAxis})";
     }
 
     private void ExportTemplate_Click(object sender, RoutedEventArgs e)
