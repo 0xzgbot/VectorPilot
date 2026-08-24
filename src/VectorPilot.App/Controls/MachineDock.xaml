@@ -26,6 +26,11 @@
             <Button x:Name="BtnDockSurfacing" Content="▦ Surface Board…" Click="DockSurfacing_Click"
                     MinWidth="118" MinHeight="30" Margin="0,0,10,0"
                     ToolTip="Wasteboard surfacing wizard — raster facing program for the sheet XY"/>
+            <ToggleButton x:Name="TglRotary" Click="Rotary_Click" MinWidth="104" MinHeight="30"
+                          Margin="0,0,10,0"
+                          ToolTip="Rotary mode: Y words wrap to A (deg = mm / Ø × 360) at send time. No auto-start; affects subsequent sends only.">
+                <Run>♻ Rotary</Run>
+            </ToggleButton>
             <TextBlock x:Name="DockNote" VerticalAlignment="Center" Foreground="#8888A0"
                        Margin="6,0,0,0"/>
         </DockPanel>

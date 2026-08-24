@@ -165,4 +165,54 @@ public partial class MachineDock : UserControl
 
     /// <summary>H-402 test seam: construct the surfacing wizard exactly as the button does.</summary>
     public SurfacingWizardDialog OpenSurfacingWizard() => new(this);
+
+    // ---- H-403: rotary mode toggle ----
+
+    /// <summary>Dock rotary toggle. Asks for the stock diameter once via a small
+    /// input dialog; default 50mm. No motion is ever sent by this handler.</summary>
+    private void Rotary_Click(object sender, RoutedEventArgs e)
+    {
+        if (Session is null)
+        {
+            TglRotary.IsChecked = false;
+            DockNote.Text = "Rotary: not connected";
+            return;
+        }
+
+        bool enable = TglRotary.IsChecked == true;
+        double diameter = 50;
+        if (enable)
+        {
+            var dlg = new RotaryDiameterDialog(RotaryDiameterMm) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() != true)
+            {
+                TglRotary.IsChecked = false;
+                return;
+            }
+            diameter = dlg.DiameterMm;
+        }
+
+        Session.SetRotaryMode(enable, diameter);
+        RotaryDiameterMm = Session.RotaryDiameterMm;
+        DockConnState.Text = Session.IsConnected
+            ? $"connected · {Session.Transport.Name}" + (enable ? " · ♢ rotary" : "")
+            : "machine: not connected";
+        DockMessage?.Invoke(enable
+            ? $"rotary mode ON — Y wraps to A at Ø {diameter:0.#}mm"
+            : "rotary mode OFF");
+    }
+
+    /// <summary>Last confirmed rotary diameter (persists across toggles within a session).</summary>
+    public double RotaryDiameterMm { get; private set; } = 50;
+
+    /// <summary>H-403 test seam: drive the same state change the click handler performs,
+    /// minus the modal diameter prompt.</summary>
+    public bool ToggleRotaryForTest(bool enable, double diameterMm)
+    {
+        if (Session is null) { TglRotary.IsChecked = false; return false; }
+        bool state = Session.SetRotaryMode(enable, diameterMm);
+        RotaryDiameterMm = Session.RotaryDiameterMm;
+        TglRotary.IsChecked = state;
+        return state;
+    }
 }

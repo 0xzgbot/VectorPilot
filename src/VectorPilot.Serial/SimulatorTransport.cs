@@ -15,6 +15,23 @@ public sealed class SimulatorTransport : IMachineTransport
     /// <summary>H-401: where the simulated touch plate sits (work Z). A G38.2 probe
     /// stops here; targets shallower than this report a probe failure.</summary>
     public double ProbePlateZ { get; set; } = -5.0;
+
+    /// <summary>H-403: rotary A position in degrees, wrapped to [0,360).</summary>
+    public double AAxisDegrees => _a;
+
+    /// <summary>H-403: when true, plain Y moves are accepted as chuck rotation
+    /// (Y-as-A) for programs not yet rewritten to A words.</summary>
+    public bool YAsAWrap { get; set; }
+
+    private double _a;
+    private bool _yAsA => YAsAWrap;
+
+    private static double Normalize(double degrees)
+    {
+        var r = degrees % 360.0;
+        return r < 0 ? r + 360.0 : r;
+    }
+
     public string Name => "Simulator (virtual GRBL)";
 
     private MachineProfile _profile = MachineProfile.Simulator();
@@ -40,10 +57,14 @@ public sealed class SimulatorTransport : IMachineTransport
         return Task.CompletedTask;
     }
 
+    /// <summary>H-403 test seam: raw TX log (">> line" entries) without enabling the session console.</summary>
+    public List<string> ConsoleLinesForTest { get; } = new();
+
     public async Task WriteLineAsync(string line, CancellationToken ct = default)
     {
         if (!IsOpen) return;
-        line = line.TrimEnd('\r', '\n');
+        line = line.TrimEnd((char)13, (char)10);
+        ConsoleLinesForTest.Add(line);
         Emit(TransportEventType.DataReceived, line);
 
         // Real-time commands (GRBL: ! ~ ? 0x18) bypass the line buffer.
@@ -185,6 +206,11 @@ public sealed class SimulatorTransport : IMachineTransport
         bool absolute = !upper.Contains("G91");
         if (absolute) { _x = targetX; _y = targetY; _z = targetZ; }
         else { _x += targetX; _y += targetY; _z += targetZ; }
+
+        // H-403: track the rotary axis. An explicit A word sets the (wrapped) angle.
+        if (upper.Contains('A'))
+            _a = Normalize(absolute ? ParseNumberAfter(upper, 'A', _a)
+                                    : _a + ParseNumberAfter(upper, 'A', 0));
     }
 
     private void JogFrom(string line)

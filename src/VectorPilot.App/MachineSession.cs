@@ -241,6 +241,72 @@ public sealed class MachineSession : IAsyncDisposable
         };
     }
 
+    // ---- H-403: rotary mode (Y→A wrap at send time, optional) ----
+
+    /// <summary>When true, every streamed/sent Y word is rewritten to an A word
+    /// (degrees = linear / circumference × 360) before it reaches the transport —
+    /// gSender's "Y-as-A" trick for programs not yet posted for rotary.</summary>
+    public bool RotaryModeEnabled { get; private set; }
+
+    public double RotaryDiameterMm { get; private set; } = 50;
+
+    /// <summary>Toggle rotary mode. Returns the resulting state. No motion is sent;
+    /// this only affects how SUBSEQUENT sends are translated. Documented in the
+    /// dock tooltip so the operator knows the DRO's A column follows the wrap.</summary>
+    public bool SetRotaryMode(bool enabled, double diameterMm)
+    {
+        RotaryModeEnabled = enabled;
+        RotaryDiameterMm = Math.Max(1, diameterMm);
+        Log(enabled
+            ? $"-- rotary mode ON (Ø {RotaryDiameterMm:0.#}mm): Y words wrap to A at send time"
+            : "-- rotary mode OFF: Y words sent as-is");
+        return RotaryModeEnabled;
+    }
+
+    /// <summary>Send one line through the rotary translator when enabled.
+    /// G0/G1/G2/G3 lines have their Y word converted to A; everything else passes
+    /// through untouched. Returns false when not connected (same as SendAsync).</summary>
+    public async Task<bool> SendWithRotaryWrapAsync(string line)
+    {
+        if (!_transport.IsOpen) return false;
+
+        if (!RotaryModeEnabled)
+        {
+            await SendAsync(line);
+            return true;
+        }
+
+        var wrapped = WrapYToA(line);
+        Log($">> [rotary] {line}  ⇒  {wrapped}");
+        await _transport.WriteLineAsync(wrapped);
+        return true;
+    }
+
+    /// <summary>Rewrite a motion line's Y word into an A word using
+    /// angle = (linear / circumference) × 360, direction preserved. Public seam:
+    /// tests pin the exact translation the stream path uses.</summary>
+    public string WrapYToA(string line)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(
+            line, @"^(.*?G[0-3]\s*)(.*?)$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!m.Success) return line;
+
+        string head = m.Groups[1].Value, rest = m.Groups[2].Value;
+        var yMatch = System.Text.RegularExpressions.Regex.Match(
+            rest, @"Y(-?\d+(?:\.\d+)?)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!yMatch.Success) return line;
+
+        double linear = double.Parse(yMatch.Groups[1].Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+        double degrees = linear / (Math.PI * RotaryDiameterMm) * 360.0;
+
+        string replaced = rest[..yMatch.Index] +
+            $"A{degrees.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)}" +
+            rest[(yMatch.Index + yMatch.Length)..];
+        return head + replaced;
+    }
+
     // ---- streaming (explicit consent only) ----
 
     /// <summary>The active streamer (null until a stream starts) — for progress binding.</summary>
