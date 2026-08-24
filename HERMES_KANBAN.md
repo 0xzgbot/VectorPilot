@@ -321,3 +321,44 @@ Pass: short list of residual risks only.
 - `H-501` — da82714 (CutPanel material+bit pickers resolve feed/depth/RPM through ResolvedCutData machine→material→derived; RPM rides ParamsJson into Calculate. Engine fix: derived fallback dropped the material argument; catalog names normalized MDF/Acrylic; 4 tests)
 - `H-502` — d2be3bd (FlashRecipeManager photo plaque + 3D coaster; coaster ships a real pre-computed PocketEngine program on the job; RecipeDialog tiles; no text input needed; 3 tests)
 - `H-503` — bd09781 (ThreeDPreview BeginLivePlayback/MoveLiveCursor/EndLivePlayback — machined green / pending gray / red head cross; MachinePanel's progress timer drives it via MainWindow.LiveSimPreview; E-stop stops both; 4 tests)
+
+---
+
+## Wave P — Parity holes (worker: hermes/wave-p-holes)
+
+- [ ] **P-101** Draw calculated toolpaths on the 2D Design canvas  
+  Locks: **DESIGN** (read Cut/AppState toolpaths; do not rewrite CutPanel calculate)  
+  OWN: `DesignPanel.Render.cs`, `DesignPanel.xaml` (toggle "Show toolpaths"), thin helper next to WireframeRenderer allowed  
+  FORBIDDEN: StrategyRegistry math, Machine dock  
+  Gate: `FullyQualifiedName~DesignToolpathOverlay`  
+  AC: Toggle on → G1 strokes on the sheet in world mm; rapids distinct; empty job paints nothing. Toggle off restores previous draw.
+
+- [ ] **P-102** Type tool on Design (not only Text-on-curve)  
+  Locks: **DESIGN**  
+  OWN: `DesignPanel.xaml`, `DesignPanel.Input.cs` / `Edit.cs`; reuse GlyphExtractor  
+  FORBIDDEN: CutPanel, a second glyph pipeline  
+  Gate: `FullyQualifiedName~TypeTool`  
+  AC: Type tool → click canvas → outlines land as vectors, undoable. Empty string = no shapes.
+
+- [ ] **P-201** Pocket leftover raster only  
+  Locks: **ENGINE-3D / pocket files**  
+  OWN: `PocketEngine.cs`, `ContourPocketEngine.cs` (+ `FullyQualifiedName~PocketRemainder` tests)  
+  AC: Circular pocket: loops concentric; raster G1 length strictly less than today for the same fixture; no G1 outside inset boundary; floor still covered.
+
+- [ ] **P-202** V-carve flat-area clearing  
+  Locks: **ENGINE-PHOTO / VCarve files**  
+  OWN: `VCarveEngine.cs`, `VCarveGeometry.cs`; optional `flatClearing` in VCarveParams + vcarve defaults only  
+  Gate: `FullyQualifiedName~VCarveFlatClear`  
+  AC: Wide region gets extra G1 at max depth; narrow neck stays V-depth. Off by default if risky; on in the test.
+
+- [ ] **P-301** Dual-sided job actually yields two programs  
+  Locks: **APP-SHELL job model + OUTPUT** (not Machine send)  
+  OWN: `OutputPanel.xaml(.cs)` + Engine dual-sided helper if present  
+  Gate: `FullyQualifiedName~DualSidedExport`  
+  AC: Dual-sided job + Calculate → Export offers/writes two files (or two rows). Mirror matches FlipAxis. Cancel/single-sided unchanged.
+
+- [ ] **P-302** Setup material is the same preset Cut uses  
+  Locks: **CUT + Setup** (serial)  
+  OWN: SetupPanel, CutPanel preset path  
+  Gate: `FullyQualifiedName~JobMaterialPreset`  
+  AC: Create Job Oak → Cut material combo is Oak (or documented mapping); changes stay in sync.
