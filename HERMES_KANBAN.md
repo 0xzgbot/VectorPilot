@@ -186,7 +186,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~SculptView`  
   AC: Drag on mesh changes heightfield; undo.
 
-- [ ] **H-303** Split 2D | 3D + component height/fade controls  
+- [x] **H-303** Split 2D | 3D + component height/fade controls  
   Locks: **APP-SHELL**, **MODEL**, **DESIGN** — **serial, orchestrator-only tick**  
   Depends: H-101  
   Gate: `FullyQualifiedName~SplitView`  
@@ -209,12 +209,12 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~ProbeWizard`  
   AC: Simulator can complete a probe; no motion if disconnected.
 
-- [ ] **H-402** Wasteboard surfacing wizard  
+- [x] **H-402** Wasteboard surfacing wizard  
   Locks: **MACHINE**, **CUT** (generates a temp toolpath) — **after H-102**  
   Gate: `FullyQualifiedName~SurfacingWizard`  
   AC: Creates a raster facing program for sheet XY; user must press Start.
 
-- [ ] **H-403** Rotary mode (Y→A wrap at send time optional)  
+- [x] **H-403** Rotary mode (Y→A wrap at send time optional)  
   Locks: **MACHINE**, posts if needed  
   Parallel-OK: photo engine  
   Gate: `FullyQualifiedName~RotaryMode`  
