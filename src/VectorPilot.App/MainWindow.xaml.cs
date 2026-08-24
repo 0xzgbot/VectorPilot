@@ -346,6 +346,12 @@ public partial class MainWindow : Window
     private static readonly CommandRegistry PaletteCommands = BuildPaletteCommands();
 
     /// <summary>
+    /// H-503: the preview that live playback draws on — the Model stage's own
+    /// ThreeDPreview (also shown by the split view). Null before panels are built.
+    /// </summary>
+    public Controls.ThreeDPreview? LiveSimPreview => _model?.Preview;
+
+    /// <summary>
     /// H-402: a wizard landed a program in the Cuts list while its own dialog was up —
     /// tell the Cuts list to rebuild. Safe to call from anywhere on the UI thread.
     /// </summary>

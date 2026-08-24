@@ -242,6 +242,74 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         return new GeometryModel3D(line, mat);
     }
 
+    // ---- H-503: live playback cursor ----
+
+    /// <summary>The G-code this preview is tracking (set by BeginLivePlayback).</summary>
+    private IReadOnlyList<WireframeRenderer.Segment>? _liveSegments;
+    private int _liveCursor;
+
+    /// <summary>True while live playback tracking is armed on this preview.</summary>
+    public bool IsLivePlayback => _liveSegments is not null;
+
+    /// <summary>
+    /// Arm the preview for live playback of a program: pre-parses the segments and
+    /// shows the full path dimmed so the streamed portion can light up behind the
+    /// cursor. Call MoveLiveCursor as lines stream.
+    /// </summary>
+    public void BeginLivePlayback(IReadOnlyList<string> gcodeLines)
+    {
+        _liveSegments = WireframeRenderer.GenerateSegments(gcodeLines);
+        _liveCursor = 0;
+        ShowToolpath(_liveSegments);   // full path first; the cursor repaints progressively
+    }
+
+    /// <summary>
+    /// Move the playback cursor to the given line index and redraw: segments up to
+    /// the cursor in bright green (cut so far), the rest dimmed gray. A red head
+    /// marker sits at the current segment — the E-stop stops both this and the stream.
+    /// </summary>
+    public void MoveLiveCursor(int lineIndex)
+    {
+        if (_liveSegments is null) return;
+        _liveCursor = Math.Clamp(lineIndex, 0, _liveSegments.Count);
+
+        var group = new Model3DGroup();
+        var cutColor = Color.FromRgb(0x30, 0xC0, 0x50);   // green: machined
+        var todoColor = Color.FromRgb(0x60, 0x60, 0x68);  // gray: pending
+
+        for (int i = 0; i < _liveSegments.Count; i++)
+            group.Children.Add(CreateLineModel(_liveSegments[i], i < _liveCursor ? cutColor : todoColor));
+
+        // Head marker at the current position (bright red dot-ish short cross).
+        if (_liveCursor > 0 && _liveCursor <= _liveSegments.Count)
+        {
+            var head = _liveSegments[_liveCursor - 1].End;
+            var headGroup = new Model3DGroup();
+            double r = 1.2;
+            headGroup.Children.Add(CreateLineModel(
+                new WireframeRenderer.Segment(
+                    new VectorPilot.Geometry.VectorPoint(head.X - r, head.Y - r),
+                    new VectorPilot.Geometry.VectorPoint(head.X + r, head.Y + r), false),
+                Color.FromRgb(0xE0, 0x20, 0x20)));
+            headGroup.Children.Add(CreateLineModel(
+                new WireframeRenderer.Segment(
+                    new VectorPilot.Geometry.VectorPoint(head.X - r, head.Y + r),
+                    new VectorPilot.Geometry.VectorPoint(head.X + r, head.Y - r), false),
+                Color.FromRgb(0xE0, 0x20, 0x20)));
+            group.Children.Add(headGroup);
+        }
+
+        ToolpathModel.Content = group;
+    }
+
+    /// <summary>Clear live tracking (stream finished or cancelled) and show the
+    /// final state plainly.</summary>
+    public void EndLivePlayback()
+    {
+        _liveSegments = null;
+        _liveCursor = 0;
+    }
+
     /// <summary>Rotate the view (degrees).</summary>
     public void Rotate(double degrees)
     {

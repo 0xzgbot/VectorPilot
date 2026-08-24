@@ -275,11 +275,20 @@ public partial class MachinePanel : UserControl
         }
 
         var progress = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        // H-503: arm the 3D preview's live cursor for this program. The preview is
+        // found via the shell (Model stage or the split view); absent shell = no cursor.
+        Controls.ThreeDPreview? livePreview = null;
+        if (Application.Current?.MainWindow is MainWindow mw)
+        {
+            livePreview = mw.LiveSimPreview;
+            livePreview?.BeginLivePlayback(AppState.LoadedGCode);
+        }
         progress.Tick += (_, _) =>
         {
             int total = Session.TotalLines, cur = Session.StreamedLines;
             StreamProgress.Value = total == 0 ? 0 : cur * 100.0 / total;
             StreamInfo.Text = $"{cur} / {total} lines";
+            livePreview?.MoveLiveCursor(cur);   // cursor follows the streamer line index
             if (Session.IsStreaming) return;
             progress.Stop();
             UpdateStreamButtons();
