@@ -74,8 +74,46 @@ public partial class CutPanel : UserControl
         }
         finally { _loadingPresets = false; }
 
+        SyncMaterialFromJob();   // P-302: a job created in Setup picks its material here
         ApplyPresetToFields();
     }
+
+    /// <summary>
+    /// P-302: select the current job's material (set in Setup) in the preset combo so
+    /// the Cut stage resolves feeds for the material the operator actually chose.
+    /// Setup names map onto the material database catalog: Pine→Softwood,
+    /// Oak→Hardwood, Aluminum 6061→Aluminum, Plywood→Softwood. Unknown materials
+    /// fall back to index 0. Public seam: tests drive this exact path.
+    /// </summary>
+    public void SyncMaterialFromJob()
+    {
+        var jobMaterial = AppState.CurrentJob?.ActiveSheet.Material?.Name;
+        if (string.IsNullOrWhiteSpace(jobMaterial)) return;
+
+        string target = MapSetupMaterial(jobMaterial);
+
+        var names = CmbMaterialPreset.ItemsSource as IEnumerable<string>;
+        int idx = names?.ToList()
+            .FindIndex(n => string.Equals(n, target, StringComparison.OrdinalIgnoreCase)) ?? -1;
+        if (idx >= 0) CmbMaterialPreset.SelectedIndex = idx;
+    }
+
+    /// <summary>Setup combo name → material-database catalog name.</summary>
+    public static string MapSetupMaterial(string setupName) => setupName.ToLowerInvariant() switch
+    {
+        "pine" => "Softwood",
+        "plywood" => "Softwood",
+        "oak" => "Hardwood",
+        "mdf" => "MDF",
+        "acrylic" => "Acrylic",
+        var s when s.Contains("aluminum") || s.Contains("aluminium") => "Aluminum",
+        var s when s.Contains("steel") => "Steel",
+        _ => setupName   // pass through — exact-name matches still work
+    };
+
+    /// <summary>P-302 test seam: rerun preset population after a new job replaces
+    /// the current one (the ctor already ran it for the previous job).</summary>
+    public void PopulatePresetsForTest() => PopulatePresets();
 
     private void Preset_Changed(object sender, SelectionChangedEventArgs e)
     {
