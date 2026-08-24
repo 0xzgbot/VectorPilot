@@ -8,8 +8,10 @@
         <TextBlock Text="A recipe builds a complete job — stock, layers and toolpaths — ready to cut."
                    Foreground="#777" TextWrapping="Wrap" Margin="0,4,0,12"/>
 
-        <ListBox x:Name="RecipeList" Height="104" SelectionMode="Single">
+        <ListBox x:Name="RecipeList" Height="130" SelectionMode="Single">
             <ListBoxItem Content="Carved sign — text on a curve, V-carved, with a border" IsSelected="True" Tag="sign"/>
+            <ListBoxItem Content="Photo plaque — plaque sheet with a dome relief face (H-502)" Tag="photo-plaque"/>
+            <ListBoxItem Content="3D coaster — stock with a round recess, pocket program ready" Tag="coaster"/>
             <ListBoxItem Content="Blank job — empty sheet, no toolpaths" Tag="blank"/>
         </ListBox>
 

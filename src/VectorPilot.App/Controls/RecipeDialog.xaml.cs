@@ -32,8 +32,10 @@ public partial class RecipeDialog : Window
 
     private void UpdateEnabled()
     {
+        bool flash = SelectedRecipe is "photo-plaque" or "coaster";
         bool sign = SelectedRecipe == "sign";
         TxtSignText.IsEnabled = CmbFont.IsEnabled = TxtAngle.IsEnabled = TxtDepth.IsEnabled = sign;
+        if (flash) Note.Text = "";
     }
 
     private void Create_Click(object sender, RoutedEventArgs e)
@@ -43,6 +45,21 @@ public partial class RecipeDialog : Window
             if (SelectedRecipe == "blank")
             {
                 CreatedJob = Job.CreateEmpty();
+                DialogResult = true;
+                return;
+            }
+
+            // H-502: flash recipes build a complete job with at least one toolpath
+            // ready to Calculate — no text fields required.
+            if (SelectedRecipe == "photo-plaque")
+            {
+                CreatedJob = FlashRecipeManager.CreatePhotoPlaqueJob();
+                DialogResult = true;
+                return;
+            }
+            if (SelectedRecipe == "coaster")
+            {
+                CreatedJob = FlashRecipeManager.CreateCoasterJob();
                 DialogResult = true;
                 return;
             }
