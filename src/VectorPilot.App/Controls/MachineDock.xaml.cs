@@ -152,6 +152,17 @@ public partial class MachineDock : UserControl
         dlg.ShowDialog();
     }
 
+    /// <summary>H-402: open the wasteboard surfacing wizard over the app shell.</summary>
+    private void DockSurfacing_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        var dlg = new SurfacingWizardDialog(this) { Owner = owner };
+        dlg.ShowDialog();
+    }
+
     /// <summary>H-401 test seam: construct the wizard exactly as the button does.</summary>
     public ProbeWizardDialog OpenProbeWizard() => new(this);
+
+    /// <summary>H-402 test seam: construct the surfacing wizard exactly as the button does.</summary>
+    public SurfacingWizardDialog OpenSurfacingWizard() => new(this);
 }
