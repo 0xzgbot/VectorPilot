@@ -74,6 +74,15 @@ public partial class DesignPanel
             return;
         }
 
+        // P-102: the Type tool places text at the CLICK point as vector outlines
+        // (one click, no drag) through the SAME TextToCurves pipeline Text-on-curve
+        // uses. Empty/whitespace text places nothing.
+        if (CurrentTool == Tool.Type)
+        {
+            PlaceTypeAt(world);
+            return;
+        }
+
         if (CurrentTool == Tool.Select)
         {
             bool additive = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
@@ -276,6 +285,71 @@ public partial class DesignPanel
             RedrawShapes();
             UpdateEditChrome();
         }
+    }
+
+    // ---- P-102: Type tool — click-to-place text as vector outlines ----
+
+    /// <summary>
+    /// Place the text in TxtTypeText at the clicked world point, scaled so the cap
+    /// height ≈ TxtTypeSize mm. Outlines come from TextToCurves (the same glyph
+    /// pipeline Text-on-curve and the sign recipe use). Empty/whitespace text
+    /// places nothing. Returns the number of outline shapes added. Public seam:
+    /// tests drive this exact path (no InternalsVisibleTo).
+    /// </summary>
+    public int PlaceTypeAt(VectorPoint origin, string? textOverride = null, double? sizeMmOverride = null)
+    {
+        var layer = ActiveLayer;
+        if (layer is null) { SetStatus("No active layer"); return 0; }
+        if (layer.Locked) { SetStatus("Layer is locked"); return 0; }
+
+        string text = textOverride ?? TxtTypeText.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            SetStatus("Type tool: enter some text first");
+            return 0;
+        }
+
+        double sizeMm = sizeMmOverride ?? (double.TryParse(TxtTypeSize.Text, out var s) ? Math.Max(2, s) : 36);
+
+        // TextToCurves emits point-unit outlines (1pt = 25.4/72 mm). Rather than
+        // predicting font metrics, measure the inked height of THIS text and rescale
+        // so it is exactly sizeMm tall — deterministic for every font.
+        const double SourcePt = 100;
+        var outlines = TextToCurves.Convert(text, fontFamily: "Segoe UI", size: SourcePt);
+        if (outlines.Count == 0)
+        {
+            SetStatus($"\"{text}\" produced no outlines");
+            return 0;
+        }
+
+        // Measure inked bounds and normalize: scale so the height is exactly
+        // sizeMm, then translate so the baseline-left corner sits at the click.
+        double minY = outlines.Min(o => o.Points.Min(p => p.Y));
+        double maxY = outlines.Max(o => o.Points.Max(p => p.Y));
+        double minX = outlines.Min(o => o.Points.Min(p => p.X));
+        double rawH = maxY - minY;
+        double scale = rawH > 1e-9 ? sizeMm / rawH : 1.0;
+
+        foreach (var shape in outlines)
+        {
+            for (int i = 0; i < shape.Points.Count; i++)
+                shape.Points[i] = new VectorPoint(
+                    origin.X + (shape.Points[i].X - minX) * scale,
+                    origin.Y + (shape.Points[i].Y - minY) * scale);
+        }
+
+        var before = UndoStack.Snapshot(layer);
+        foreach (var shp in outlines) layer.AddShape(shp);
+        Undo.Push($"Type \"{text}\"", layer, before);
+        if (AppState.CurrentJob is { } job) job.IsDirty = true;
+
+        Selection.Clear();
+        foreach (var shp in outlines) Selection.Select(shp);
+
+        SetStatus($"Placed \"{text}\" — {outlines.Count} outline(s), {sizeMm:0.#}mm");
+        RedrawShapes();
+        UpdateEditChrome();
+        return outlines.Count;
     }
 
     private void Canvas_RightDown(object sender, MouseButtonEventArgs e)

@@ -20,7 +20,16 @@
                 <RadioButton x:Name="ToolPolyline" Content="Polyline" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 <RadioButton x:Name="ToolNode" Content="Nodes" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"
                              ToolTip="Click a shape to edit its points. Double-click a segment to insert. Del removes."/>
-                <TextBlock x:Name="LayerLabel" Text="" Foreground="#666" VerticalAlignment="Center" Margin="24,0,0,0"/>
+                <RadioButton x:Name="ToolType" Content="Type" GroupName="Tool" VerticalAlignment="Center" Margin="12,0,0,0"
+                             ToolTip="Click the canvas to place the text below as vector outlines"/>
+                <TextBox x:Name="TxtTypeText" Width="80" Height="24" Margin="4,0,0,0" Text="HELLO"
+                         ToolTip="Text the Type tool places at the click point"/>
+                <TextBox x:Name="TxtTypeSize" Width="30" Height="24" Margin="4,0,0,0" Text="36"
+                         ToolTip="Type height in mm"/>
+                <CheckBox x:Name="ChkShowToolpaths" Content="Show toolpaths" VerticalAlignment="Center" Margin="24,0,0,0"
+                          Checked="ShowToolpaths_Changed" Unchecked="ShowToolpaths_Changed"
+                          ToolTip="Overlay calculated G-code on the sheet — cut moves solid green, rapids dashed red"/>
+                <TextBlock x:Name="LayerLabel" Text="" Foreground="#666" VerticalAlignment="Center" Margin="12,0,0,0"/>
             </StackPanel>
         </Border>
 

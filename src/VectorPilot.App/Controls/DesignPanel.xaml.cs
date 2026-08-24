@@ -10,14 +10,14 @@ namespace VectorPilot.App.Controls;
 
 public partial class DesignPanel : UserControl
 {
-    internal enum Tool { Select, Rectangle, Line, Circle, Polyline, Node }
+    public enum Tool { Select, Rectangle, Line, Circle, Polyline, Node, Type }
 
     private VectorPoint? _dragStart;
     private Shape? _preview;
     private readonly List<UIElement> _shapeElements = new();
     private readonly List<VectorPoint> _polylinePoints = new();
 
-    internal readonly UndoStack Undo = new();
+    public readonly UndoStack Undo = new();
     internal readonly SelectionModel Selection = new();
 
     private bool _movingSelection;
@@ -47,12 +47,13 @@ public partial class DesignPanel : UserControl
 
     public void RefreshIfVisible() => Refresh();
 
-    internal Tool CurrentTool =>
+    public Tool CurrentTool =>
         ToolRect.IsChecked == true ? Tool.Rectangle :
         ToolLine.IsChecked == true ? Tool.Line :
         ToolCircle.IsChecked == true ? Tool.Circle :
         ToolPolyline.IsChecked == true ? Tool.Polyline :
-        ToolNode.IsChecked == true ? Tool.Node : Tool.Select;
+        ToolNode.IsChecked == true ? Tool.Node :
+        ToolType.IsChecked == true ? Tool.Type : Tool.Select;
 
     internal readonly NodeEditSession NodeEdit = new();
 
@@ -207,6 +208,20 @@ public partial class DesignPanel : UserControl
         double scale = ViewScale.ScaleX == 0 ? 1 : ViewScale.ScaleX;
         return screenPixels / scale;
     }
+
+    // ---- P-101 test seams (no InternalsVisibleTo) ----
+
+    /// <summary>Drive the same toggle the checkbox drives, then repaint — the exact
+    /// path Checked/Unchecked handlers run.</summary>
+    public void SetShowToolpathsForTest(bool on)
+    {
+        ChkShowToolpaths.IsChecked = on;
+        RedrawShapes();
+    }
+
+    /// <summary>Read-only view of the canvas children for overlay assertions.</summary>
+    public System.Collections.Generic.IReadOnlyList<UIElement> DrawCanvasChildren()
+        => DrawCanvas.Children.OfType<UIElement>().ToList();
 
     private static System.Windows.Media.Color ToMediaColor(System.Drawing.Color c)
         => System.Windows.Media.Color.FromArgb(c.A, c.R, c.G, c.B);

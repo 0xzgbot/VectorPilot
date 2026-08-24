@@ -53,27 +53,34 @@ public static class PocketEngine
             depth += slice;
             foreach (var shape in shapes)
             {
-                if (contourFirst && shape.Points.Count >= 3)
+                // P-201: generate the offset loops ONCE, reuse them for both the
+                // contour pass and the remainder raster. The loops walk inward until
+                // they collapse, so the only region they cannot reach is the interior
+                // of the INNERMOST loop — the raster is clipped to exactly that, not
+                // to the whole outline. On a convex pocket this removes nearly all
+                // double-cutting; on any pocket it keeps the floor fully covered,
+                // because the raster still sweeps everything inside the last loop.
+                //
+                // History: suppressing the raster entirely was tried and reverted —
+                // the prediction silently skipped floors on a small rectangle whose
+                // loops do NOT cover them. Clipping to the innermost loop keeps the
+                // guarantee structurally: whatever the loops missed is inside that
+                // loop, and the raster crosses all of it.
+                List<ContourPocketEngine.Loop>? loops = null;
+                if (contourFirst)
+                    loops = LoopSource(shape, toolDiameter, step);
+
+                if (loops is { Count: > 0 })
                 {
-                    // Contour loops finish the wall along the true outline, and
-                    // ContourPocketEngine walks every offset from the wall inward until
-                    // the loops collapse — so for a convex pocket they clear it alone.
-                    g.AddRange(ContourPocketEngine.GenerateSlice(
-                        shape.Points, -depth, toolDiameter, step, feedRate, plungeRate, safeZ));
-
-                    // The raster then covers whatever the offsets could NOT reach (a
-                    // concave outline the inset stops short of). It is clipped to the
-                    // outline, so it never leaves the pocket; on a convex shape it is
-                    // redundant coverage rather than a correctness problem.
-                    //
-                    // Suppressing it by predicting "the loops already got everything"
-                    // was tried and reverted: the prediction silently skipped the raster
-                    // on a small rectangle whose loops do NOT cover it, leaving the
-                    // pocket floor uncut. Redundant passes are safe; a missed region is
-                    // not.
+                    EmitLoops(loops, -depth, feedRate, plungeRate, safeZ, g);
+                    RemainderRaster(loops[^1].Points, -depth, step, feedRate, plungeRate, safeZ, g);
                 }
-
-                GenerateSlice(shape, -depth, step, toolDiameter / 2, feedRate, plungeRate, safeZ, g);
+                else
+                {
+                    // Pocket too small for even one loop (or raster-only mode): the
+                    // clipped raster is the only coverage there is.
+                    GenerateSlice(shape, -depth, step, toolDiameter / 2, feedRate, plungeRate, safeZ, g);
+                }
             }
         }
 
@@ -182,5 +189,136 @@ public static class PocketEngine
             if (e - s > 1e-6) spans.Add((s, e));
         }
         return spans;
+    }
+
+    // ---- P-201: leftover-only raster ----
+
+    /// <summary>Boundary polygon for loop generation: analytic circles become dense
+    /// polylines so the offset machinery can work on them like any other outline.</summary>
+    private static List<VectorPoint> LoopBoundary(VectorShape shape)
+    {
+        if (shape.Type == ShapeType.Circle && shape.Points.Count > 0 && shape.Radius > 0)
+        {
+            var c = shape.Points[0];
+            const int segments = 64;
+            var pts = new List<VectorPoint>(segments);
+            for (int i = 0; i < segments; i++)
+            {
+                double t = 2 * Math.PI * i / segments;
+                pts.Add(new VectorPoint(c.X + shape.Radius * Math.Cos(t), c.Y + shape.Radius * Math.Sin(t)));
+            }
+            return pts;
+        }
+        return shape.Points.ToList();
+    }
+
+    private static List<ContourPocketEngine.Loop> LoopSource(VectorShape shape, double toolDiameter, double step)
+        => ContourPocketEngine.GenerateLoops(LoopBoundary(shape), toolDiameter, step);
+
+
+    /// <summary>
+    /// Emit the contour G-code for pre-computed loops (same output shape as
+    /// GenerateSlice, but without regenerating them).
+    /// </summary>
+    private static void EmitLoops(List<ContourPocketEngine.Loop> loops, double z, double feedRate, double plungeRate, double safeZ, List<string> g)
+    {
+        string F(double v) => v.ToString("F4", CultureInfo.InvariantCulture);
+        bool first = true;
+        foreach (var loop in loops)
+        {
+            var start = loop.Points[0];
+            g.Add(first
+                ? $"G0 Z{F(safeZ)} ; rapid to safe Z"
+                : $"G0 Z{F(safeZ)}");
+            g.Add($"G0 X{F(start.X)} Y{F(start.Y)}");
+            g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)}");
+            first = false;
+
+            for (int i = 1; i < loop.Points.Count; i++)
+                g.Add($"G1 X{F(loop.Points[i].X)} Y{F(loop.Points[i].Y)} F{feedRate.ToString("F1", CultureInfo.InvariantCulture)}");
+            g.Add($"G1 X{F(start.X)} Y{F(start.Y)} F{feedRate.ToString("F1", CultureInfo.InvariantCulture)}");
+        }
+        g.Add($"G0 Z{F(safeZ)}");
+    }
+
+    /// <summary>
+    /// P-201 remainder raster: scanlines clipped to the INNERMOST contour loop's
+    /// polygon instead of the whole outline. Everything outside that loop was
+    /// already machined by the loops themselves; everything inside it is guaranteed
+    /// coverage. Zigzag direction preserved; spans shorter than a step are skipped.
+    /// </summary>
+    private static void RemainderRaster(
+        List<VectorPoint> innermostLoop,
+        double z, double step, double feedRate, double plungeRate, double safeZ, List<string> g)
+    {
+        if (innermostLoop.Count < 3) return;
+
+        string F(double v) => v.ToString("F4", CultureInfo.InvariantCulture);
+        var b = Bounds(innermostLoop);
+
+        double y = b.MinY;
+        bool leftToRight = true;
+        bool first = true;
+
+        while (y <= b.MaxY + 1e-9)
+        {
+            // Clip against the loop polygon itself (no extra inset: the loop is
+            // already one tool radius inside the wall).
+            var xs = new List<double>();
+            int n = innermostLoop.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var a = innermostLoop[i];
+                var c = innermostLoop[(i + 1) % n];
+                if (Math.Abs(a.Y - c.Y) < 1e-12) continue;
+                if ((y >= a.Y && y < c.Y) || (y >= c.Y && y < a.Y))
+                    xs.Add(a.X + (y - a.Y) / (c.Y - a.Y) * (c.X - a.X));
+            }
+            if (xs.Count >= 2)
+            {
+                xs.Sort();
+                for (int i = 0; i + 1 < xs.Count; i += 2)
+                {
+                    double sx = xs[i], ex = xs[i + 1];
+                    if (ex - sx < 1e-6) continue;
+
+                    double x0 = leftToRight ? sx : ex;
+                    double x1 = leftToRight ? ex : sx;
+
+                    if (first)
+                    {
+                        g.Add($"G0 Z{F(safeZ)} ; rapid to safe Z");
+                        g.Add($"G0 X{F(x0)} Y{F(y)} ; rapid to start");
+                        g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)} ; plunge");
+                        first = false;
+                    }
+                    else
+                    {
+                        g.Add($"G0 Z{F(safeZ)}");
+                        g.Add($"G0 X{F(x0)} Y{F(y)}");
+                        g.Add($"G1 Z{F(z)} F{plungeRate.ToString("F1", CultureInfo.InvariantCulture)}");
+                    }
+
+                    g.Add($"G1 X{F(x1)} Y{F(y)} F{feedRate.ToString("F1", CultureInfo.InvariantCulture)} ; remainder raster");
+                }
+            }
+
+            leftToRight = !leftToRight;
+            y += step;
+        }
+        g.Add($"G0 Z{F(safeZ)} ; retract");
+    }
+
+    private static (double MinX, double MinY, double MaxX, double MaxY) Bounds(IReadOnlyList<VectorPoint> poly)
+    {
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        foreach (var p in poly)
+        {
+            if (p.X < minX) minX = p.X;
+            if (p.X > maxX) maxX = p.X;
+            if (p.Y < minY) minY = p.Y;
+            if (p.Y > maxY) maxY = p.Y;
+        }
+        return (minX, minY, maxX, maxY);
     }
 }
