@@ -110,8 +110,8 @@ public sealed class Tool
             }
         }
         return new ResolvedCutData(
-            ToolDatabase.RecommendedFeedRate(DiameterMm),
-            ToolDatabase.RecommendedPlungeRate(DiameterMm),
+            ToolDatabase.RecommendedFeedRate(DiameterMm, material ?? "hardwood"),
+            ToolDatabase.RecommendedPlungeRate(DiameterMm, material ?? "hardwood"),
             RecommendedSpindleRpm(DiameterMm),
             RecommendedDepthOfCut(DiameterMm));
     }
@@ -234,7 +234,11 @@ public sealed class ToolDatabase
 
     public static double RecommendedFeedRate(double diameterMm, string material = "hardwood")
     {
-        double factor = material.ToLowerInvariant() switch
+        string m = material.ToLowerInvariant();
+        // The seeded catalog names ("Softwood"/"MDF"/"Acrylic"…) normalize onto the factors.
+        if (m.Contains("mdf")) m = "softwood";
+        else if (m.Contains("acryl")) m = "plastic";
+        double factor = m switch
         {
             "hardwood" => 3.0,
             "softwood" => 4.0,
