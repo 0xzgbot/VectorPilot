@@ -192,7 +192,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~SplitView`  
   AC: Both views show; fade/scale height on selected component recomposites.
 
-- [ ] **H-304** Inverse mill (cavity from model) checkbox on 3D rough  
+- [x] **H-304** Inverse mill (cavity from model) checkbox on 3D rough  
   Locks: **ENGINE-3D**, **CUT** (one param)  
   Depends: H-102  
   Gate: `FullyQualifiedName~InverseMill`  
@@ -202,7 +202,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ## Wave 4 — Machine (gSender)
 
-- [ ] **H-401** Touch-plate probe wizard  
+- [x] **H-401** Touch-plate probe wizard  
   Locks: **MACHINE**  
   Parallel-OK: H-201, H-202, H-301  
   OWN: `src/VectorPilot.App/Controls/MachineDock.xaml(.cs)` (after H-103) or `src/VectorPilot.App/Controls/MachinePanel.xaml(.cs)` if dock not merged; `src/VectorPilot.App/MachineSession.cs`; `src/VectorPilot.Serial/SimulatorTransport.cs` (emulate contact).  
@@ -224,18 +224,18 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ## Wave 5 — Easy power
 
-- [ ] **H-501** Material + bit preset fills Cut params  
+- [x] **H-501** Material + bit preset fills Cut params  
   Locks: **CUT**  
   Gate: `FullyQualifiedName~MaterialBitPreset`  
   AC: Pick Hardwood + 6mm EM → feed/plunge/rpm match DB; Calculate uses them.
 
-- [ ] **H-502** Recipe: photo plaque / 3D coaster / sign  
+- [x] **H-502** Recipe: photo plaque / 3D coaster / sign  
   Locks: **APP-SHELL**  
   Depends: H-210, H-301  
   Gate: `FullyQualifiedName~FlashRecipes`  
   AC: Each recipe creates job + at least one toolpath ready to Calculate.
 
-- [ ] **H-503** Live sim playback on same 3D view while streaming  
+- [x] **H-503** Live sim playback on same 3D view while streaming  
   Locks: **MODEL**, **MACHINE** — serial  
   Gate: `FullyQualifiedName~LiveSim`  
   AC: Streamer line index moves a cursor on preview; E-stop stops both.
@@ -313,3 +313,11 @@ Pass: short list of residual risks only.
 - `H-301` — cd69dcc (STL-to-stock wizard: new StlImportDialog, opened from ModelPanel; one STL → component; cancel leaves job unchanged)
 - `H-302` — 0e08114 (drag on the 3D mesh sculpts the selected component via ComponentTreeViewModel → SculptEngine + undo)
 - merge(wave2/3) — 856f892 (H-211+H-301+H-302 to main in one branch hermes/h-211-301-302; FrameJogTests async conversion un-reds CI xUnit1031; 1464/1464 green)
+- `H-303` — 2e31fde (split 2D|3D stage: ToggleSplitView + rail button + Ctrl+K command; component tree height/fade controls drive ComponentModifierEngine at composite time; CompositeChanged event; 5 tests)
+- `H-304` — 478f74e (HeightfieldRoughParams.InverseMill flips the field about max → machines the mould cavity; inverseMill in DefaultsJson so the params form renders an editable bool row; 3 tests)
+- `H-401` — 8ee6d6e (simulator G38.2 + ProbePlateZ; MachineSession.ProbeZAsync zeroes Z on plate top via G10 L20; ProbeWizardDialog from dock button; refuses when disconnected; 5 tests)
+- `H-402` — 4e2b5ee (WasteboardSurfacing serpentine raster engine; SurfacingWizardDialog lands program as a real Cuts row, thread-safe shell refresh; dock button; nothing auto-streams; 4 tests)
+- `H-403` — 57cd7a5 (MachineSession.SetRotaryMode/WrapYToA/SendWithRotaryWrapAsync — Y→A degrees wrap at send time; simulator tracks A wrapped [0,360); dock Rotary toggle with diameter prompt; never sends motion by itself; 4 tests + STAApplicationGate for suite-wide lazy Application creation)
+- `H-501` — da82714 (CutPanel material+bit pickers resolve feed/depth/RPM through ResolvedCutData machine→material→derived; RPM rides ParamsJson into Calculate. Engine fix: derived fallback dropped the material argument; catalog names normalized MDF/Acrylic; 4 tests)
+- `H-502` — d2be3bd (FlashRecipeManager photo plaque + 3D coaster; coaster ships a real pre-computed PocketEngine program on the job; RecipeDialog tiles; no text input needed; 3 tests)
+- `H-503` — bd09781 (ThreeDPreview BeginLivePlayback/MoveLiveCursor/EndLivePlayback — machined green / pending gray / red head cross; MachinePanel's progress timer drives it via MainWindow.LiveSimPreview; E-stop stops both; 4 tests)
