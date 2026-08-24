@@ -48,6 +48,56 @@ public partial class DesignPanel
         DrawSelectionBounds();
         DrawNodeHandles();
         DrawKeepOutZones();
+        DrawToolpathOverlay();   // P-101: calculated G-code strokes (when toggled)
+    }
+
+    // ---- P-101: calculated toolpath overlay ----
+
+    /// <summary>True when the "Show toolpaths" toggle is checked. Public seam so
+    /// tests read the same state the checkbox drives.</summary>
+    public bool ShowToolpaths => ChkShowToolpaths?.IsChecked == true;
+
+    private readonly List<UIElement> _toolpathElements = new();
+
+    private void ShowToolpaths_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded) return;   // XAML init fires the events before the canvas exists in a usable state
+        RedrawShapes();
+    }
+
+    /// <summary>
+    /// P-101: paint every calculated toolpath's G1 path onto the sheet in world mm —
+    /// cut moves as solid green strokes, rapids (G0) as thin dashed red, so you can
+    /// see whether the bit stays inside the shape without streaming anything.
+    /// Empty/not-calculated toolpaths paint nothing.
+    /// </summary>
+    private void DrawToolpathOverlay()
+    {
+        foreach (var el in _toolpathElements) DrawCanvas.Children.Remove(el);
+        _toolpathElements.Clear();
+        if (!ShowToolpaths) return;
+
+        foreach (var tp in AppState.Toolpaths.Toolpaths)
+        {
+            if (tp.GCode.Count == 0) continue;
+
+            var segments = WireframeRenderer.GenerateSegments(tp.GCode);
+            foreach (var seg in segments)
+            {
+                var line = new Line
+                {
+                    X1 = seg.Start.X, Y1 = seg.Start.Y,
+                    X2 = seg.End.X, Y2 = seg.End.Y,
+                    Stroke = seg.IsRapid ? Brushes.Red : Brushes.Green,
+                    StrokeThickness = Math.Max(WorldTolerance(seg.IsRapid ? 0.8 : 1.4), 0.05),
+                    Opacity = seg.IsRapid ? 0.55 : 0.9,
+                    StrokeDashArray = seg.IsRapid ? new DoubleCollection { 3, 2 } : null,
+                    IsHitTestVisible = false
+                };
+                DrawCanvas.Children.Add(line);
+                _toolpathElements.Add(line);
+            }
+        }
     }
 
     /// <summary>Card P3: hatched red overlay for no-cut zones.</summary>

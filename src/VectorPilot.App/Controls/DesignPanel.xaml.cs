@@ -208,6 +208,20 @@ public partial class DesignPanel : UserControl
         return screenPixels / scale;
     }
 
+    // ---- P-101 test seams (no InternalsVisibleTo) ----
+
+    /// <summary>Drive the same toggle the checkbox drives, then repaint — the exact
+    /// path Checked/Unchecked handlers run.</summary>
+    public void SetShowToolpathsForTest(bool on)
+    {
+        ChkShowToolpaths.IsChecked = on;
+        RedrawShapes();
+    }
+
+    /// <summary>Read-only view of the canvas children for overlay assertions.</summary>
+    public System.Collections.Generic.IReadOnlyList<UIElement> DrawCanvasChildren()
+        => DrawCanvas.Children.OfType<UIElement>().ToList();
+
     private static System.Windows.Media.Color ToMediaColor(System.Drawing.Color c)
         => System.Windows.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
 }
