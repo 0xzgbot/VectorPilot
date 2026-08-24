@@ -26,6 +26,11 @@ public sealed class HeightfieldRoughParams
     /// <summary>Rest machining: &gt; 0 means this rough clears valleys narrower than the previous tool.</summary>
     public double PreviousToolDiameterMm { get; set; }
 
+    /// <summary>H-304 inverse (negative) milling: machine the CAVITY the model would
+    /// leave — the Z-complement of the relief. The tool clears everything the model
+    /// is NOT, producing a mould rather than the part.</summary>
+    public bool InverseMill { get; set; }
+
     public bool IsRestRough => PreviousToolDiameterMm > 1e-9;
 }
 
@@ -60,6 +65,21 @@ public static class HeightfieldRoughEngine
     public static HeightfieldToolpathResult Compute(HeightfieldData heightfield, HeightfieldRoughParams p)
     {
         var b = heightfield.Bounds;
+
+        // H-304: invert Z vs the stock — machine where the model ISN'T. Flipping the
+        // field about its max turns every "surface above the level" run (cut) into
+        // its complement (mould cavity), and shifts the stock top to the flipped
+        // maximum, so both the XY content and the cut depths differ from normal.
+        if (p.InverseMill)
+        {
+            double maxH = heightfield.MaxHeight;
+            var inverted = new double[heightfield.Heights.Length];
+            for (int i = 0; i < inverted.Length; i++)
+                inverted[i] = Math.Max(0, maxH - heightfield.Heights[i]);
+            heightfield = new HeightfieldData(heightfield.Width, heightfield.Height,
+                heightfield.CellSizeMm, heightfield.MinX, heightfield.MinY, inverted);
+        }
+
         double stockTop = heightfield.MaxHeight + p.StockAllowanceMm;
         double stepDown = Math.Max(0.1, p.StepDownMm);
         double stepOver = Math.Max(0.1, p.StepOverMm);
@@ -74,6 +94,7 @@ public static class HeightfieldRoughEngine
         levels.Add(0);
 
         var lines = new List<string> { "%", "O=ROUGH_3D" };
+        if (p.InverseMill) lines.Add("(Inverse mill: machining the Z-complement of the model)");
         if (p.SpindleRpm > 0) lines.Add($"M3 S{(int)p.SpindleRpm}");
         lines.Add(p.IsRestRough
             ? $"(Rest Rough: {p.ToolDiameterMm:0.0}mm after {p.PreviousToolDiameterMm:0.0}mm, {levels.Count} z-levels)"
