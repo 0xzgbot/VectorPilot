@@ -13,20 +13,19 @@ namespace VectorPilot.Tests;
 [Collection("STA")]
 public class RotaryWrapTests
 {
-    private static MachineSession ConnectedSession(out SimulatorTransport transport)
+    private static async Task<(MachineSession Session, SimulatorTransport Transport)> ConnectedSessionAsync()
     {
-        transport = new SimulatorTransport();
+        var transport = new SimulatorTransport();
         var session = new MachineSession(transport);
-        session.ConnectAsync(new MachineProfile { Name = "Sim" }).GetAwaiter().GetResult();
-        return session;
+        await session.ConnectAsync(new MachineProfile { Name = "Sim" });
+        return (session, transport);
     }
 
     [Fact]
-    public void Wrap_Converts_Y_Linear_To_A_Degrees_By_Circumference()
+    public async Task Wrap_Converts_Y_Linear_To_A_Degrees_By_Circumference()
     {
-        var session = ConnectedSession(out _);
+        var (session, _) = await ConnectedSessionAsync();
         session.SetRotaryMode(true, diameterMm: 50);   // circumference ≈ 157.08
-
         // 157.0796mm of linear travel = one full revolution = 360°.
         string wrapped = session.WrapYToA("G1 X10 Y157.0796 F1200");
         var a = System.Text.RegularExpressions.Regex.Match(wrapped, @"A(\d+(?:\.\d+)?)");
@@ -35,9 +34,9 @@ public class RotaryWrapTests
     }
 
     [Fact]
-    public void Wrap_Preserves_The_Rest_Of_The_Line_And_Off_Mode_Sends_As_Is()
+    public async Task Wrap_Preserves_The_Rest_Of_The_Line_And_Off_Mode_Sends_As_Is()
     {
-        var session = ConnectedSession(out var transport);
+        var (session, transport) = await ConnectedSessionAsync();
         session.SetRotaryMode(true, 50);
 
         string wrapped = session.WrapYToA("G0 A90 Y25");
@@ -52,23 +51,23 @@ public class RotaryWrapTests
 
         // Off mode: SendWithRotaryWrapAsync forwards verbatim.
         session.SetRotaryMode(false, 50);
-        session.SendWithRotaryWrapAsync("G1 Y42").GetAwaiter().GetResult();
+        await session.SendWithRotaryWrapAsync("G1 Y42");
         Assert.Contains(transport.ConsoleLinesForTest, l => l.Contains("Y42"));
         Assert.DoesNotContain(transport.ConsoleLinesForTest, l => l.Contains("A95."));
     }
 
     [Fact]
-    public void Simulator_Tracks_And_Wraps_Explicit_A_Words()
+    public async Task Simulator_Tracks_And_Wraps_Explicit_A_Words()
     {
-        var session = ConnectedSession(out var transport);
+        var (session, transport) = await ConnectedSessionAsync();
 
-        session.SendWithRotaryWrapAsync("G0 A270").GetAwaiter().GetResult();
+        await session.SendWithRotaryWrapAsync("G0 A270");
         Assert.Equal(270, transport.AAxisDegrees, 3);
 
-        session.SendWithRotaryWrapAsync("G0 A450").GetAwaiter().GetResult();   // wraps to 90
+        await session.SendWithRotaryWrapAsync("G0 A450");   // wraps to 90
         Assert.Equal(90, transport.AAxisDegrees, 3);
 
-        session.SendWithRotaryWrapAsync("G0 A-45").GetAwaiter().GetResult();   // wraps to 315
+        await session.SendWithRotaryWrapAsync("G0 A-45");   // wraps to 315
         Assert.Equal(315, transport.AAxisDegrees, 3);
     }
 
@@ -83,7 +82,9 @@ public class RotaryWrapTests
         {
             try
             {
-                var session = ConnectedSession(out var transport);
+                var transport = new SimulatorTransport();
+                var session = new MachineSession(transport);
+                session.ConnectAsync(new MachineProfile { Name = "Sim" }).GetAwaiter().GetResult();
                 Assert.False(session.RotaryModeEnabled);   // default off
 
                 var dock = new MachineDock();
