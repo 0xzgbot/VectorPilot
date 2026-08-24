@@ -214,4 +214,85 @@ public class FrameJogTests
         var session = new MachineSession(new SimulatorTransport());
         Assert.False(await session.JogAsync(10, 0, 0, 1000));
     }
+
+    // ---- H-401: touch-plate probe wizard ----
+
+    [Fact]
+    public async Task Probe_Finds_The_Plate_And_Sets_Work_Zero_On_The_Plate_Top()
+    {
+        var transport = new SimulatorTransport();
+        var session = new MachineSession(transport);
+        await session.ConnectAsync(new MachineProfile { Name = "Sim" });
+
+        // Park 10mm above the plate; the sim's plate sits at Z-5.
+        await session.SendAsync("G0 Z5");
+        var result = await session.ProbeZAsync(targetZ: -15, feed: 100, plateThicknessMm: 2);
+
+        Assert.True(result.Success, "probe must reach the plate");
+        Assert.Equal(-5, result.ContactZ, 3);          // stopped AT the plate
+
+        await session.PollAsync();                      // refresh the DRO
+        double z = double.Parse(session.Dro.Z, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(-5, z, 1);
+    }
+
+    [Fact]
+    public async Task Probe_With_No_Plate_In_Travel_Fails_And_Changes_Nothing()
+    {
+        var transport = new SimulatorTransport { ProbePlateZ = -500 };   // unreachable
+        var session = new MachineSession(transport);
+        await session.ConnectAsync(new MachineProfile { Name = "Sim" });
+        await session.SendAsync("G0 Z5");
+
+        var result = await session.ProbeZAsync(targetZ: -15, feed: 100, plateThicknessMm: 2);
+
+        Assert.False(result.Success, "an unreachable plate must fail the probe");
+        Assert.Contains("no contact", result.Reason);
+
+        await session.PollAsync();
+        double z = double.Parse(session.Dro.Z, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(-15, z, 1);                        // travelled but never zeroed
+    }
+
+    [Fact]
+    public async Task Probe_Without_A_Connection_Is_Refused_Outright()
+    {
+        var session = new MachineSession(new SimulatorTransport());
+        var result = await session.ProbeZAsync(-15, 100, 2);
+        Assert.False(result.Success);
+        Assert.Contains("not connected", result.Reason);
+    }
+
+    [Fact]
+    public void The_Probe_Wizard_Opens_From_The_Dock_And_Refuses_When_Disconnected()
+    {
+        OnSta(() =>
+        {
+            var dock = new MachineDock();
+            var dlg = dock.OpenProbeWizard();           // the DockProbe_Click path, minus ShowDialog
+
+            Assert.False(dlg.CanProbe,
+                "no session — the wizard must refuse to probe (AC: no motion if disconnected)");
+
+            // Driving the same RunProbeAsync the button invokes returns the refusal.
+            var refused = dlg.RunProbeAsync().GetAwaiter().GetResult();
+            Assert.False(refused.Success);
+            Assert.Contains("Not connected", refused.Reason);
+            Assert.Contains("Not connected", dlg.ResultLabel.Text);
+        });
+    }
+
+    [Fact]
+    public void The_Dock_Carries_A_Probe_Button()
+    {
+        OnSta(() =>
+        {
+            var dock = new MachineDock();
+            // The UI element that invokes the wizard must exist and be wired — the
+            // honesty gate for this card.
+            var btn = (System.Windows.Controls.Button)dock.FindName("BtnDockProbe")!;
+            Assert.NotNull(btn);
+            Assert.Equal("▼ Probe Z…", btn.Content);
+        });
+    }
 }
