@@ -23,6 +23,9 @@
             <Button x:Name="BtnDockProbe" Content="▼ Probe Z…" Click="DockProbe_Click"
                     MinWidth="88" MinHeight="30" Margin="0,0,10,0"
                     ToolTip="Touch-plate Z probe wizard — sets work zero on the plate top"/>
+            <Button x:Name="BtnDockSurfacing" Content="▦ Surface Board…" Click="DockSurfacing_Click"
+                    MinWidth="118" MinHeight="30" Margin="0,0,10,0"
+                    ToolTip="Wasteboard surfacing wizard — raster facing program for the sheet XY"/>
             <TextBlock x:Name="DockNote" VerticalAlignment="Center" Foreground="#8888A0"
                        Margin="6,0,0,0"/>
         </DockPanel>

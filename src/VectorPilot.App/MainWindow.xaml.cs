@@ -345,6 +345,12 @@ public partial class MainWindow : Window
 
     private static readonly CommandRegistry PaletteCommands = BuildPaletteCommands();
 
+    /// <summary>
+    /// H-402: a wizard landed a program in the Cuts list while its own dialog was up —
+    /// tell the Cuts list to rebuild. Safe to call from anywhere on the UI thread.
+    /// </summary>
+    public void RefreshCutsFromWizard() => _cut.RefreshCutsList();
+
     private static CommandRegistry BuildPaletteCommands()
     {
         var reg = new CommandRegistry();
