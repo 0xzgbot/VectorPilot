@@ -11,6 +11,10 @@ public sealed class SimulatorTransport : IMachineTransport
 {
     public event Action<TransportEvent>? EventReceived;
     public bool IsOpen { get; private set; }
+
+    /// <summary>H-401: where the simulated touch plate sits (work Z). A G38.2 probe
+    /// stops here; targets shallower than this report a probe failure.</summary>
+    public double ProbePlateZ { get; set; } = -5.0;
     public string Name => "Simulator (virtual GRBL)";
 
     private MachineProfile _profile = MachineProfile.Simulator();
@@ -93,6 +97,27 @@ public sealed class SimulatorTransport : IMachineTransport
             else if (upper.StartsWith("G28") || upper.StartsWith("$HZ") || upper.StartsWith("G10 L20"))
             {
                 Emit(TransportEventType.Ok, "ok");
+            }
+            else if (upper.StartsWith("G38"))
+            {
+                // H-401 touch-plate probe (G38.2): drive Z toward the commanded target,
+                // STOP at the plate. Reaching the plate acks ok; running out of travel
+                // first reports a probe failure like real GRBL's alarm path.
+                double target = ParseNumberAfter(upper, 'Z', _z);
+                bool absolute = !upper.Contains("G91");
+                double commanded = absolute ? target : _z + target;
+                _state = MachineState.Run;
+                if (commanded <= ProbePlateZ + 1e-9)
+                {
+                    _z = ProbePlateZ;                       // plate contact
+                    Emit(TransportEventType.Ok, "ok");
+                }
+                else
+                {
+                    _z = commanded;                         // never touched anything
+                    Emit(TransportEventType.Error, "error:probeFail");
+                }
+                Emit(TransportEventType.Status, BuildStatusLine());
             }
             else if (upper.StartsWith("G10"))
             {

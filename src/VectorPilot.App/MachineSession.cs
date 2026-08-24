@@ -186,6 +186,61 @@ public sealed class MachineSession : IAsyncDisposable
         return true;
     }
 
+    // ---- H-401: touch-plate probe ----
+
+    /// <summary>
+    /// Probe Z with a touch plate (GRBL G38.2). Drives the tool down toward
+    /// <paramref name="targetZ"/>, stopping at the plate; on contact, offsets work
+    /// zero by (plate thickness + tool tip allowance) so Z0 lands ON the stock.
+    /// Returns false when not connected or the probe never touched (no motion was
+    /// left half-done — GRBL reports the failure and the operator decides).
+    /// </summary>
+    public async Task<ProbeResult> ProbeZAsync(double targetZ, double feed, double plateThicknessMm)
+    {
+        if (!_transport.IsOpen) return new ProbeResult { Success = false, Reason = "not connected" };
+        if (feed <= 0) return new ProbeResult { Success = false, Reason = "probe feed must be positive" };
+
+        Log($">> G38.2 Z{targetZ:0.###} F{feed:0} (touch-plate probe)");
+
+        var transport = _transport as SimulatorTransport;
+        bool failed = false;
+        void OnEvent(TransportEvent ev)
+        {
+            if (ev.Type == TransportEventType.Error && ev.Payload.Contains("probeFail"))
+                failed = true;
+        }
+        _transport.EventReceived += OnEvent;
+        try
+        {
+            await _transport.WriteLineAsync($"G38.2 Z{targetZ:0.###} F{feed:0}");
+        }
+        finally
+        {
+            _transport.EventReceived -= OnEvent;
+        }
+
+        if (failed || transport is null && !IsConnected)
+        {
+            Log("<< probe FAILED — no contact within travel");
+            return new ProbeResult { Success = false, Reason = "no contact within travel" };
+        }
+
+        double zAtContact = Dro.Z is { } zs &&
+            double.TryParse(zs, System.Globalization.CultureInfo.InvariantCulture, out var zv) ? zv : 0;
+
+        // Zero Z on top of the plate, then lift by its thickness so Z0 = stock top.
+        await _transport.WriteLineAsync(
+            $"G10 L20 P1 Z{-plateThicknessMm:0.###}");
+        Log($">> G10 L20 P1 Z{-plateThicknessMm:0.###} (zero on plate top → Z0 = stock top)");
+
+        return new ProbeResult
+        {
+            Success = true,
+            ContactZ = zAtContact,
+            Reason = $"contact at Z{zAtContact:0.000}; Z0 set to plate top ({plateThicknessMm:0.##}mm)"
+        };
+    }
+
     // ---- streaming (explicit consent only) ----
 
     /// <summary>The active streamer (null until a stream starts) — for progress binding.</summary>
@@ -242,4 +297,12 @@ public sealed class MachineSession : IAsyncDisposable
         _transport.EventReceived -= OnTransportEvent;
         if (_streamer is not null) await _streamer.DisposeAsync();
     }
+}
+
+/// <summary>H-401: outcome of a touch-plate probe.</summary>
+public sealed class ProbeResult
+{
+    public bool Success { get; init; }
+    public double ContactZ { get; init; }
+    public string Reason { get; init; } = "";
 }

@@ -143,4 +143,15 @@ public partial class MachineDock : UserControl
         // The port picker lives on the Machine stage; the dock routes the user there.
         MachineStageRequested?.Invoke();
     }
+
+    /// <summary>H-401: open the touch-plate probe wizard over the app shell.</summary>
+    private void DockProbe_Click(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this);
+        var dlg = new ProbeWizardDialog(this) { Owner = owner };
+        dlg.ShowDialog();
+    }
+
+    /// <summary>H-401 test seam: construct the wizard exactly as the button does.</summary>
+    public ProbeWizardDialog OpenProbeWizard() => new(this);
 }
