@@ -13,8 +13,117 @@ public partial class CutPanel : UserControl
     {
         InitializeComponent();
         PopulateStrategies();
+        PopulatePresets();   // H-501
         RefreshList();
         RefreshTemplates();
+    }
+
+    // ---- H-501: material + bit presets fill the cut params ----
+
+    private ToolDatabase? _toolDb;
+    private MaterialDatabase? _materialDb;
+    private bool _loadingPresets;
+
+    /// <summary>Load (or reuse) the persisted tool + material databases.</summary>
+    private void EnsureDatabases()
+    {
+        if (_toolDb is null)
+        {
+            var toolPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "VectorPilot", "tools.json");
+            _toolDb = File.Exists(toolPath)
+                ? ToolDatabase.LoadFromJson(toolPath)
+                : new ToolDatabase(seedDefaults: true);
+            _toolDbPath = toolPath;
+        }
+        if (_materialDb is null)
+        {
+            var matPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VectorPilot", "materials.json");
+            _materialDb = new MaterialDatabase(matPath).WithDefaults();
+        }
+    }
+
+    private string? _toolDbPath;
+    private string ToolDbPath => _toolDbPath ?? System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "VectorPilot", "tools.json");
+
+    private void PopulatePresets()
+    {
+        _loadingPresets = true;
+        try
+        {
+            EnsureDatabases();
+
+            // Materials first — the preset list the operator actually reasons about.
+            CmbMaterialPreset.ItemsSource = _materialDb!.Materials.Select(m => m.Name).ToList();
+            if (_materialDb.Materials.Count > 0) CmbMaterialPreset.SelectedIndex = 0;
+
+            CmbToolPreset.ItemsSource = _toolDb!.Tools
+                .OrderBy(t => t.DiameterMm)
+                .Select(t => $"{t.Name}  ⌀{t.DiameterMm:0.##}")
+                .ToList();
+            if (CmbToolPreset.Items.Count > 0) CmbToolPreset.SelectedIndex = 0;
+        }
+        catch
+        {
+            // A missing/corrupt database must not take down the whole panel.
+        }
+        finally { _loadingPresets = false; }
+
+        ApplyPresetToFields();
+    }
+
+    private void Preset_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingPresets) return;   // programmatic fills during Populate don't re-apply
+        ApplyPresetToFields();
+    }
+
+    /// <summary>
+    /// Resolve feed/plunge/RPM/depth for the current (tool, material, machine) and
+    /// write them into the fields that BtnAdd_Click consumes. The user can still
+    /// override anything by typing before pressing Add.
+    /// </summary>
+    public void ApplyPresetToFields()
+    {
+        EnsureDatabases();
+
+        string? toolLabel = CmbToolPreset.SelectedItem as string;
+        var tool = _toolDb!.Tools
+            .OrderBy(t => t.DiameterMm)
+            .FirstOrDefault(t => $"{t.Name}  ⌀{t.DiameterMm:0.##}" == toolLabel);
+        if (tool is null) return;
+
+        string? materialName = CmbMaterialPreset.SelectedItem as string;
+        var resolved = tool.ResolvedCutData(materialName, AppState.Profile?.Name);
+
+        TxtFeed.Text = resolved.FeedRateMmPerMin.ToString("0", CultureInfo.InvariantCulture);
+        TxtDepth.Text = Math.Min(resolved.MaxDepthOfCutMm, resolved.MaxDepthOfCutMm > 0 ? resolved.MaxDepthOfCutMm : 2)
+            .ToString("0.###", CultureInfo.InvariantCulture);
+
+        // Remember RPM on the panel so Add can pass it through ParamsJson.
+        PresetSpindleRpm = resolved.SpindleRpm;
+    }
+
+    /// <summary>RPM from the last preset resolution (0 when no preset applied).</summary>
+    public double PresetSpindleRpm { get; private set; }
+
+    // H-501 test seams (no InternalsVisibleTo): read the fields Add consumes and
+    // drive the exact BtnAdd path minus its MessageBox guard.
+    public string FeedFieldText => TxtFeed.Text;
+    public string DepthFieldText => TxtDepth.Text;
+
+    public void AddToolpathForTest(string name)
+    {
+        var layer = AppState.CurrentJob.ActiveSheet.ActiveLayer;
+        if (layer is null || layer.Shapes.Count == 0) return;
+        BtnAdd_Click(this, new RoutedEventArgs());
+        if (AppState.Toolpaths.Toolpaths.Count > 0)
+            AppState.Toolpaths.Toolpaths[^1].Name = name;
     }
 
     /// <summary>H-102: rebuild the Cuts list. Public so tests can prove a refresh keeps
@@ -365,6 +474,22 @@ public partial class CutPanel : UserControl
         {
             tp.Name = $"{entry.DisplayName} {AppState.Toolpaths.Toolpaths.Count}";
             tp.ParamsJson = entry.DefaultsJson;
+
+            // H-501: the preset resolution's RPM rides along in ParamsJson so
+            // Calculate emits M3 S<rpm> without retyping it per strategy.
+            if (PresetSpindleRpm > 0)
+            {
+                try
+                {
+                    if (System.Text.Json.Nodes.JsonNode.Parse(tp.ParamsJson)?.AsObject() is { } obj &&
+                        obj.ContainsKey("spindleRpm"))
+                    {
+                        obj["spindleRpm"] = PresetSpindleRpm;
+                        tp.ParamsJson = obj.ToJsonString();
+                    }
+                }
+                catch { /* params stay at defaults when JSON shape differs */ }
+            }
         }
         else tp.ParamsJson = "{}";
         foreach (var s in layer.Shapes) tp.SelectedShapeIds.Add(s.Id);

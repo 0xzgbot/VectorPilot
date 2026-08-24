@@ -31,6 +31,14 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <!-- H-501: material + bit presets. Picking either fills the depth/feed
+                 fields from ToolDatabase.ResolvedCutData (machine → material → derived). -->
+            <ComboBox x:Name="CmbMaterialPreset" Width="120" Margin="8,0,0,0"
+                      SelectionChanged="Preset_Changed"
+                      ToolTip="Material preset — feeds the recommended feed/plunge/RPM into the fields"/>
+            <ComboBox x:Name="CmbToolPreset" Width="140" Margin="4,0,0,0"
+                      SelectionChanged="Preset_Changed"
+                      ToolTip="Bit preset — pairs with the material to resolve cut data"/>
             <TextBox x:Name="TxtDepth" Text="0.25" Width="70" Margin="8,0,0,0" ToolTip="Cut depth"/>
             <TextBox x:Name="TxtFeed" Text="100" Width="60" Margin="6,0,0,0" ToolTip="Feed rate"/>
             <TextBlock Text="Tabs:" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#555"/>
