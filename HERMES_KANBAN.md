@@ -367,4 +367,20 @@ Pass: short list of residual risks only.
 - `P-201` — 079d971 (PocketEngine loops-once + RemainderRaster clipped to innermost loop; circles densified for offsetting; 4 tests)
 - `P-202` — 71249d1 (VCarveParams.FlatAreaClearing + FlatAreaSweep at max depth over too-wide ridge runs; off by default, in vcarve defaults JSON; 3 tests)
 - `P-301` — f5ff3b8 (dual-sided ExportTap writes {job}-front.tap + {job}-back.tap with MirrorMotionLine involution + FlipInstructions; 4 tests)
-- `P-302` — 0934cd6 (CutPanel.SyncMaterialFromJob + Setup→catalog mapping Pine→Softwood/Oak→Hardwood/etc; syncs on PopulatePresets; 3 tests)
+- `P-302` — 0934cd6 (CutPanel.SyncMaterialFromJob + Setup→catalog mapping Pine→Softwood/Oak/etc; syncs on PopulatePresets; 3 tests)
+
+# H-6xx — Family quality wave (mirrors ShopPilot PHASE X, 2026-08-25)
+
+> Source of truth for semantics: Mac repo `docs/planning/FAMILY_QUALITY_IMPLEMENTATION_PLAN_2026-08-25.md`
+> (rev 2). Claim order follows the Mac twins' merge order. Gate: `./verify.sh [filter]`.
+
+- [ ] **H-601** Vector doctor one-tap repair (mirror of Mac SPK-2020a) — Join All / Close All / Delete Zero-Span wired into the doctor panel via an applying API; V-carve open-path failure offers Fix. Engine prerequisite: polyline join gap tolerance (Mac SPK-2020a0 semantics, default 0.1 mm).
+- [ ] **H-602** Inlay wizard physics (mirror SPK-2021a) — tipDiameterMm 0.1 / glueGapMm 0.05 pocket-out-plug-unchanged (V1 choice, copy verbatim) / compressionFudge 1.002 centroid scale; numeric goldens per plan.
+- [ ] **H-603** Device profile library (mirror SPK-2022d) — same six-machine catalog JSON, post+baud+travel+origin in one pick, Generic fallback, jog soft-limit warn, last-used persists.
+- [ ] **H-604** Per-op enable flag + filter at send (mirror SPK-2022e) — persisted enabled flag on ops, send emits enabled only, re-enable byte-stable.
+- [ ] **H-605** Macros + alarm decode banner (mirror SPK-2022g) — user-editable macro buttons, no auto-run; GRBL 1.1 ALARM decode to plain-text banner.
+- [ ] **H-606** Chip-load preflight (mirror SPK-2023a) — same bit_feeds_seed.json ranges; warning tier; preset-trusted silent.
+- [ ] **H-607** T-bones (mirror SPK-2023b) — TBone variant beside dogbones; existing dogbone fixtures byte-stable.
+- [ ] **H-608** 2D rest machining engine + form (mirror SPK-2023c/d) — PreviousToolDiameterMm semantics ported down from HeightfieldToolpath to 2D Pocket; UI call-site required before [x].
+- [ ] **H-609** Copy along path (mirror SPK-2023e) — N-or-spacing along curve, tangent-follow toggle.
+- [ ] **H-610** Trochoidal slotting registry match (closes Mac-only SPK-1910) — register trochoid slot op with Mac-identical semantics; verified zero hits in VectorPilot.Engine as of 2026-08-25.
