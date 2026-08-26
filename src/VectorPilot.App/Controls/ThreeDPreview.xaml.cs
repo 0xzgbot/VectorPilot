@@ -321,10 +321,10 @@ public partial class ThreeDPreview : System.Windows.Controls.UserControl
         cam.Position = (Point3D)(rot.Transform((Vector3D)cam.Position));
     }
 
-    // ---- animated camera (Aspire OSG camera row) ----
+    // ---- animated camera ----
     //
-    // The preview only ever had this manual Rotate(): a static orbit the user nudged by
-    // hand. Aspire animates the camera, which is how you actually inspect a 3D relief.
+    // Continuous orbit plus eased named viewpoints so you can inspect a relief
+    // without only nudging Rotate() by hand.
 
     private System.Windows.Threading.DispatcherTimer? _orbitTimer;
 

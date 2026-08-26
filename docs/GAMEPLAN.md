@@ -1,4 +1,4 @@
-# Game Plan — Aspire Parity (Vectric Aspire 12.5 feature surface)
+# Game Plan — feature surface
 
 Status legend: `[ ]` pending · `[~]` in progress · `[x]` done (tests green, committed)
 Every item's DoD: port from Mac Swift authority (if one exists) or implement cleanly → xUnit tests → `dotnet build` 0 errors → full suite green → commit + push.
@@ -17,7 +17,7 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 9. `[x]` **Tabs + ramps + leads generation** — wire SPK-1136a params into Profile/Pocket: 5 ramp types, tabs (2D/3D), lead-in/out shapes.
 10. `[x]` **Tiling** — split large jobs into tiles with overlap.
 11. `[x]` **Toolpath templates** — save/reuse strategy settings. Source: `ToolpathTemplates.swift`.
-12. `[x]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture (our own implementations; Aspire sells as add-on).
+12. `[x]` **Laser strategies** — Laser Cut / Laser Fill / Laser Picture.
 13. `[x]` **Weave toolpath** — weave strategy if present in Mac (`SpecialtyToolpaths.swift`).
 
 ## Phase 3 — vector & 2D tools
@@ -35,8 +35,8 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 23. `[x]` **3DM (status registry, OpenNURBS-pending) import** — evaluate; heavy (OpenNURBS) — implement or stub with honest status.
 
 ## Phase 5 — UI parity
-24. `[x]` **Strategy forms (StrategyRegistry + JSON params wired into CutPanel; field-level polish via cron)** — one form per ported engine wired into CutPanel (field parity per Aspire form capture).
-25. `[x]` **Docked Job Setup (JobSetupOptions model; panel polish via cron)** — match Aspire's docked panel (size/material/datum/resolution).
+24. `[x]` **Strategy forms (StrategyRegistry + JSON params wired into CutPanel; field-level polish via cron)** — one form per engine wired into CutPanel.
+25. `[x]` **Docked Job Setup (JobSetupOptions model; panel polish via cron)** — size, material, datum, resolution.
 26. `[x]` **Material Settings (MaterialDatabase JSON CRUD; dialog shell via cron)** — material DB CRUD (feeds/speeds) using ToolDatabase.
 27. `[x]` **Post-processor management (PostCatalog versions + Latest-V2 + install/update; dialog shell via cron)** — post catalog (JSON), "Latest (V2)" versioning, install/update.
 28. `[x]` **Import hub (ImportHub service; dialog polish via cron)** — one UI for all importers.
@@ -44,6 +44,6 @@ Every item's DoD: port from Mac Swift authority (if one exists) or implement cle
 30. `[x]` **Command palette (CommandRegistry + shortcuts; palette window via cron) + shortcut map**.
 
 ## Phase 6 — packaging
-31. `[x]` **Inno Setup installer + release workflow** + driver notes + README parity matrix.
+31. `[x]` **Inno Setup installer + release workflow** + driver notes + README.
 
 Execution rule: work top-to-bottom; each item lands tested and committed before the next starts. The 2-hourly cron continues this list when no session is active.

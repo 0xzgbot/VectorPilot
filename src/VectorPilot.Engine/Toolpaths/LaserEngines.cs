@@ -3,8 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 // ---------------------------------------------------------------------------
-// Laser strategies (Aspire laser add-on parity; clean implementations on the
-// existing engine pattern). Lasers cut with power (S) instead of Z depth.
+// Laser strategies. Lasers cut with power (S) instead of Z depth.
 // ---------------------------------------------------------------------------
 
 public sealed class LaserCutParams

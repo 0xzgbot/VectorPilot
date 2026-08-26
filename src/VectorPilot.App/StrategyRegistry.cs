@@ -181,7 +181,7 @@ public sealed class StrategyRegistry
             return StrategyAdapters.ToSpecialty(finish);
         });
 
-        // Thread milling: Aspire ships Thread Mill as BOTH a tool type and a toolpath.
+        // Thread milling is both a tool type and a toolpath.
         // VectorPilot (and the Mac) had only the tool type, so picking a thread mill cut
         // whatever other strategy was selected.
         Add<ThreadMillParams>("threadmill", "Thread Mill", false, (s, _, p) =>

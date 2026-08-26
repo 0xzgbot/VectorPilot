@@ -4,7 +4,7 @@ using VectorPilot.Engine;
 namespace VectorPilot.App.Controls;
 
 /// <summary>
-/// H-402: wasteboard surfacing wizard (gSender-style). Generates a raster facing
+/// H-402: wasteboard surfacing wizard . Generates a raster facing
 /// program for the sheet XY and lands it in the Cuts list as a real Toolpath row.
 /// The user must press Start themselves — nothing here streams to the machine.
 /// </summary>

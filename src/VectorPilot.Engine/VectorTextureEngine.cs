@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Vector texture (Aspire parity; clean implementation): fills the area
+/// Vector texture : fills the area
 /// inside a boundary with a repeating pattern of vectors — crosshatch,
 /// dots, or a custom tile — producing decorative relief-style engraving.
 /// </summary>

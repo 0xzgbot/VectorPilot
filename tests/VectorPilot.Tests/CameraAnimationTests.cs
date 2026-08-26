@@ -5,7 +5,7 @@ using Xunit;
 namespace VectorPilot.Tests;
 
 /// <summary>
-/// Animated camera for the 3D preview (Aspire OSG camera row).
+/// Animated camera for the 3D preview (animated camera).
 ///
 /// The preview shipped with a manual Rotate(degrees) only — a static orbit the user had
 /// to nudge by hand, which is why the parity doc read "no camera animation". These tests

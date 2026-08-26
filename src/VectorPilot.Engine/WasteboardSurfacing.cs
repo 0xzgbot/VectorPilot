@@ -12,7 +12,7 @@ public static class WasteboardSurfacing
         public double SheetWidthMm { get; init; }
         public double SheetHeightMm { get; init; }
         public double CutterDiameterMm { get; init; } = 22;
-        /// <summary>Stepover as a percent of cutter diameter (gSender convention).</summary>
+        /// <summary>Stepover as a percent of cutter diameter.</summary>
         public double StepoverPercent { get; init; } = 40;
         public double DepthPerPassMm { get; init; } = 1;
         public double FeedRateMmPerMin { get; init; } = 800;
@@ -31,7 +31,7 @@ public static class WasteboardSurfacing
     public static Result Generate(Params p)
     {
         double diameter = Math.Max(0.1, p.CutterDiameterMm);
-        // gSender clamps stepover to 1–90% of the cutter.
+        // Stepover is clamped to 1–90% of the cutter.
         double stepover = Math.Clamp(p.StepoverPercent / 100.0, 0.01, 0.9) * diameter;
 
         var lines = new List<string>

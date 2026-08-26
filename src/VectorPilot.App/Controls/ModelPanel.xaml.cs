@@ -31,7 +31,7 @@ public partial class ModelPanel : UserControl
         // relief lands in the same stack this panel's tree displays.
         Tree.UseSharedStack(AppState.Components);
         // H-302: drag on the 3D mesh strokes the selected component's heightfield,
-        // then the composite re-renders — the Aspire sculpt loop.
+        // then the composite re-renders — the sculpt loop.
         Preview.SculptStroke += (x, y) =>
         {
             if (!Vm.Sculpt(SculptTool.Brush, x, y)) return false;
@@ -255,7 +255,7 @@ public partial class ModelPanel : UserControl
         return true;
     }
 
-    // ---- animated camera handlers (Aspire OSG camera row) ----
+    // ---- animated camera handlers (animated camera) ----
 
     private void ViewIso_Click(object sender, RoutedEventArgs e)
         => Preview.AnimateToView(CameraViewpoint.Isometric);

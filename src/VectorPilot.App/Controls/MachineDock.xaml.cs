@@ -5,7 +5,7 @@ using VectorPilot.Serial;
 namespace VectorPilot.App.Controls;
 
 /// <summary>
-/// App-lifetime machine dock (gSender/LightBurn pattern): the machine is always present,
+/// App-lifetime machine dock: the machine is always present,
 /// not something you visit. The dock lives in the MainWindow shell, outside the stage host,
 /// so E-stop / Hold / Reset stay visible and enabled on every stage.
 ///

@@ -138,7 +138,7 @@ public sealed class MachineSession : IAsyncDisposable
     /// operator can see the machine's travel cover the work area before cutting. Emits
     /// lift → four corners → return to start. Returns false when not connected.
     ///
-    /// H-104: gSender/LightBurn both frame before every job; without it the first sign of
+    /// H-104: We frame before every job; without it the first sign of
     /// a mis-set origin is a tool crash.
     /// </summary>
     public async Task<bool> FrameAsync(double x0, double y0, double x1, double y1, double feed, double safeZ)
@@ -245,7 +245,7 @@ public sealed class MachineSession : IAsyncDisposable
 
     /// <summary>When true, every streamed/sent Y word is rewritten to an A word
     /// (degrees = linear / circumference × 360) before it reaches the transport —
-    /// gSender's "Y-as-A" trick for programs not yet posted for rotary.</summary>
+    /// Y-as-A wrap for programs not yet posted for rotary.</summary>
     public bool RotaryModeEnabled { get; private set; }
 
     public double RotaryDiameterMm { get; private set; } = 50;

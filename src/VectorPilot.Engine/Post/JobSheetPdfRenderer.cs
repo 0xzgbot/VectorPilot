@@ -5,7 +5,7 @@ namespace VectorPilot.Engine;
 
 /// <summary>
 /// Self-contained A4 PDF job-sheet renderer with a structurally valid xref table
-/// (Aspire job-sheet parity). Deterministic: the only timestamp in the output is
+/// (job sheet). Deterministic: the only timestamp in the output is
 /// JobSheetData.CreatedAt. No NuGet dependencies — pure BCL, ASCII-only output.
 /// </summary>
 public static class JobSheetPdfRenderer

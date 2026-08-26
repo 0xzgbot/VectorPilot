@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Machine configuration DB (Aspire Machine Configuration parity; engine side):
+/// Machine configuration DB (engine-side machine configuration):
 /// a JSON catalog of machine profiles (work envelope, axes, controller, port).
 /// </summary>
 public sealed class MachineConfigEntry

@@ -6,7 +6,7 @@ namespace VectorPilot.Tests;
 public class JobSetupTests
 {
     [Fact]
-    public void Point_Budget_Matches_Aspire()
+    public void Point_Budget_Is_One_Million_Or_Four()
     {
         Assert.Equal(1_000_000, new JobSetupOptions().PointBudget);
         Assert.Equal(4_000_000, new JobSetupOptions { Resolution = ModelingResolution.High }.PointBudget);

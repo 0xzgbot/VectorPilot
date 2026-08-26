@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Material settings database (Aspire Material Settings parity; engine side):
+/// Material settings database (engine-side material settings):
 /// JSON CRUD over Material entries with per-material feed/speed recommendations.
 /// </summary>
 public sealed class MaterialDatabase
@@ -74,7 +74,7 @@ public sealed class MaterialDatabase
 }
 
 /// <summary>
-/// Post-processor catalog (Aspire post management parity; engine side): a JSON
+/// Post-processor catalog (engine-side post catalog): a JSON
 /// catalog of post processors with versions tagged "Latest (V2)" and
 /// install/update lifecycle.
 /// </summary>

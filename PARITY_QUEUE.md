@@ -23,7 +23,7 @@ Rules:
 
 ---
 
-## Tier 1 — App layer (the actual gap vs Aspire)
+## Tier 1 — App layer
 
 - [x] **A1. Node editing** — click a shape in Select mode to enter node mode: draggable point handles, insert point on segment double-click, delete selected node (Del), Esc exits. Wire through `UndoStack`.
   Gate: `FullyQualifiedName~NodeEdit` — ≥8 tests (hit-test a node, drag updates geometry, insert splits the correct segment, delete removes, undo restores).

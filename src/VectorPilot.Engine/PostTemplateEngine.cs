@@ -71,7 +71,7 @@ public sealed class PostTemplate
         var unitsComment = units == GCodeUnits.Millimeter ? "Millimeter units" : "Inch units";
         return $"""
             %
-            (ShopPilot {(units == GCodeUnits.Millimeter ? "mm" : "in")} post)
+            (VectorPilot {(units == GCodeUnits.Millimeter ? "mm" : "in")} post)
             [N|A|N|3.0] {modal} ; {unitsComment}
             [N|A|N|3.0] G90 ; Absolute positioning
             [N|A|N|3.0] G17 ; XY plane
@@ -87,7 +87,7 @@ public sealed class PostTemplate
 
     private const string RotaryWrapTemplateText = """
         %
-        (ShopPilot GRBL rotary wrap Y2A post)
+        (VectorPilot GRBL rotary wrap Y2A post)
         [N|A|N|3.0] G21 ; Millimeter units
         [N|A|N|3.0] G90 ; Absolute positioning
         [N|A|N|3.0] G17 ; XY plane

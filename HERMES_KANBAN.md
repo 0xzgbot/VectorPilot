@@ -6,7 +6,7 @@ Supersedes `MASTER_KANBAN.md` (stale M0–M6) and `PARITY_QUEUE.md` (single-agen
 
 **Repo:** `C:\Users\tmoph\OneDrive\Documents\cncresearch\VectorPilot`  
 **Mac (read-only):** `../ShopPilot/Sources/**`  
-**Product north star:** [beyond-Aspire plan](https://github.com/0xzgbot/VectorPilot) — LightBurn UX + gSender machine + Aspire-class 3D/photo. Not more combo-box strategies.
+**Product north star:** a CAM app you can design, toolpath, and cut in — 2D, 3D/photo, and a machine dock that stays up. Not more combo-box strategies.
 
 ---
 
@@ -55,7 +55,7 @@ Worker flips only its own line. Orchestrator owns wave headers and locks.
 | **ENGINE-PHOTO** | `src/VectorPilot.Engine/Photo/LithophaneEngine.cs`, `src/VectorPilot.Engine/Toolpaths/PhotoVCarveEngine.cs`, `SketchCarveEngine.cs` | One worker |
 | **ENGINE-GEO** | `src/VectorPilot.Geometry/**` | One worker |
 | **TESTS** | `tests/VectorPilot.Tests/{CardFilter}*.cs` | Parallel OK if **new files only** |
-| **DOCS** | `docs/ASPIRE_PARITY.md`, this kanban | Orchestrator only |
+| **DOCS** | `docs/FEATURES.md`, this kanban | Orchestrator only |
 
 **Disjoint locks do NOT make two workers safe here.** `tests/VectorPilot.Tests.csproj`
 line 18 has a `ProjectReference` to `VectorPilot.App`, so EVERY test run compiles the App.
@@ -92,7 +92,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~JobStarter` — Advanced shows full registry; Beginner shows ≤8 operations; Photo/3D starters exist as clickable UI  
   AC: User can start without seeing Thread Mill.
 
-- [x] **H-102** Cuts/Layers list (LightBurn-style operations list)  
+- [x] **H-102** Cuts/Layers list (operations list)  
   Locks: **CUT**  
   Depends: H-101 merged  
   Parallel-OK: **none while H-202 is in flight** (MSB3021 + 429). After H-202 merge: new-file engine cards only.  
@@ -102,7 +102,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   AC: Each toolpath is a row (name, strategy, time); double-click opens **named fields** not a JSON blob; Calculate uses row ParamsJson.  
   Recon for brief: `CutPanel.xaml.cs` already has toolpath list + `CommitParamsForm` / `ParamsJson` — extend that list; do not invent a second registry.
 
-- [x] **H-103** App-lifetime machine dock (gSender/LightBurn)  
+- [x] **H-103** App-lifetime machine dock  
   Locks: **APP-SHELL**, **MACHINE**  
   Depends: none if H-101 not touching MachinePanel — **conflict with H-101**. Do **after** H-101.  
   Parallel-OK: H-201–H-203  
@@ -177,7 +177,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
   Gate: `FullyQualifiedName~StlWizard`  
   AC: One STL → component on sheet bounds; cancel leaves job unchanged.
 
-- [x] **H-302** Sculpt on 3D view (Aspire loop)  
+- [x] **H-302** Sculpt on 3D view  
   Locks: **MODEL**  
   Depends: H-301 not required  
   Parallel-OK: H-201, H-103 if locks disjoint — **MODEL vs MACHINE OK**  
@@ -200,7 +200,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ---
 
-## Wave 4 — Machine (gSender)
+## Wave 4 — Machine
 
 - [x] **H-401** Touch-plate probe wizard  
   Locks: **MACHINE**  
@@ -244,7 +244,7 @@ These take APP-SHELL / CUT / MACHINE. **Run one App worker at a time.** Engine w
 
 ## Out of scope (do not spawn)
 
-SKP / V3M / 3DM SDKs · FlaUI for its own sake · 5-axis Fusion · gadget HTML marketplace · extra posts “to reach N” · editing README as the card.
+SKP / V3M / 3DM SDKs · FlaUI for its own sake · 5-axis CAM · gadget HTML marketplace · extra posts “to reach N” · editing README as the card.
 
 ---
 

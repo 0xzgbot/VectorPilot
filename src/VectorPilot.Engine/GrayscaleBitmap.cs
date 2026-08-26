@@ -4,7 +4,7 @@ using System.Text;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Grayscale bitmap ↔ heightfield (Aspire "Export as Grayscale Bitmap" parity).
+/// Grayscale bitmap ↔ heightfield.
 /// BMP (trivial, universally readable) and PNG (zlib IDAT via ZLibStream, CRC32).
 /// </summary>
 public static class GrayscaleBitmap
@@ -146,7 +146,7 @@ public static class GrayscaleBitmap
     }
 }
 
-/// <summary>Heightfield resolution math (Aspire modeling-resolution parity): resample
+/// <summary>Heightfield resolution math: resample
 /// to a new cell size with bilinear interpolation.</summary>
 public static class HeightfieldMath
 {
@@ -170,7 +170,7 @@ public static class HeightfieldMath
         return new HeightfieldData(w, h, newCellSizeMm, minX, minY, heights);
     }
 
-    /// <summary>Compute the cell size for a target cell budget (Aspire's Standard ≈ 1M points).</summary>
+    /// <summary>Compute the cell size for a target cell budget (Standard ≈ 1M points).</summary>
     public static double CellSizeForBudget(HeightfieldData hf, int targetCells)
     {
         var (minX, minY, maxX, maxY) = hf.Bounds;

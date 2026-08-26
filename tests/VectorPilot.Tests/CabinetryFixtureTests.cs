@@ -7,7 +7,7 @@ namespace VectorPilot.Tests;
 /// <summary>
 /// Cabinetry part-list import validated against REAL vendor fixture files.
 ///
-/// The Aspire parity row read "needs fixture validation" and it was right: the existing
+/// Cabinetry import needed fixture validation: the existing
 /// tests used inline strings and covered only 2 of the 6 supported vendors, with zero
 /// fixture files on disk. Each vendor uses a different header vocabulary
 /// (Width vs W vs XSize vs Width_mm) and SmartWOP is tab-delimited, so a mapping

@@ -2,7 +2,7 @@ using VectorPilot.Geometry;
 
 namespace VectorPilot.Engine;
 
-/// <summary>Severity of a vector problem (Aspire vector-validator parity).</summary>
+/// <summary>Severity of a vector problem.</summary>
 public enum VectorIssueSeverity { Warning, Error }
 
 /// <summary>A problem found on a vector (open loop, self-intersection, degenerate).</summary>
@@ -15,7 +15,7 @@ public sealed class VectorIssue
 }
 
 /// <summary>
-/// Vector validator (Aspire parity; clean implementation): detects open
+/// Vector validator: detects open
 /// loops, self-intersections, duplicate points, and degenerate shapes.
 /// </summary>
 public static class VectorValidator

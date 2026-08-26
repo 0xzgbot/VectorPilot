@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Node-edit model (Aspire node-editing parity; engine-side): add, delete,
+/// Node-edit model (engine-side node editing): add, delete,
 /// move, and split operations on a polyline's points. UI binds to these.
 /// </summary>
 public static class NodeEditEngine

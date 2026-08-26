@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Cabinetry / part-list import (Aspire parity): vendor part-list files
+/// Cabinetry / part-list import: vendor part-list files
 /// (Mozaik, KCD, CabinetSense, CabinetPartsPro, Polyboard, SmartWOP) map onto
 /// a common part model via per-vendor parsers + a JSON schema mapper.
 /// </summary>
@@ -29,7 +29,7 @@ public enum PartListVendor { Mozaik, Kcd, CabinetSense, CabinetPartsPro, Polyboa
 /// </summary>
 public static class PartListImporter
 {
-    /// <summary>Default column mappings per vendor (Aspire's shipped mappings).</summary>
+    /// <summary>Default column mappings per vendor (default vendor mappings).</summary>
     public static readonly Dictionary<PartListVendor, Dictionary<string, string>> DefaultMappings = new()
     {
         [PartListVendor.Mozaik] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

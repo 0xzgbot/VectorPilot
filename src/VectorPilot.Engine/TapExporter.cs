@@ -80,7 +80,7 @@ public static class TapExporter
     public static string DefaultPath(string jobPath) => Path.ChangeExtension(jobPath, ".tap");
 }
 
-/// <summary>One job-sheet row (Aspire job-sheet parity).</summary>
+/// <summary>One job-sheet row (job sheet).</summary>
 public sealed class JobSheetRow
 {
     public string Name { get; init; } = "";
@@ -91,7 +91,7 @@ public sealed class JobSheetRow
 }
 
 /// <summary>
-/// HTML job sheet (Aspire PrintSheetTemplate.html parity): renders job info +
+/// HTML job sheet: renders job info +
 /// a toolpath table from an HTML template with {TOKEN} placeholders.
 /// </summary>
 public static class JobSheetHtml

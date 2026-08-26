@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Tab generator (Aspire tabs parity): post-processes a profile/pocket G-code
+/// Tab generator (holding tabs): post-processes a profile/pocket G-code
 /// pass list, lifting the tool to SafeZ across tab spans so the part stays
 /// tethered. Tabs are placed at fixed spacing along the cut path.
 /// </summary>
@@ -93,7 +93,7 @@ public static class TabGenerator
 }
 
 /// <summary>
-/// Ramp generator (Aspire ramping parity): replaces the vertical plunge into
+/// Ramp generator (ramping): replaces the vertical plunge into
 /// the first cut of a pass with a linear (smooth), zigzag, or spiral ramp
 /// over `rampDistanceMm` along the path.
 /// </summary>

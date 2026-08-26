@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Moulding toolpath (Aspire-parity strategy, implemented on the Mac's own
+/// Moulding toolpath (strategy implemented from the Mac
 /// building blocks — the Mac has no Moulding engine yet): sweeps a profile
 /// along rails via SweepReliefEngine, then generates surface-following finish
 /// G-code over the swept relief via HeightfieldFinishEngine.

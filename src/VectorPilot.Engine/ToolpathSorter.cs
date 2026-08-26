@@ -1,6 +1,6 @@
 namespace VectorPilot.Engine;
 
-/// <summary>Toolpath sort strategies (Aspire toolpath-arrangement parity).</summary>
+/// <summary>Toolpath sort strategies (toolpath arrangement).</summary>
 public enum ToolpathSortMode
 {
     ByTool,      // group by tool, smallest diameter first
@@ -51,7 +51,7 @@ public static class ToolpathSorter
     }
 
     /// <summary>Merge contiguous toolpaths of the same tool into one cut session
-    /// (Aspire merged-toolpath parity): returns group boundaries.</summary>
+    /// (merged toolpaths): returns group boundaries.</summary>
     public static List<List<Toolpath>> MergeByTool(IReadOnlyList<Toolpath> ordered)
     {
         var groups = new List<List<Toolpath>>();

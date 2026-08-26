@@ -41,7 +41,7 @@ public sealed class ThreadMillParams
 }
 
 /// <summary>
-/// Thread milling. Aspire ships Thread Mill as a tool type AND a toolpath; VectorPilot
+/// Thread milling is both a tool type and a toolpath. VectorPilot
 /// had the tool type in ToolDatabase (and so did the Mac) but no toolpath anywhere —
 /// selecting a thread mill just cut whatever strategy you happened to pick.
 ///

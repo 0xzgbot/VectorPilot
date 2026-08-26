@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Preferences store (Aspire preferences parity; engine side): JSON settings
+/// Preferences store (engine-side preferences): JSON settings
 /// for units, grid, colors, autosave interval, and startup behavior.
 /// </summary>
 public sealed class Preferences

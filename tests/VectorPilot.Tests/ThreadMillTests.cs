@@ -9,7 +9,7 @@ namespace VectorPilot.Tests;
 /// <summary>
 /// Thread milling as a real strategy.
 ///
-/// Aspire ships Thread Mill as BOTH a tool type and a toolpath. VectorPilot had
+/// Thread mill is both a tool type and a toolpath. Earlier VectorPilot had
 /// ToolType.ThreadMill in the tool database — and so does the Mac — but no thread
 /// toolpath anywhere, so selecting a thread mill cut whatever other strategy happened
 /// to be picked. These tests pin the helical geometry that makes it a thread.

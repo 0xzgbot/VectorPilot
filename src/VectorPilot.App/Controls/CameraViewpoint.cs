@@ -1,7 +1,7 @@
 namespace VectorPilot.App.Controls;
 
 /// <summary>
-/// Named camera viewpoints for the 3D preview (Aspire OSG camera row). Kept in its own
+/// Named camera viewpoints for the 3D preview (animated camera). Kept in its own
 /// file so tests can reference it without constructing a WPF control.
 /// </summary>
 public enum CameraViewpoint

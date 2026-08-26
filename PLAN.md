@@ -1,17 +1,15 @@
 # VectorPilot — Windows Conversion Plan
 
 **App:** VectorPilot · **Repo:** `github.com/0xzgbot/VectorPilot` (private) · **Date:** 2026-08-06 · **Status:** Plan approved, M0 ready
-**Sibling app:** ShopPilot (macOS, SwiftUI) — same product family, same document schema, independent codebase.
-**Source studied:** ShopPilot repo (44,846 LOC Swift) · reference CAM installer re-unpacked (V12.5.1.0 Build 12738, 1,368 files, exe + SQLite + data payloads forensically examined) · planning docs (`INSTALLER_BREAKDOWN.md`, `FEATURE_PARITY_MATRIX.md` §R, `WINDOWS_EXPLORER_PROMPT.md`, `UX_STAGE_SYSTEM.md`).
 
 ---
 
 ## 1. Mission
 
-Build **VectorPilot**: a native **Windows** CNC suite — design → toolpaths → preview → machine control — as the sibling of ShopPilot. Same product bar (professional-grade CAM feature surface, independently implemented), same safety rules, same document format; a **new codebase** in a new language on a new platform.
+Build **VectorPilot**: a native **Windows** CNC suite — design → toolpaths → preview → machine control. Same safety rules and `.shoppilot` document format as the macOS sibling; a **new codebase** in a new language on a new platform.
 
 **What this is:** a *re-platform* — the engine logic is translated, not recompiled.
-**What this is not:** a copy of any third-party app, format, or asset. Feature *names, defaults, and workflow order* are reference evidence only.
+**What this is not:** a copy of any third-party app, format, or asset.
 
 ## 2. Definition of Done
 
@@ -35,17 +33,14 @@ Build **VectorPilot**: a native **Windows** CNC suite — design → toolpaths �
 
 Full file-by-file inventory with LOC + class: `docs/PORT_MANIFEST.md`.
 
-## 4. Reference surface (the feature target — installer-verified)
+## 4. Target surface
 
-- **Reference app stack:** native Win32 C++ x64 (MSVC140), OpenSceneGraph/OpenGL 3D, pstill PDF, BugSplat crash, NSIS installer. **No machine-control UI** — control = posts + machine DB. That gap is VectorPilot's differentiator.
-- **Data formats (semantics only — never copied):** `postp.ppdb` SQLite (800 posts + 935 machine configs), `.vtdb` SQLite tool DBs with GUID 3-part linkage (`db_geom_id` / `db_cut_data_id` / `db_mach_cut_data_id` — confirms the tool DB design), 17 binary `.default` toolpath defaults, 72 stock sheets, 91 Lua gadgets.
-- **`.pp` post grammar (pattern to mirror):** `VAR X_POSITION = [X|C|X|1.3]`, `UNITS`, `LINE_ENDING`, block numbering, `begin` blocks. GRBL family shipped: Grbl (inch/mm), Grbl WrapY2A (inch/mm), Easel-Grbl, OpenBuilds GRBL, Shapeoko.
-- **Strategies (17 + variants):** Profile, Pocket, V-Carve, Drilling, Chamfer, Fluting, 3D Rough, 3D Finish, Swept Profile/Moulding, Texture, Quick Engrave, Bevel Carving, Thread Milling, Laser family, Photo V-Carve, V-Carve Inlay, Prism Carving, Plasma Profile.
-- **Shared subsystems:** tabs (2D/3D/auto), ramps (5 types), leads (arc/line), ordering/sorting/merge, boundaries + offsets, tolerances, climb/conventional, keep-out zones, tiling, nesting, toolpath templates, 2x–16x simulation.
-- **Job types:** single / double-sided / rotary. **2D:** full create/edit incl. node edit, boolean, offset, text-to-curves, bitmap trace, layers. **3D:** components + combine modes + sculpt, STL/3DM/SKP import.
-- **Output:** 964 posts, HTML job sheet, machine DB. **Trial limits:** export disabled, laser gated (our paid/full tier map).
+- **Strategies:** Profile, Pocket, V-carve, Drilling, Chamfer, Fluting, 3D Rough, 3D Finish, Moulding, Texture, Quick Engrave, Bevel, Thread milling, Laser family, Photo V-carve, Inlay, Prism, Plasma profile, rotary wrap.
+- **Shared:** tabs, ramps, leads, sort/merge, keep-out, tiling, nesting, templates, simulation.
+- **Jobs:** single, double-sided, rotary. Vector edit (nodes, boolean, offset, text-to-curves, bitmap trace, layers). 3D components, sculpt, mesh import.
+- **Output:** post catalog, HTML/PDF job sheet, machine profiles.
 
-Full detail: `docs/PORT_MANIFEST.md` §5 + ShopPilot `docs/planning/INSTALLER_BREAKDOWN.md` + `FEATURE_PARITY_MATRIX.md` §R.
+Full engine inventory: `docs/PORT_MANIFEST.md`.
 
 ## 5. Stack decision
 
@@ -69,7 +64,7 @@ VectorPilot.sln
 ├── VectorPilot.App/        WPF — stage rail, design canvas, machine panel, DX11 preview host
 ├── VectorPilot.Tests/      xUnit — the ported verify CLTs + goldens + 429-test equivalents (the DoD)
 ├── assets/                 JSON seeds (72 presets, tool DB), golden G-code, job-sheet template
-└── docs/                   this plan, LIVE_CAPTURE.md, parity matrix, spec pack
+└── docs/                   this plan, spec pack
 ```
 
 Key seams (mirror the Mac architecture):

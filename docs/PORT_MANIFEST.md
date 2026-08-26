@@ -312,12 +312,8 @@ Each is a plain-Swift CLI (no XCTest) in `Sources/ShopPilotVerifyXXXX/`, registe
 | File panels / app shell | DocumentLoader/Saver, Autosaver, ExportBlocker, FileOperations (AppKit/SwiftUI) | WPF dialogs (Microsoft.Win32.OpenFileDialog / SaveFileDialog) |
 | All UI | Sources/ShopPilot (35 files) | WPF re-implementation; UX spec = UX_STAGE_SYSTEM.md (stage rail, progressive disclosure), not pixel-for-pixel |
 
-## 5. The reference surface to match (installer-verified, V12.5.1.0)
+## 5. Target surface (strategies and posts)
 
-- **App stack:** native Win32 C++ x64 (MSVC140), OpenSceneGraph/OpenGL 3D, pstill PDF, BugSplat crash, NSIS installer. No machine-control UI — control = posts + machine DB (ShopPilot's differentiator).
-- **Data formats:** postp.ppdb SQLite (800 posts + 935 machine configs), .vtdb SQLite tool DBs (GUID 3-part linkage: db_geom_id / db_cut_data_id / db_mach_cut_data_id), 17 binary `.default` toolpath defaults, 72 stock sheets, 91 Lua gadgets.
-- **`.pp` grammar:** `VAR X_POSITION = [X|C|X|1.3]`, UNITS, LINE_ENDING, block numbering, `begin REVISION_COMMENT` blocks; GRBL posts shipped: Grbl (inch/mm), Grbl WrapY2A (inch/mm), Easel-Grbl, OpenBuilds GRBL, Shapeoko.
-- **Strategies (17 + variants):** Profile, Pocket, V-Carve, Drilling, Chamfer, Fluting, 3D Rough, 3D Finish, Swept Profile/Moulding, Texture, Quick Engrave, Bevel Carving, Thread Milling, Laser family, Photo V-Carve, V-Carve Inlay, Prism Carving, Plasma Profile.
-- **Shared subsystems:** tabs (2D/3D/auto), ramps (5 types), leads (arc/line), ordering/sorting/merge, boundaries + offsets, tolerances, climb/conventional, keep-out zones, tiling, nesting, toolpath templates, 2x–16x simulation.
-
-Full inventory: `docs/planning/INSTALLER_BREAKDOWN.md` + `FEATURE_PARITY_MATRIX.md` §R in the ShopPilot repo; raw evidence re-unpackable from `AspireTrialEdition_Setup.exe` (see PC_SETUP.md §4).
+- **Strategies:** Profile, Pocket, V-carve, Drilling, Chamfer, Fluting, 3D Rough, 3D Finish, Moulding, Texture, Quick Engrave, Bevel, Thread milling, Laser family, Photo V-carve, Inlay, Prism, Plasma profile.
+- **Shared:** tabs, ramps, leads, sort/merge, keep-out, tiling, nesting, templates, simulation.
+- **Posts:** template grammar `[X|C|X|1.3]` plus the shipped catalog (GRBL family, industrial, laser/plasma).

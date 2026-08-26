@@ -8,20 +8,18 @@ namespace VectorPilot.Engine;
 public static class ProprietaryFormatStatus
 {
     /// <summary>
-    /// V3M (Aspire 3D clipart) is a proprietary binary format with no public spec.
-    /// The Mac reference app does not import V3M either. Stub until a spec or
-    /// sample corpus exists.
+    /// V3M 3D clipart is a proprietary binary format with no public spec.
+    /// Stub until a spec or sample corpus exists.
     /// </summary>
     public const string V3m = "not-implemented: V3M is a proprietary binary format without a public specification. " +
-                              "No V3M importer exists in the Mac reference app either. Implement when a spec/samples are available.";
+                              "Implement when a spec/samples are available.";
 
     /// <summary>
-    /// SKP (SketchUp) needs SketchUpAPI.dll (proprietary SDK). Aspire ships the
-    /// 9MB SketchUpAPI.dll next to the SKP importer. We do not bundle third-party
-    /// binaries; the import surface exists and will wire to the SDK when present.
+    /// SKP (SketchUp) needs SketchUpAPI.dll (proprietary SDK). We do not bundle
+    /// third-party binaries; the import surface exists and will wire to the SDK when present.
     /// </summary>
     public const string Skp = "not-implemented: SKP import requires SketchUpAPI.dll (proprietary SketchUp SDK). " +
-                              "Aspire bundles it (9MB); we do not ship third-party binaries. Import surface reserved.";
+                              "Import surface reserved until the SDK is present.";
 
     /// <summary>
     /// 3DM (Rhino) is documented by the OpenNURBS SDK (open source). A full port

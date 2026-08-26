@@ -4,7 +4,7 @@ using Xunit;
 namespace VectorPilot.Tests;
 
 /// <summary>
-/// E3: shipped post catalog. VectorPilot shipped 3 posts against Aspire's 53+.
+/// E3: shipped post catalog.
 /// These assert each controller's dialect actually round-trips through the
 /// existing template engine — not merely that entries exist.
 /// </summary>
@@ -21,9 +21,9 @@ public class ShippedPostCatalogTests
         => PostTemplateEngine.Emit(Moves, t).Lines;
 
     [Fact]
-    public void Catalog_Reaches_Aspire_Scale()
+    public void Catalog_Has_A_Full_Controller_Set()
     {
-        // Aspire ships 53+ posts. The parity doc claimed the row while only 3 existed,
+        // The catalog used to claim completeness while only 3 posts existed,
         // then 20; this pins the real number so the claim cannot drift again.
         Assert.True(PostTemplate.Shipped.Count >= 53,
             $"expected 53+ shipped posts, got {PostTemplate.Shipped.Count}");

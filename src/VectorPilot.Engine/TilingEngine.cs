@@ -1,6 +1,6 @@
 namespace VectorPilot.Engine;
 
-/// <summary>One tile of a tiled job (Aspire tiling parity; clean implementation).</summary>
+/// <summary>One tile of a tiled job (tiling).</summary>
 public sealed class TileRegion
 {
     public int Row { get; init; }

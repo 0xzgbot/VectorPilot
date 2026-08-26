@@ -9,7 +9,7 @@ using Xunit;
 namespace VectorPilot.Tests;
 
 /// <summary>
-/// H-102: the LightBurn-style Cuts list.
+/// H-102: the Cuts list.
 ///
 /// The toolpath list was a ListBox of formatted STRINGS. Six call-sites in CutPanel
 /// (ArrayCopy_Click, the array and merge result selection, the StrategyKey lookup,

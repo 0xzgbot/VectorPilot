@@ -6,7 +6,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.App.Controls;
 
 /// <summary>
-/// Lua gadget host UI (Aspire gadget row). Edit a script, run it in the sandbox, see
+/// Lua gadget host UI (Lua gadgets). Edit a script, run it in the sandbox, see
 /// what it drew, then commit the shapes to the active layer.
 /// </summary>
 public partial class GadgetDialog : Window

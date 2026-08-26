@@ -82,7 +82,7 @@
                     ToolTip="Combine every calculated toolpath into ONE program, ordered by tool (originals kept)"/>
         </StackPanel>
 
-        <!-- H-102: LightBurn-style Cuts list. Items are real Toolpath objects (they used to be
+        <!-- H-102: Cuts list. Items are real Toolpath objects (they used to be
              formatted strings, which made every `SelectedItem is not Toolpath` guard in
              ArrayCopy_Click / SaveTemplate_Click / ApplyTemplate_Click fail, so those three
              buttons were dead). Name kept so the existing handlers keep working. -->

@@ -42,7 +42,7 @@
                         ToolTip="Restore the selected component to before the last sculpt stroke (drag on the 3D view to sculpt)"/>
             </StackPanel>
 
-            <!-- Animated camera (Aspire OSG camera row): the preview previously had a
+            <!-- Animated camera (animated camera): the preview previously had a
                  manual nudge-rotate only. -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <TextBlock Text="View:" VerticalAlignment="Center" Foreground="#555"/>

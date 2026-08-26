@@ -4,9 +4,9 @@ using Xunit;
 namespace VectorPilot.Tests;
 
 /// <summary>
-/// Lua gadget host — the last unblocked Aspire row (gadget system).
+/// Lua gadget host — Lua gadget host.
 ///
-/// Aspire's gadgets are Lua + HTML; VectorPilot had two hardcoded C# gadgets and no host,
+/// Gadgets are Lua; earlier VectorPilot had two hardcoded C# gadgets and no host,
 /// so a user could not write one. MoonSharp runs the script in a HARD SANDBOX, which is
 /// the part that matters: a gadget is untrusted code, and it must not be able to read the
 /// disk, shell out, or hang the app.

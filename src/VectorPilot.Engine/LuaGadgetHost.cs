@@ -4,7 +4,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Engine;
 
 /// <summary>
-/// Lua gadget host (Aspire gadget row). Runs a user script in a sandbox and collects
+/// Lua gadget host (Lua gadgets). Runs a user script in a sandbox and collects
 /// the vectors it draws.
 ///
 /// Sandboxed deliberately: the script gets a <see cref="CoreModules.Preset_HardSandbox"/>

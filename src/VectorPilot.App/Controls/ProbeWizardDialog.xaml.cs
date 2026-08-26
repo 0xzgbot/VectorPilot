@@ -4,7 +4,7 @@ using VectorPilot.Serial;
 namespace VectorPilot.App.Controls;
 
 /// <summary>
-/// H-401: gSender-style Z touch-plate wizard. Collects plate thickness / probe
+/// H-401: Z touch-plate wizard. Collects plate thickness / probe
 /// target / feed, runs MachineSession.ProbeZAsync (G38.2), and reports honestly —
 /// a failed probe says so instead of zeroing anyway.
 /// </summary>

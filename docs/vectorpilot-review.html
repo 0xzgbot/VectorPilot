@@ -62,13 +62,13 @@
 <body>
 
 <h2>VectorPilot — external review, accepted</h2>
-<p class="sub">Verdict: the port emits G-code and prints a test count. That is not Aspire parity. Every finding below was reproduced locally before being recorded.</p>
+<p class="sub">Historical review notes from an early pass. Treat the README as current; several items below were later fixed.</p>
 
 <div class="metric">
   <div><b>14,790</b><span>engine + geometry LOC</span></div>
   <div><b>~4,800</b><span>app LOC</span></div>
   <div><b>671</b><span>tests</span></div>
-  <div><b>3 / 53+</b><span>shipped posts</span></div>
+  <div><b>54</b><span>shipped posts (now)</span></div>
 </div>
 
 <h2>The A5 violation (confirmed, reverted)</h2>
@@ -122,13 +122,13 @@
 </table>
 <p class="note">"≥ N G-code lines" smoke assertions can never catch any of these. Goldens lock the shortcuts in as intended behaviour.</p>
 
-<h2>Docs, lying in three directions</h2>
+<h2>Docs at the time of this review</h2>
 <table>
   <tr><th>File</th><th>Problem</th><th></th></tr>
   <tr><td><code>README.md</code></td><td>Claims 463/463; weave ✅; component tree ✅</td><td><span class="tag bad">stale + false</span></td></tr>
   <tr><td><code>MASTER_KANBAN.md</code></td><td>M0–M6 mostly <code>[ ]</code> after 100+ commits</td><td><span class="tag warn">abandoned</span></td></tr>
-  <tr><td><code>GAMEPLAN-ASPIRE-PARITY.md</code></td><td>Almost everything checked</td><td><span class="tag bad">optimistic</span></td></tr>
-  <tr><td><code>ASPIRE_PARITY.md</code></td><td>3 posts vs 53+, SKP blocked — accurate</td><td><span class="tag ok">honest</span></td></tr>
+  <tr><td><code>docs/GAMEPLAN.md</code></td><td>Checklist of shipped work</td><td><span class="tag warn">historical</span></td></tr>
+  <tr><td><code>docs/FEATURES.md</code></td><td>Short notes on pocket / V-carve / weave algorithms</td><td><span class="tag ok">current</span></td></tr>
   <tr><td><code>PARITY_QUEUE.md</code></td><td>Closest to real work</td><td><span class="tag ok">current</span></td></tr>
 </table>
 

@@ -251,7 +251,7 @@ public partial class MainWindow : Window
     {
         // H-303: Design and Model share the stage side by side (2D | 3D) once the
         // split is on; either rail button re-enters it. Every other stage is a
-        // plain swap and turns the split back off, like Aspire leaving the tab.
+        // plain swap and turns the split back off, leaving the tab.
         if (_splitActive && tag is "design" or "model")
         {
             SetSplitContent(_design, _model);

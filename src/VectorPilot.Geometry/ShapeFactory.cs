@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.Geometry;
 
 /// <summary>
-/// Draw-tool shape factories (Aspire draw-tool parity): arc, polygon, star,
+/// Draw-tool shape factories: arc, polygon, star,
 /// spiral, ellipse generators as point sets / VectorShapes.
 /// </summary>
 public static class ShapeFactory

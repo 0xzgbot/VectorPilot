@@ -3,7 +3,7 @@ using VectorPilot.Geometry;
 namespace VectorPilot.App;
 
 /// <summary>
-/// Text-on-curve (Aspire parity; App-layer since it consumes the WPF
+/// Text-on-curve (App-layer: consumes WPF
 /// GlyphTypeface outlines from TextToCurves): places each character along a
 /// path, rotated to the path tangent. Produces outline VectorShapes ready
 /// for the toolpath engines.
